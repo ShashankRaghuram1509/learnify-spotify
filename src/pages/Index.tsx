@@ -4,7 +4,7 @@ import HeroSection from "@/components/HeroSection";
 import FeaturedCourses from "@/components/FeaturedCourses";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ArrowRight, BookOpen, Users, Award, Clock, CheckCircle } from "lucide-react";
+import { ArrowRight, BookOpen, Users, Award, Clock, CheckCircle, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -190,6 +190,62 @@ const Index = () => {
           </div>
         </section>
         
+        {/* Premium Features Section */}
+        <section className="py-20 bg-spotify-gray/10 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#1DB95440,_transparent_70%)]"></div>
+          <div className="container mx-auto px-4 md:px-6 relative z-10">
+            <div className="text-center max-w-3xl mx-auto mb-12">
+              <span className="text-spotify font-medium inline-flex items-center gap-2">
+                <Sparkles size={18} className="text-spotify" />
+                Premium Experience
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">Unlock Advanced Learning Features</h2>
+              <p className="text-spotify-text/70 text-lg">
+                Take your learning journey to the next level with our premium features designed to accelerate your progress.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+              <div className="bg-spotify-gray/20 backdrop-blur-md rounded-xl p-6 border border-spotify/20 animate-fade-in">
+                <div className="w-12 h-12 bg-spotify/10 rounded-full flex items-center justify-center mb-5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-spotify">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    <path d="M14.5 8a2.5 2.5 0 1 0 0 5 2.5 2.5 0 1 0 0-5z"></path>
+                    <path d="M7.5 12H9"></path>
+                    <path d="M16.5 10H18"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">AI Learning Assistant</h3>
+                <p className="text-spotify-text/70 mb-4">
+                  Get personalized help from our AI assistant that's available 24/7 to answer questions, provide feedback, and guide your learning path.
+                </p>
+              </div>
+              
+              <div className="bg-spotify-gray/20 backdrop-blur-md rounded-xl p-6 border border-spotify/20 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                <div className="w-12 h-12 bg-spotify/10 rounded-full flex items-center justify-center mb-5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-spotify">
+                    <path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">1-on-1 Video Calls</h3>
+                <p className="text-spotify-text/70 mb-4">
+                  Schedule video calls with our expert instructors to receive direct guidance, clarify doubts, and get personalized feedback on your projects.
+                </p>
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <Link 
+                to="/premium" 
+                className="spotify-button inline-flex items-center"
+              >
+                Explore Premium Features
+                <ArrowRight size={18} className="ml-2" />
+              </Link>
+            </div>
+          </div>
+        </section>
+        
         {/* CTA Section */}
         <section className="py-20 bg-spotify-dark relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#1DB95430,_transparent_70%)]"></div>
@@ -209,10 +265,11 @@ const Index = () => {
                   Explore Courses
                 </Link>
                 <Link 
-                  to="/register" 
-                  className="bg-transparent text-spotify-text border border-spotify-text/30 hover:border-spotify hover:text-spotify rounded-full py-3 px-8 font-semibold transition-colors duration-300 text-lg"
+                  to="/premium" 
+                  className="bg-spotify/20 hover:bg-spotify/30 text-spotify border border-spotify/30 rounded-full py-3 px-8 font-semibold transition-colors duration-300 text-lg flex items-center justify-center"
                 >
-                  Sign Up for Free
+                  <Sparkles size={16} className="mr-2" />
+                  Get Premium
                 </Link>
               </div>
             </div>
