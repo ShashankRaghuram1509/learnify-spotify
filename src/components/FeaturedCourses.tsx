@@ -1,112 +1,74 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import CourseCard from "./CourseCard";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock data for featured courses
-const featuredCourses = [
-  {
-    id: "web-dev-101",
-    title: "Web Development Fundamentals",
-    instructor: "Sarah Johnson",
-    rating: 4.8,
-    students: 1543,
-    duration: "8 weeks",
-    level: "Beginner",
-    price: 89.99,
-    discountPrice: 49.99,
-    image: "https://images.unsplash.com/photo-1537432376769-00f5c2f4c8d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    featured: true,
-    category: "development"
-  },
-  {
-    id: "ui-ux-design",
-    title: "UI/UX Design Mastery",
-    instructor: "Michael Chang",
-    rating: 4.7,
-    students: 982,
-    duration: "10 weeks",
-    level: "Intermediate",
-    price: 99.99,
-    discountPrice: 69.99,
-    image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    featured: true,
-    category: "design"
-  },
-  {
-    id: "data-science-python",
-    title: "Data Science with Python",
-    instructor: "Emily Rodriguez",
-    rating: 4.9,
-    students: 2102,
-    duration: "12 weeks",
-    level: "Intermediate",
-    price: 119.99,
-    discountPrice: 79.99,
-    image: "https://images.unsplash.com/photo-1551033406-611cf9a28f67?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    featured: true,
-    category: "data-science"
-  },
-  {
-    id: "digital-marketing",
-    title: "Digital Marketing Strategies",
-    instructor: "Alex Thompson",
-    rating: 4.6,
-    students: 1287,
-    duration: "6 weeks",
-    level: "All Levels",
-    price: 79.99,
-    discountPrice: 39.99,
-    image: "https://images.unsplash.com/photo-1533750516457-a7f992034fec?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2326&q=80",
-    featured: true,
-    category: "marketing"
-  },
-  {
-    id: "ai-machine-learning",
-    title: "AI & Machine Learning Fundamentals",
-    instructor: "David Chen",
-    rating: 4.8,
-    students: 1843,
-    duration: "14 weeks",
-    level: "Advanced",
-    price: 129.99,
-    discountPrice: 89.99,
-    image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2301&q=80",
-    featured: true,
-    category: "ai"
-  },
-  {
-    id: "mobile-app-dev",
-    title: "Mobile App Development",
-    instructor: "Jessica Lee",
-    rating: 4.7,
-    students: 1204,
-    duration: "10 weeks",
-    level: "Intermediate",
-    price: 99.99,
-    discountPrice: 59.99,
-    image: "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    featured: true,
-    category: "development"
-  }
-];
-
+// In a real app, this would be fetched from your backend
 const categories = [
   { id: "all", name: "All Categories" },
-  { id: "development", name: "Development" },
-  { id: "design", name: "Design" },
-  { id: "marketing", name: "Marketing" },
+  { id: "programming", name: "Programming" },
+  { id: "data-structures", name: "Data Structures" },
+  { id: "algorithms", name: "Algorithms" },
+  { id: "web-development", name: "Web Development" },
+  { id: "database", name: "Database" },
+  { id: "system-design", name: "System Design" },
   { id: "data-science", name: "Data Science" },
-  { id: "ai", name: "AI & ML" }
+  { id: "cloud", name: "Cloud Computing" },
+  { id: "tools", name: "Developer Tools" }
 ];
 
 const FeaturedCourses = () => {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [activeType, setActiveType] = useState("all"); // "all", "free", or "premium"
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   
-  const filteredCourses = activeCategory === "all" 
-    ? featuredCourses 
-    : featuredCourses.filter(course => course.category === activeCategory);
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        // In a real implementation, you would use your API client to fetch from your backend
+        const response = await fetch('http://localhost:8080/api/courses');
+        if (!response.ok) {
+          throw new Error('Failed to fetch courses');
+        }
+        const data = await response.json();
+        setCourses(data);
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        toast({
+          title: "Error",
+          description: "Could not load courses. Please try again later.",
+          variant: "destructive",
+        });
+        // Use the mock data as fallback if API fails
+        setCourses([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [toast]);
+  
+  const filteredCourses = courses.filter(course => {
+    // Filter by category
+    const categoryMatch = activeCategory === "all" || course.category === activeCategory;
+    
+    // Filter by type (free/premium)
+    const typeMatch = 
+      activeType === "all" || 
+      (activeType === "free" && !course.premium) ||
+      (activeType === "premium" && course.premium);
+    
+    return categoryMatch && typeMatch;
+  });
+  
+  // Filter to just featured courses for the homepage section
+  const featuredFilteredCourses = filteredCourses.filter(course => course.featured);
   
   return (
     <section className="py-20 bg-spotify-dark">
@@ -123,27 +85,101 @@ const FeaturedCourses = () => {
           </Link>
         </div>
         
-        <div className="flex overflow-x-auto scrollbar-none space-x-2 mb-8 pb-2">
-          {categories.map(category => (
+        <div className="mb-6">
+          <div className="flex overflow-x-auto scrollbar-none space-x-2 mb-4 pb-2">
+            {categories.map(category => (
+              <button
+                key={category.id}
+                onClick={() => setActiveCategory(category.id)}
+                className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
+                  activeCategory === category.id
+                    ? "bg-spotify text-white"
+                    : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+          
+          <div className="flex space-x-2">
             <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.id)}
+              onClick={() => setActiveType("all")}
               className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
-                activeCategory === category.id
+                activeType === "all"
                   ? "bg-spotify text-white"
                   : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
               }`}
             >
-              {category.name}
+              All Courses
             </button>
-          ))}
+            <button
+              onClick={() => setActiveType("free")}
+              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
+                activeType === "free"
+                  ? "bg-green-500 text-white"
+                  : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
+              }`}
+            >
+              Free Courses
+            </button>
+            <button
+              onClick={() => setActiveType("premium")}
+              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
+                activeType === "premium"
+                  ? "bg-amber-500 text-white"
+                  : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
+              }`}
+            >
+              Premium Courses
+            </button>
+          </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-          {filteredCourses.map((course) => (
-            <CourseCard key={course.id} {...course} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {[1, 2, 3, 4, 5, 6].map((_, index) => (
+              <div key={index} className="bg-spotify-gray/20 rounded-xl animate-pulse h-[400px]"></div>
+            ))}
+          </div>
+        ) : featuredFilteredCourses.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {featuredFilteredCourses.map((course) => (
+              <CourseCard 
+                key={course.id} 
+                id={course.courseId}
+                title={course.title}
+                instructor={course.instructor}
+                rating={course.rating}
+                students={course.students}
+                duration={course.duration}
+                level={course.level}
+                price={course.price}
+                discountPrice={course.discountPrice}
+                image={course.image}
+                featured={course.featured}
+                premium={course.premium}
+                externalLink={course.externalLink}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <h3 className="text-2xl font-semibold mb-2">No Courses Found</h3>
+            <p className="text-spotify-text/70 mb-6">
+              We couldn't find any courses matching your search criteria.
+            </p>
+            <button
+              onClick={() => {
+                setActiveCategory("all");
+                setActiveType("all");
+              }}
+              className="bg-spotify text-white px-6 py-3 rounded-full font-medium hover:bg-spotify-hover transition-colors duration-300"
+            >
+              Reset Filters
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

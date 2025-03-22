@@ -46,6 +46,10 @@ public class Course {
     
     private String category;
     
+    private boolean premium = false;
+    
+    private String externalLink;
+    
     @Column(length = 1000)
     private String description;
 

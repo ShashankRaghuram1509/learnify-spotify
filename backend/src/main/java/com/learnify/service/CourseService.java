@@ -18,6 +18,14 @@ public class CourseService {
     public List<Course> getAllCourses() {
         return courseRepository.findAll();
     }
+    
+    public List<Course> getFreeCourses() {
+        return courseRepository.findByPremium(false);
+    }
+    
+    public List<Course> getPremiumCourses() {
+        return courseRepository.findByPremium(true);
+    }
 
     public Optional<Course> getCourseById(String courseId) {
         return courseRepository.findByCourseId(courseId);
@@ -29,6 +37,10 @@ public class CourseService {
 
     public List<Course> getCoursesByCategory(String category) {
         return courseRepository.findByCategory(category);
+    }
+    
+    public List<Course> getCoursesByCategoryAndType(String category, boolean premium) {
+        return courseRepository.findByCategoryAndPremium(category, premium);
     }
 
     public Course createCourse(Course course) {
