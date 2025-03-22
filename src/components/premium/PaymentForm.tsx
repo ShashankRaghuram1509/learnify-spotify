@@ -11,6 +11,14 @@ import { toast } from "sonner";
 import { CreditCard, Lock, ArrowRight } from "lucide-react";
 import { apiService } from "@/services/apiService";
 
+// Define the correct type for payment form data
+type PaymentFormData = {
+  cardHolder: string;
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+};
+
 const formSchema = z.object({
   cardHolder: z.string().min(3, {
     message: "Cardholder name must be at least 3 characters.",
@@ -29,7 +37,7 @@ const formSchema = z.object({
 const PaymentForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<PaymentFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       cardHolder: "",
@@ -39,7 +47,7 @@ const PaymentForm = () => {
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: PaymentFormData) {
     setIsSubmitting(true);
     
     try {
