@@ -1,10 +1,13 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { apiService } from "@/services/apiService";
+import { toast } from "sonner";
 
 interface User {
   id: string;
   name: string;
   email: string;
+  isPremium?: boolean;
 }
 
 interface AuthContextType {
@@ -34,8 +37,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Check if user is stored in localStorage
     const storedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
     
-    if (storedUser) {
+    if (storedUser && token) {
       setUser(JSON.parse(storedUser));
     }
     
@@ -43,44 +47,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string) => {
-    // In a real app, you'd make an API call here
-    // This is a mock implementation for demo purposes
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock user data
-    const mockUser = {
-      id: "user_123",
-      name: email.split('@')[0],
-      email,
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem("user", JSON.stringify(mockUser));
+    try {
+      const response = await apiService.login(email, password);
+      
+      setUser(response.user);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      toast.success("Successfully logged in!");
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   };
 
   const register = async (name: string, email: string, password: string) => {
-    // In a real app, you'd make an API call here
-    // This is a mock implementation for demo purposes
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock user data
-    const mockUser = {
-      id: "user_" + Date.now(),
-      name,
-      email,
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem("user", JSON.stringify(mockUser));
+    try {
+      const response = await apiService.register(name, email, password);
+      
+      setUser(response.user);
+      localStorage.setItem("user", JSON.stringify(response.user));
+      toast.success("Account created successfully!");
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
+    }
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    toast.info("You have been logged out");
   };
 
   return (
