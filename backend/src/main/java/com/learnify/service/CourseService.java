@@ -33,24 +33,47 @@ public class CourseService {
     }
 
     public Optional<Course> getCourseById(String courseId) {
+        // First try to get by ID directly
         Optional<Course> course = courseRepository.findByCourseId(courseId);
+        
         if (course.isPresent()) {
             return course;
         }
-        // Try the alternative method with native query if the first attempt fails
-        return courseRepository.findByCourseIdExact(courseId);
+        
+        try {
+            // Try parsing the ID as a long and fetch by database ID
+            Long id = Long.parseLong(courseId);
+            return courseRepository.findById(id);
+        } catch (NumberFormatException e) {
+            // If not a number, try the exact match query
+            return courseRepository.findByCourseIdExact(courseId);
+        }
     }
 
     public List<Course> getFeaturedCourses() {
         return courseRepository.findByFeatured(true);
     }
+    
+    public List<Course> getFeaturedCoursesByPremium(boolean premium) {
+        return courseRepository.findFeaturedByPremium(premium);
+    }
 
     public List<Course> getCoursesByCategory(String category) {
-        return courseRepository.findByCategory(category);
+        try {
+            return courseRepository.findByCategoryIgnoreCase(category);
+        } catch (Exception e) {
+            // Fallback to the regular method if there's an issue
+            return courseRepository.findByCategory(category);
+        }
     }
     
     public List<Course> getCoursesByCategoryAndType(String category, boolean premium) {
-        return courseRepository.findByCategoryAndPremium(category, premium);
+        try {
+            return courseRepository.findByCategoryIgnoreCaseAndPremium(category, premium);
+        } catch (Exception e) {
+            // Fallback to the regular method if there's an issue
+            return courseRepository.findByCategoryAndPremium(category, premium);
+        }
     }
 
     public Course createCourse(Course course) {

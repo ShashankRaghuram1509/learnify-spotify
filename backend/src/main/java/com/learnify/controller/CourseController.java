@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/courses")
@@ -31,13 +32,33 @@ public class CourseController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getCourseById(@PathVariable String id) {
         try {
-            return courseService.getCourseById(id)
-                    .map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.status(404).body(Map.of("error", "Course not found", "courseId", id)));
+            Optional<Course> courseOpt = courseService.getCourseById(id);
+            
+            if (courseOpt.isPresent()) {
+                return ResponseEntity.ok(courseOpt.get());
+            } else {
+                // Log more details for debugging
+                System.out.println("Course not found with ID: " + id);
+                return ResponseEntity
+                    .status(404)
+                    .body(Map.of(
+                        "error", "Course not found", 
+                        "courseId", id,
+                        "message", "No course exists with the provided identifier"
+                    ));
+            }
         } catch (Exception e) {
+            // Log the exception for debugging
+            System.err.println("Error retrieving course with ID: " + id);
+            e.printStackTrace();
+            
             return ResponseEntity
                 .status(500)
-                .body(Map.of("error", "Failed to retrieve course", "message", e.getMessage()));
+                .body(Map.of(
+                    "error", "Failed to retrieve course", 
+                    "message", e.getMessage(),
+                    "courseId", id
+                ));
         }
     }
 
@@ -50,6 +71,18 @@ public class CourseController {
             return ResponseEntity
                 .status(500)
                 .body(Map.of("error", "Failed to retrieve featured courses", "message", e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/featured/premium/{premium}")
+    public ResponseEntity<?> getFeaturedCoursesByPremium(@PathVariable boolean premium) {
+        try {
+            List<Course> courses = courseService.getFeaturedCoursesByPremium(premium);
+            return ResponseEntity.ok(courses);
+        } catch (Exception e) {
+            return ResponseEntity
+                .status(500)
+                .body(Map.of("error", "Failed to retrieve featured courses by premium status", "message", e.getMessage()));
         }
     }
 
