@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -82,14 +81,18 @@ const FeaturedCourses = () => {
   const [error, setError] = useState(null);
   const { toast } = useToast();
   
+  // Define the backend API base URL
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+  
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Important: Use the correct API endpoint with the context path
-        const response = await fetch('http://localhost:8080/api/courses');
+        // Use the API base URL from environment
+        console.log("Fetching courses from:", `${apiBaseUrl}/courses`);
+        const response = await fetch(`${apiBaseUrl}/courses`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch courses: ${response.status} ${response.statusText}`);
@@ -116,7 +119,7 @@ const FeaturedCourses = () => {
     };
 
     fetchCourses();
-  }, [toast]);
+  }, [toast, apiBaseUrl]);
   
   const filteredCourses = courses.filter(course => {
     // Filter by category
