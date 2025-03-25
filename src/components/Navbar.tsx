@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, LogIn, User, ChevronDown, Search } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -9,7 +8,9 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
@@ -34,6 +35,13 @@ const Navbar = () => {
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/courses?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   return (
@@ -75,19 +83,21 @@ const Navbar = () => {
               </Link>
             </div>
 
-            <div className="relative h-10 w-10 md:w-64 transition-all">
+            <form onSubmit={handleSearch} className="relative h-10 w-10 md:w-64 transition-all">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <Search className="h-4 w-4 text-muted-foreground" />
               </div>
               <input
                 type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-10 w-10 md:w-64 rounded-full bg-spotify-gray/50 
                           border-none focus:ring-0 focus:outline-none
                           pl-10 pr-4 text-sm text-spotify-text placeholder:text-muted-foreground
                           transition-all duration-300 focus:w-64"
                 placeholder="Search courses..."
               />
-            </div>
+            </form>
 
             {isAuthenticated ? (
               <div className="relative">
@@ -190,18 +200,20 @@ const Navbar = () => {
                 Contact
               </Link>
 
-              <div className="relative">
+              <form onSubmit={handleSearch} className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                   <Search className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <input
                   type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-10 rounded-full bg-spotify-gray/50 
                             border-none focus:ring-0 focus:outline-none
                             pl-10 pr-4 text-sm text-spotify-text"
                   placeholder="Search courses..."
                 />
-              </div>
+              </form>
 
               {isAuthenticated ? (
                 <div className="space-y-3 pt-2 border-t border-spotify-gray/30">

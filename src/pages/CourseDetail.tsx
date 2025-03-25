@@ -2,449 +2,234 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { Star, Clock, Award, Users, Check, Lock } from "lucide-react";
 import { toast } from "sonner";
-import { 
-  Clock, 
-  Users, 
-  BarChart, 
-  Award, 
-  Calendar, 
-  CheckCircle, 
-  Play, 
-  BookOpen, 
-  Globe, 
-  MessageCircle,
-  Star,
-  AlertCircle, 
-  Share2, 
-  Heart, 
-  HeartOff, 
-  ChevronDown,
-  ChevronUp
-} from "lucide-react";
+
+// Mock data for fallback
+const mockCourseDetails = {
+  id: "default-course",
+  courseId: "default-course",
+  title: "Course Not Available",
+  instructor: "Instructor",
+  rating: 0,
+  students: 0,
+  duration: "Unknown",
+  level: "All Levels",
+  price: 0,
+  discountPrice: 0,
+  image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2340&h=1560&auto=format&fit=crop",
+  description: "This course data couldn't be loaded from the server. Please try again later.",
+  premium: false,
+  modules: []
+};
 
 const CourseDetail = () => {
-  const { id } = useParams<{ id: string }>();
-  const [course, setCourse] = useState<any>(null);
+  const { id } = useParams();
+  const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<string[]>([]);
-  const [wishlist, setWishlist] = useState(false);
-  const { isAuthenticated } = useAuth();
   const { toast: uiToast } = useToast();
   
+  // Define the backend API base URL with fallback
   const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
-  
+
   useEffect(() => {
     const fetchCourse = async () => {
+      if (!id) return;
+      
+      console.info(`Fetching course details for: ${id}`);
       try {
         setLoading(true);
-        console.log(`Fetching course details for: ${id}`);
-        
         const response = await fetch(`${apiBaseUrl}/courses/${id}`);
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch course: ${response.status} ${response.statusText}`);
+          throw new Error(`HTTP error! Status: ${response.status}`);
         }
         
         const data = await response.json();
+        console.log("Course data fetched:", data);
         setCourse(data);
-        
-        if (data && data.curriculum && data.curriculum.length > 0) {
-          setExpanded([data.curriculum[0].title]);
-        }
       } catch (error) {
         console.error("Error fetching course:", error);
-        uiToast.error("Failed to load course details. Please try again.");
+        // Use sonner toast instead of useToast
+        toast.error("Failed to load course data. Using fallback data.");
+        
+        // Set fallback mock data if we can't get the actual course
+        setCourse(mockCourseDetails);
       } finally {
         setLoading(false);
       }
     };
-    
-    if (id) {
-      fetchCourse();
-    }
+
+    fetchCourse();
   }, [id, apiBaseUrl]);
-  
-  const toggleSection = (title: string) => {
-    if (expanded.includes(title)) {
-      setExpanded(expanded.filter(t => t !== title));
-    } else {
-      setExpanded([...expanded, title]);
-    }
-  };
-  
-  const handleEnroll = () => {
-    if (!isAuthenticated) {
-      uiToast({
-        title: "Authentication Required",
-        description: "Please log in or sign up to enroll in this course.",
-        variant: "default",
-      });
-      return;
-    }
-    
-    uiToast({
-      title: "Successfully Enrolled!",
-      description: `You are now enrolled in "${course.title}". Check your dashboard to start learning.`,
-      variant: "default",
-    });
-  };
-  
-  const toggleWishlist = () => {
-    setWishlist(!wishlist);
-    uiToast({
-      title: wishlist ? "Removed from Wishlist" : "Added to Wishlist",
-      description: wishlist 
-        ? `"${course.title}" has been removed from your wishlist.` 
-        : `"${course.title}" has been added to your wishlist.`,
-      variant: "default",
-    });
-  };
-  
+
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="animate-pulse-soft">
-            <div className="h-6 w-32 bg-spotify-gray/30 rounded-full mb-4 mx-auto"></div>
-            <div className="h-10 w-64 bg-spotify-gray/30 rounded-full mb-8 mx-auto"></div>
-            <div className="h-4 w-96 bg-spotify-gray/30 rounded-full mx-auto"></div>
+        <main className="flex-grow pt-20">
+          <div className="container mx-auto px-4 py-16">
+            <div className="animate-pulse">
+              <div className="h-12 bg-spotify-gray/20 rounded-lg max-w-md mb-6"></div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="md:col-span-2 space-y-4">
+                  <div className="h-6 bg-spotify-gray/20 rounded max-w-sm"></div>
+                  <div className="h-6 bg-spotify-gray/20 rounded max-w-xs"></div>
+                  <div className="h-32 bg-spotify-gray/20 rounded"></div>
+                  <div className="h-64 bg-spotify-gray/20 rounded"></div>
+                </div>
+                <div className="space-y-4">
+                  <div className="h-60 bg-spotify-gray/20 rounded-xl"></div>
+                  <div className="h-12 bg-spotify-gray/20 rounded-lg"></div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
         <Footer />
       </div>
     );
   }
-  
+
+  // If course not found even after loading
   if (!course) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <AlertCircle className="h-16 w-16 text-spotify-text/50 mx-auto mb-4" />
-            <h1 className="text-2xl font-semibold mb-2">Course Not Found</h1>
-            <p className="text-spotify-text/70 mb-6">
+        <main className="flex-grow pt-20">
+          <div className="container mx-auto px-4 py-16 text-center">
+            <h1 className="text-3xl font-bold mb-4">Course Not Found</h1>
+            <p className="text-spotify-text/70 mb-8">
               The course you're looking for doesn't exist or has been removed.
             </p>
-            <Link to="/courses" className="spotify-button">
-              Browse Courses
+            <Link 
+              to="/courses" 
+              className="spotify-button px-6 py-3"
+            >
+              Browse All Courses
             </Link>
           </div>
-        </div>
+        </main>
         <Footer />
       </div>
     );
   }
-  
-  const totalLessons = course.curriculum 
-    ? course.curriculum.reduce((total, section) => total + (section.lessons ? section.lessons.length : 0), 0)
-    : 0;
-  
-  const totalDuration = course.curriculum
-    ? course.curriculum.reduce(
-        (total, section) => 
-          total + (section.lessons 
-            ? section.lessons.reduce(
-                (sectionTotal, lesson) => {
-                  if (!lesson.duration) return sectionTotal;
-                  const [minutes, seconds] = lesson.duration.split(':').map(Number);
-                  return sectionTotal + minutes + (seconds / 60);
-                }, 
-                0
-              )
-            : 0
-          ), 
-        0
-      )
-    : 0;
-  
+
+  // Course found and loaded
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <main className="flex-grow pt-20 bg-spotify-dark">
-        <section className="py-16 bg-spotify-dark relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-spotify-dark/90 to-spotify-dark/90 z-0"></div>
-          <div className="absolute inset-0 overflow-hidden">
-            <img 
-              src={course.image} 
-              alt={course.title}
-              className="w-full h-full object-cover opacity-20 blur-sm"
-            />
-          </div>
-          
-          <div className="container mx-auto px-4 md:px-6 relative z-10">
-            <div className="max-w-5xl mx-auto">
-              <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-                <div className="w-full md:w-2/5 flex-shrink-0">
-                  <div className="relative rounded-xl overflow-hidden shadow-2xl animate-fade-in">
-                    <img 
-                      src={course.image} 
-                      alt={course.title}
-                      className="w-full aspect-video object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                    <button className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-spotify text-white rounded-full w-16 h-16 flex items-center justify-center hover:bg-spotify-hover transition-colors duration-300">
-                      <Play size={28} fill="currentColor" />
-                    </button>
-                    <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded">
-                      {course.level}
-                    </div>
+      <main className="flex-grow pt-20">
+        <section className="relative py-20 bg-spotify-dark">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Course Image */}
+              <div className="md:order-2">
+                <img 
+                  src={course.image || mockCourseDetails.image}
+                  alt={course.title || mockCourseDetails.title}
+                  className="rounded-2xl shadow-xl aspect-video object-cover"
+                />
+              </div>
+              
+              {/* Course Details */}
+              <div className="md:order-1">
+                <h1 className="text-4xl font-bold mb-4">{course.title || mockCourseDetails.title}</h1>
+                <p className="text-spotify-text/80 mb-6">{course.description || mockCourseDetails.description}</p>
+                
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="flex items-center text-sm text-spotify-text/70">
+                    <Star className="h-5 w-5 mr-1 text-yellow-500" />
+                    <span>{course.rating || mockCourseDetails.rating} ({course.students || mockCourseDetails.students} students)</span>
+                  </div>
+                  <div className="flex items-center text-sm text-spotify-text/70">
+                    <Clock className="h-5 w-5 mr-1" />
+                    <span>{course.duration || mockCourseDetails.duration}</span>
                   </div>
                 </div>
                 
-                <div className="w-full md:w-3/5 animate-fade-up">
-                  <div className="inline-block mb-3 bg-spotify/20 backdrop-blur-sm border border-spotify/20 rounded-full px-4 py-1 text-sm text-spotify">
-                    {course.category && course.category.charAt(0).toUpperCase() + course.category.slice(1)}
-                  </div>
-                  
-                  <h1 className="text-3xl md:text-4xl font-bold mb-4">{course.title}</h1>
-                  
-                  <p className="text-spotify-text/80 text-lg mb-6">{course.description}</p>
-                  
-                  <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-6">
-                    <div className="flex items-center">
-                      <div className="flex items-center text-yellow-400 mr-1">
-                        <Star size={18} fill="currentColor" stroke="none" />
-                      </div>
-                      <span className="font-medium">{course.rating ? course.rating.toFixed(1) : '4.5'}</span>
-                      <span className="text-spotify-text/60 ml-1">({course.reviews || 120} reviews)</span>
-                    </div>
-                    
-                    <div className="flex items-center text-spotify-text/80">
-                      <Users size={16} className="mr-1" />
-                      <span>{course.students ? course.students.toLocaleString() : 500} students</span>
-                    </div>
-                    
-                    <div className="flex items-center text-spotify-text/80">
-                      <Calendar size={16} className="mr-1" />
-                      <span>Last updated {course.lastUpdated || 'June 2023'}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center mb-6">
-                    <img 
-                      src={course.instructorImage || "https://randomuser.me/api/portraits/men/32.jpg"} 
-                      alt={course.instructor} 
-                      className="w-10 h-10 rounded-full mr-3"
-                    />
-                    <div>
-                      <p className="font-medium">{course.instructor}</p>
-                      <p className="text-sm text-spotify-text/70">{course.instructorTitle || 'Instructor'}</p>
-                    </div>
+                <div className="flex items-center space-x-4 mb-6">
+                  <div>
+                    <span className="text-2xl font-bold">${course.discountPrice !== undefined ? course.discountPrice : course.price || mockCourseDetails.price}</span>
+                    {course.discountPrice !== undefined && course.discountPrice !== course.price && (
+                      <span className="text-lg line-through ml-2 text-spotify-text/70">${course.price || mockCourseDetails.price}</span>
+                    )}
                   </div>
                 </div>
+                
+                {course.premium ? (
+                  <button className="spotify-button">Enroll Now (Premium)</button>
+                ) : (
+                  course.externalLink ? (
+                    <a href={course.externalLink} target="_blank" rel="noopener noreferrer" className="spotify-button">
+                      Enroll Now (External)
+                    </a>
+                  ) : (
+                    <button className="spotify-button">Enroll Now (Free)</button>
+                  )
+                )}
               </div>
             </div>
           </div>
         </section>
         
-        <section className="py-12 bg-spotify-dark">
+        {/* Course Features */}
+        <section className="py-16 bg-spotify-gray/10">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="max-w-5xl mx-auto">
-              <div className="flex flex-col lg:flex-row gap-10">
-                <div className="w-full lg:w-2/3 order-2 lg:order-1">
-                  {course.whatYouWillLearn && (
-                    <div className="bg-spotify-gray/20 backdrop-blur-md rounded-xl p-6 mb-8 border border-white/10 animate-fade-in">
-                      <h2 className="text-2xl font-semibold mb-6">What You'll Learn</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {course.whatYouWillLearn.map((item, index) => (
-                          <div key={index} className="flex items-start">
-                            <CheckCircle className="h-5 w-5 text-spotify mr-2 mt-1 shrink-0" />
-                            <span>{item}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {course.curriculum && (
-                    <div className="bg-spotify-gray/20 backdrop-blur-md rounded-xl p-6 mb-8 border border-white/10 animate-fade-in">
-                      <h2 className="text-2xl font-semibold mb-2">Course Content</h2>
-                      <div className="flex items-center justify-between mb-6">
-                        <p className="text-spotify-text/80">
-                          {course.curriculum.length} sections • {totalLessons} lessons • {Math.floor(totalDuration)} hours total
-                        </p>
-                        <button 
-                          onClick={() => expanded.length === course.curriculum.length 
-                            ? setExpanded([])
-                            : setExpanded(course.curriculum.map(section => section.title))
-                          }
-                          className="text-spotify hover:text-spotify-light transition-colors duration-200 text-sm font-medium"
-                        >
-                          {expanded.length === course.curriculum.length ? "Collapse All" : "Expand All"}
-                        </button>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        {course.curriculum.map((section, sectionIndex) => (
-                          <div key={sectionIndex} className="border border-white/10 rounded-lg overflow-hidden">
-                            <button
-                              onClick={() => toggleSection(section.title)}
-                              className="w-full flex items-center justify-between bg-spotify-gray/30 px-5 py-4 hover:bg-spotify-gray/40 transition-colors duration-200"
-                            >
-                              <div className="flex items-center">
-                                {expanded.includes(section.title) ? (
-                                  <ChevronUp size={18} className="mr-2 text-spotify" />
-                                ) : (
-                                  <ChevronDown size={18} className="mr-2 text-spotify" />
-                                )}
-                                <h3 className="font-medium">{section.title}</h3>
-                              </div>
-                              <span className="text-sm text-spotify-text/70">
-                                {section.lessons ? section.lessons.length : 0} lessons
-                              </span>
-                            </button>
-                            
-                            {expanded.includes(section.title) && section.lessons && (
-                              <div className="bg-spotify-gray/20 divide-y divide-white/5">
-                                {section.lessons.map((lesson, lessonIndex) => (
-                                  <div 
-                                    key={lessonIndex} 
-                                    className="flex items-center justify-between px-5 py-3 hover:bg-spotify-gray/30 transition-colors duration-200"
-                                  >
-                                    <div className="flex items-center">
-                                      <Play size={15} className="mr-3 text-spotify-text/50" />
-                                      <span className={lesson.preview ? "text-spotify-text" : "text-spotify-text/70"}>
-                                        {lesson.title}
-                                      </span>
-                                      {lesson.preview && (
-                                        <span className="ml-2 text-xs bg-spotify/20 text-spotify px-2 py-0.5 rounded-full">
-                                          Preview
-                                        </span>
-                                      )}
-                                    </div>
-                                    <span className="text-sm text-spotify-text/60">{lesson.duration}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="bg-spotify-gray/20 backdrop-blur-md rounded-xl p-6 mb-8 border border-white/10 animate-fade-in">
-                    <h2 className="text-2xl font-semibold mb-6">Instructor</h2>
-                    <div className="flex items-start space-x-4">
-                      <img 
-                        src={course.instructorImage || "https://randomuser.me/api/portraits/men/32.jpg"} 
-                        alt={course.instructor} 
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                      <div>
-                        <h3 className="text-xl font-semibold">{course.instructor}</h3>
-                        <p className="text-spotify-text/70 mb-3">{course.instructorTitle || 'Instructor'}</p>
-                        <p className="text-spotify-text/80">
-                          {course.instructorBio || 
-                            `${course.instructor} is an experienced instructor with expertise in ${course.category || 'this field'}.
-                            They have helped thousands of students master new skills and advance their careers.`}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="w-full lg:w-1/3 order-1 lg:order-2">
-                  <div className="sticky top-28">
-                    <div className="bg-spotify-gray/20 backdrop-blur-md rounded-xl overflow-hidden border border-white/10 animate-fade-in shadow-xl">
-                      <div className="p-6 border-b border-white/10">
-                        {course.premium ? (
-                          <>
-                            <div className="flex items-center mb-4">
-                              <span className="text-3xl font-bold">${course.discountPrice ? course.discountPrice.toFixed(2) : '49.99'}</span>
-                              {course.price && (
-                                <span className="text-xl text-spotify-text/50 line-through ml-3">
-                                  ${course.price.toFixed(2)}
-                                </span>
-                              )}
-                              {course.price && course.discountPrice && (
-                                <span className="ml-3 bg-spotify/10 text-spotify px-2 py-1 rounded-md text-sm font-medium">
-                                  {Math.round((1 - course.discountPrice / course.price) * 100)}% off
-                                </span>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <div className="mb-4">
-                            <span className="text-3xl font-bold text-green-500">Free</span>
-                          </div>
-                        )}
-                        
-                        <button 
-                          onClick={handleEnroll}
-                          className="spotify-button w-full mb-3"
-                        >
-                          Enroll Now
-                        </button>
-                        
-                        <button 
-                          onClick={toggleWishlist}
-                          className="w-full bg-transparent text-spotify-text border border-white/20 rounded-full py-3 font-semibold flex items-center justify-center hover:bg-spotify-gray/30 transition-colors duration-300"
-                        >
-                          {wishlist ? (
-                            <>
-                              <HeartOff size={18} className="mr-2" />
-                              Remove from Wishlist
-                            </>
-                          ) : (
-                            <>
-                              <Heart size={18} className="mr-2" />
-                              Add to Wishlist
-                            </>
-                          )}
-                        </button>
-                        
-                        {course.premium && (
-                          <p className="text-center text-sm text-spotify-text/60 mt-4">
-                            30-Day Money-Back Guarantee
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div className="p-6">
-                        <h3 className="font-semibold mb-4">This Course Includes:</h3>
-                        
-                        <ul className="space-y-3">
-                          <li className="flex items-center text-spotify-text/80">
-                            <BookOpen size={16} className="mr-3 text-spotify" />
-                            <span>{totalLessons} on-demand video lessons</span>
-                          </li>
-                          <li className="flex items-center text-spotify-text/80">
-                            <Clock size={16} className="mr-3 text-spotify" />
-                            <span>{Math.floor(totalDuration)} hours of content</span>
-                          </li>
-                          <li className="flex items-center text-spotify-text/80">
-                            <Globe size={16} className="mr-3 text-spotify" />
-                            <span>Full lifetime access</span>
-                          </li>
-                          <li className="flex items-center text-spotify-text/80">
-                            <MessageCircle size={16} className="mr-3 text-spotify" />
-                            <span>Community support</span>
-                          </li>
-                          <li className="flex items-center text-spotify-text/80">
-                            <Award size={16} className="mr-3 text-spotify" />
-                            <span>Certificate of completion</span>
-                          </li>
-                        </ul>
-                        
-                        <div className="mt-6 pt-6 border-t border-white/10 flex justify-center">
-                          <button className="flex items-center text-spotify-text/70 hover:text-spotify-text transition-colors duration-200">
-                            <Share2 size={16} className="mr-2" />
-                            <span>Share this course</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+            <h2 className="text-3xl font-bold mb-8 text-center">Course Features</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Level */}
+              <div className="flex flex-col items-center">
+                <Award className="h-10 w-10 mb-2 text-spotify" />
+                <h3 className="font-semibold text-lg">Level</h3>
+                <p className="text-spotify-text/70">{course.level || mockCourseDetails.level}</p>
+              </div>
+              
+              {/* Duration */}
+              <div className="flex flex-col items-center">
+                <Clock className="h-10 w-10 mb-2 text-spotify" />
+                <h3 className="font-semibold text-lg">Duration</h3>
+                <p className="text-spotify-text/70">{course.duration || mockCourseDetails.duration}</p>
+              </div>
+              
+              {/* Access */}
+              <div className="flex flex-col items-center">
+                <Lock className="h-10 w-10 mb-2 text-spotify" />
+                <h3 className="font-semibold text-lg">Access</h3>
+                <p className="text-spotify-text/70">Lifetime Access</p>
               </div>
             </div>
+          </div>
+        </section>
+        
+        {/* Course Modules */}
+        <section className="py-16 bg-spotify-dark">
+          <div className="container mx-auto px-4 md:px-6">
+            <h2 className="text-3xl font-bold mb-8">Course Modules</h2>
+            
+            {course.modules && course.modules.length > 0 ? (
+              <ul className="space-y-4">
+                {course.modules.map((module, index) => (
+                  <li key={index} className="bg-spotify-gray/20 rounded-xl p-6">
+                    <div className="flex items-center space-x-4">
+                      <Check className="h-6 w-6 text-green-500" />
+                      <span className="text-lg font-medium">{module.title}</span>
+                    </div>
+                    <p className="mt-2 text-spotify-text/70">{module.description}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center py-12">
+                <h3 className="text-2xl font-semibold mb-2">No Modules Found</h3>
+                <p className="text-spotify-text/70">
+                  This course currently has no modules listed.
+                </p>
+              </div>
+            )}
           </div>
         </section>
       </main>
@@ -455,4 +240,3 @@ const CourseDetail = () => {
 };
 
 export default CourseDetail;
-

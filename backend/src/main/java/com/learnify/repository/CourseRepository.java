@@ -18,22 +18,26 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findByCategoryAndPremium(String category, boolean premium);
     
     // Add a native query to ensure correct case sensitivity for the courseId
-    @Query(value = "SELECT * FROM course WHERE course_id = ?1", nativeQuery = true)
+    @Query(value = "SELECT * FROM courses WHERE course_id = ?1", nativeQuery = true)
     Optional<Course> findByCourseIdExact(String courseId);
     
+    // Case insensitive course ID search
+    @Query(value = "SELECT * FROM courses WHERE LOWER(course_id) = LOWER(?1)", nativeQuery = true)
+    Optional<Course> findByCourseIdIgnoreCase(String courseId);
+    
     // Find featured courses by premium status
-    @Query(value = "SELECT * FROM course WHERE featured = true AND premium = ?1", nativeQuery = true)
+    @Query(value = "SELECT * FROM courses WHERE featured = true AND premium = ?1", nativeQuery = true)
     List<Course> findFeaturedByPremium(boolean premium);
     
     // Find all courses with limit for better performance
-    @Query(value = "SELECT * FROM course LIMIT 50", nativeQuery = true)
+    @Query(value = "SELECT * FROM courses LIMIT 50", nativeQuery = true)
     List<Course> findAllCoursesWithLimit();
     
     // Find courses by category with case insensitive matching
-    @Query(value = "SELECT * FROM course WHERE LOWER(category) = LOWER(?1)", nativeQuery = true)
+    @Query(value = "SELECT * FROM courses WHERE LOWER(category) = LOWER(?1)", nativeQuery = true)
     List<Course> findByCategoryIgnoreCase(String category);
     
     // Find courses by category and premium status with case insensitive matching
-    @Query(value = "SELECT * FROM course WHERE LOWER(category) = LOWER(?1) AND premium = ?2", nativeQuery = true)
+    @Query(value = "SELECT * FROM courses WHERE LOWER(category) = LOWER(?1) AND premium = ?2", nativeQuery = true)
     List<Course> findByCategoryIgnoreCaseAndPremium(String category, boolean premium);
 }

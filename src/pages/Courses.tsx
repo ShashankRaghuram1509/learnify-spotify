@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CourseCard from "@/components/CourseCard";
 import { Search, Filter, SlidersHorizontal, SortAsc, SortDesc, X } from "lucide-react";
+import { toast } from "sonner";
 
 // Mock data - in a real app, this would come from an API
 const allCourses = [
@@ -193,21 +193,61 @@ const Courses = () => {
   const [selectedLevel, setSelectedLevel] = useState("all");
   const [sortBy, setSortBy] = useState("popular"); // 'popular', 'price-low', 'price-high', 'rating'
   const [showFilters, setShowFilters] = useState(false);
-  const [filteredCourses, setFilteredCourses] = useState(allCourses);
+  const [courses, setCourses] = useState([]);
+  const [filteredCourses, setFilteredCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
   
-  // Function to apply filters and sorting
+  // Define the backend API base URL with fallback
+  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+  
+  // Fetch courses from API
   useEffect(() => {
-    let result = [...allCourses];
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${apiBaseUrl}/courses`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("Courses data fetched:", data);
+        setCourses(data);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+        toast.error("Failed to load courses. Using fallback data.");
+        
+        // Use mock data as fallback
+        setCourses(allCourses);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [apiBaseUrl]);
+  
+  // Apply filters and search
+  useEffect(() => {
+    if (!courses || courses.length === 0) {
+      setFilteredCourses([]);
+      return;
+    }
+    
+    let result = [...courses];
     
     // Apply category filter
     if (selectedCategory !== "all") {
-      result = result.filter(course => course.category === selectedCategory);
+      result = result.filter(course => 
+        course.category && course.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
     }
     
     // Apply level filter
     if (selectedLevel !== "all") {
       result = result.filter(course => 
-        course.level.toLowerCase() === selectedLevel
+        course.level && course.level.toLowerCase() === selectedLevel.toLowerCase()
       );
     }
     
@@ -216,31 +256,37 @@ const Courses = () => {
       const query = searchQuery.toLowerCase();
       result = result.filter(
         course => 
-          course.title.toLowerCase().includes(query) || 
-          course.instructor.toLowerCase().includes(query)
+          (course.title && course.title.toLowerCase().includes(query)) || 
+          (course.instructor && course.instructor.toLowerCase().includes(query))
       );
     }
     
     // Apply sorting
     switch (sortBy) {
       case "popular":
-        result.sort((a, b) => b.students - a.students);
+        result.sort((a, b) => (b.students || 0) - (a.students || 0));
         break;
       case "price-low":
-        result.sort((a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price));
+        result.sort((a, b) => 
+          ((a.discountPrice !== undefined ? a.discountPrice : a.price) || 0) - 
+          ((b.discountPrice !== undefined ? b.discountPrice : b.price) || 0)
+        );
         break;
       case "price-high":
-        result.sort((a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price));
+        result.sort((a, b) => 
+          ((b.discountPrice !== undefined ? b.discountPrice : b.price) || 0) - 
+          ((a.discountPrice !== undefined ? a.discountPrice : a.price) || 0)
+        );
         break;
       case "rating":
-        result.sort((a, b) => b.rating - a.rating);
+        result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         break;
       default:
         break;
     }
     
     setFilteredCourses(result);
-  }, [selectedCategory, selectedLevel, searchQuery, sortBy]);
+  }, [selectedCategory, selectedLevel, searchQuery, sortBy, courses]);
   
   // Function to reset all filters
   const resetFilters = () => {
@@ -248,6 +294,11 @@ const Courses = () => {
     setSelectedCategory("all");
     setSelectedLevel("all");
     setSortBy("popular");
+  };
+  
+  // Enhanced search handler with debounce
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
   };
   
   return (
@@ -274,7 +325,7 @@ const Courses = () => {
                 <input
                   type="search"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchChange}
                   className="w-full h-14 rounded-full bg-spotify-gray/40 backdrop-blur-sm 
                             border border-white/10 pl-12 pr-4 text-spotify-text placeholder:text-spotify-text/50
                             focus:outline-none focus:ring-2 focus:ring-spotify/50 focus:border-transparent
@@ -426,11 +477,32 @@ const Courses = () => {
               </div>
             )}
             
-            {/* Course Grid */}
-            {filteredCourses.length > 0 ? (
+            {/* Loading state */}
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                {[1, 2, 3, 4, 5, 6].map((_, index) => (
+                  <div key={index} className="bg-spotify-gray/20 rounded-xl animate-pulse h-[400px]"></div>
+                ))}
+              </div>
+            ) : filteredCourses.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                 {filteredCourses.map((course) => (
-                  <CourseCard key={course.id} {...course} className="animate-fade-in" />
+                  <CourseCard 
+                    key={course.id || course.courseId} 
+                    id={course.courseId}
+                    title={course.title}
+                    instructor={course.instructor}
+                    rating={course.rating}
+                    students={course.students}
+                    duration={course.duration}
+                    level={course.level}
+                    price={course.price}
+                    discountPrice={course.discountPrice}
+                    image={course.image}
+                    featured={course.featured}
+                    premium={course.premium}
+                    externalLink={course.externalLink}
+                  />
                 ))}
               </div>
             ) : (
