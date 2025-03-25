@@ -19,33 +19,97 @@ const categories = [
   { id: "tools", name: "Developer Tools" }
 ];
 
+// Mock data as fallback in case the API fails
+const mockCourses = [
+  {
+    id: 1,
+    courseId: "web-dev-101",
+    title: "Web Development Fundamentals",
+    instructor: "Sarah Johnson",
+    rating: 4.8,
+    students: 1543,
+    duration: "8 weeks",
+    level: "Beginner",
+    price: 0,
+    discountPrice: 0,
+    image: "https://images.unsplash.com/photo-1537432376769-00f5c2f4c8d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
+    featured: true,
+    premium: false,
+    category: "programming",
+    externalLink: "https://www.geeksforgeeks.org/web-development/"
+  },
+  {
+    id: 2,
+    courseId: "python-basics",
+    title: "Python Programming for Beginners",
+    instructor: "Michael Chen",
+    rating: 4.7,
+    students: 2102,
+    duration: "6 weeks",
+    level: "Beginner",
+    price: 0,
+    discountPrice: 0,
+    image: "https://images.unsplash.com/photo-1526379879527-8559ecfcaec0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
+    featured: true,
+    premium: false,
+    category: "programming",
+    externalLink: "https://www.geeksforgeeks.org/python-programming-language/"
+  },
+  {
+    id: 3,
+    courseId: "data-structures",
+    title: "Data Structures Masterclass",
+    instructor: "Priya Sharma",
+    rating: 4.9,
+    students: 1876,
+    duration: "10 weeks",
+    level: "Intermediate",
+    price: 79.99,
+    discountPrice: 49.99,
+    image: "https://images.unsplash.com/photo-1551033406-611cf9a28f67?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
+    featured: true,
+    premium: true,
+    category: "data-structures",
+    externalLink: null
+  }
+];
+
 const FeaturedCourses = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeType, setActiveType] = useState("all"); // "all", "free", or "premium"
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { toast } = useToast();
   
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        // In a real implementation, you would use your API client to fetch from your backend
+        setError(null);
+        
+        // Important: Use the correct API endpoint with the context path
         const response = await fetch('http://localhost:8080/api/courses');
+        
         if (!response.ok) {
-          throw new Error('Failed to fetch courses');
+          throw new Error(`Failed to fetch courses: ${response.status} ${response.statusText}`);
         }
+        
         const data = await response.json();
+        console.log("Courses fetched successfully:", data);
         setCourses(data);
       } catch (error) {
         console.error('Error fetching courses:', error);
+        setError(error.message);
+        
         toast({
           title: "Error",
-          description: "Could not load courses. Please try again later.",
+          description: "Could not load courses from the server. Using local data instead.",
           variant: "destructive",
         });
-        // Use the mock data as fallback if API fails
-        setCourses([]);
+        
+        // Use the mock data as fallback
+        setCourses(mockCourses);
       } finally {
         setLoading(false);
       }
@@ -141,6 +205,16 @@ const FeaturedCourses = () => {
             {[1, 2, 3, 4, 5, 6].map((_, index) => (
               <div key={index} className="bg-spotify-gray/20 rounded-xl animate-pulse h-[400px]"></div>
             ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <h3 className="text-2xl font-semibold mb-2">Error Loading Courses</h3>
+            <p className="text-spotify-text/70 mb-6">
+              {error}
+            </p>
+            <p className="text-spotify-text/70 mb-6">
+              Using fallback data for demonstration.
+            </p>
           </div>
         ) : featuredFilteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">

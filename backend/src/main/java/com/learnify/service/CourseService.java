@@ -16,7 +16,12 @@ public class CourseService {
     private CourseRepository courseRepository;
 
     public List<Course> getAllCourses() {
-        return courseRepository.findAll();
+        try {
+            return courseRepository.findAll();
+        } catch (Exception e) {
+            // Fallback to limited query if there's a database issue
+            return courseRepository.findAllCoursesWithLimit();
+        }
     }
     
     public List<Course> getFreeCourses() {
@@ -28,7 +33,12 @@ public class CourseService {
     }
 
     public Optional<Course> getCourseById(String courseId) {
-        return courseRepository.findByCourseId(courseId);
+        Optional<Course> course = courseRepository.findByCourseId(courseId);
+        if (course.isPresent()) {
+            return course;
+        }
+        // Try the alternative method with native query if the first attempt fails
+        return courseRepository.findByCourseIdExact(courseId);
     }
 
     public List<Course> getFeaturedCourses() {
