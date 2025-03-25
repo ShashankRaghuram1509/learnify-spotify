@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useToast } from "@/hooks/use-toast";
-import { Star, Clock, Award, Users, Check, Lock } from "lucide-react";
+import { Star, Clock, Award, Users, Check, Lock, BookOpen } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "../context/AuthContext";
+import { Button } from "@/components/ui/button";
 
 // Mock data for fallback
 const mockCourseDetails = {
@@ -28,11 +30,20 @@ const CourseDetail = () => {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { toast: uiToast } = useToast();
+  const [enrollmentStatus, setEnrollmentStatus] = useState({
+    enrolled: false,
+    requiresPremium: false,
+    requiresAuth: false,
+    progress: 0
+  });
+  const [enrolling, setEnrolling] = useState(false);
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
   
   // Define the backend API base URL with fallback
   const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
+  // Fetch course details
   useEffect(() => {
     const fetchCourse = async () => {
       if (!id) return;
@@ -51,7 +62,6 @@ const CourseDetail = () => {
         setCourse(data);
       } catch (error) {
         console.error("Error fetching course:", error);
-        // Use sonner toast instead of useToast
         toast.error("Failed to load course data. Using fallback data.");
         
         // Set fallback mock data if we can't get the actual course
@@ -64,6 +74,87 @@ const CourseDetail = () => {
     fetchCourse();
   }, [id, apiBaseUrl]);
 
+  // Check enrollment status when user and course are loaded
+  useEffect(() => {
+    const checkEnrollment = async () => {
+      if (!id || !isAuthenticated) return;
+      
+      try {
+        const response = await fetch(`${apiBaseUrl}/enrollments/check/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to check enrollment status');
+        }
+        
+        const data = await response.json();
+        setEnrollmentStatus({
+          enrolled: data.enrolled,
+          requiresPremium: data.requiresPremium || false,
+          requiresAuth: data.requiresAuth || false,
+          progress: data.progress || 0
+        });
+      } catch (error) {
+        console.error('Error checking enrollment:', error);
+      }
+    };
+    
+    checkEnrollment();
+  }, [id, isAuthenticated, apiBaseUrl]);
+  
+  // Handle enrollment
+  const handleEnroll = async () => {
+    if (!isAuthenticated) {
+      // Redirect to login page if not authenticated
+      toast.info("Please log in to enroll in this course");
+      navigate('/login', { state: { redirectTo: `/courses/${id}` } });
+      return;
+    }
+    
+    if (enrollmentStatus.requiresPremium) {
+      // Redirect to premium page if premium course
+      toast.info("This is a premium course. Please upgrade to premium to enroll.");
+      navigate('/premium');
+      return;
+    }
+    
+    try {
+      setEnrolling(true);
+      const response = await fetch(`${apiBaseUrl}/enrollments/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to enroll in course');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast.success("Successfully enrolled in course!");
+        setEnrollmentStatus({
+          ...enrollmentStatus,
+          enrolled: true
+        });
+      } else {
+        // Already enrolled or other issue
+        toast.info(data.message);
+      }
+    } catch (error) {
+      console.error('Error enrolling in course:', error);
+      toast.error("Failed to enroll in course. Please try again.");
+    } finally {
+      setEnrolling(false);
+    }
+  };
+  
   // Loading state
   if (loading) {
     return (
@@ -160,16 +251,45 @@ const CourseDetail = () => {
                   </div>
                 </div>
                 
-                {course.premium ? (
-                  <button className="spotify-button">Enroll Now (Premium)</button>
+                {enrollmentStatus.enrolled ? (
+                  <div className="space-y-4">
+                    <div className="bg-green-500/20 text-green-500 px-4 py-3 rounded-lg flex items-center">
+                      <Check className="mr-2" />
+                      <span>You are enrolled in this course</span>
+                    </div>
+                    
+                    <Link to={`/my-courses/${id}`}>
+                      <Button className="w-full bg-spotify hover:bg-spotify/90 text-white flex items-center justify-center gap-2">
+                        <BookOpen size={20} />
+                        Continue Learning
+                      </Button>
+                    </Link>
+                  </div>
+                ) : course.premium ? (
+                  <Button 
+                    onClick={handleEnroll}
+                    disabled={enrolling}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center gap-2"
+                  >
+                    {enrolling ? "Processing..." : "Enroll Now (Premium)"}
+                  </Button>
+                ) : course.externalLink ? (
+                  <a 
+                    href={course.externalLink} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full inline-block text-center bg-spotify text-white font-medium rounded-lg py-3 px-4 hover:bg-spotify/90 transition-colors"
+                  >
+                    Enroll Now (External)
+                  </a>
                 ) : (
-                  course.externalLink ? (
-                    <a href={course.externalLink} target="_blank" rel="noopener noreferrer" className="spotify-button">
-                      Enroll Now (External)
-                    </a>
-                  ) : (
-                    <button className="spotify-button">Enroll Now (Free)</button>
-                  )
+                  <Button 
+                    onClick={handleEnroll}
+                    disabled={enrolling}
+                    className="w-full bg-spotify hover:bg-spotify/90 text-white"
+                  >
+                    {enrolling ? "Processing..." : "Enroll Now (Free)"}
+                  </Button>
                 )}
               </div>
             </div>

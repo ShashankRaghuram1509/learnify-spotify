@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, LogIn, User, ChevronDown, Search } from "lucide-react";
@@ -31,6 +32,18 @@ const Navbar = () => {
   useEffect(() => {
     // Close mobile menu when route changes
     setIsOpen(false);
+    
+    // Extract search query from URL if present
+    if (location.pathname === '/courses' && location.search) {
+      const params = new URLSearchParams(location.search);
+      const query = params.get('search');
+      if (query) {
+        setSearchQuery(query);
+      }
+    } else {
+      // Reset search query when not on courses page
+      setSearchQuery("");
+    }
   }, [location]);
 
   const isActive = (path: string) => {
@@ -83,7 +96,7 @@ const Navbar = () => {
               </Link>
             </div>
 
-            <form onSubmit={handleSearch} className="relative h-10 w-10 md:w-64 transition-all">
+            <form onSubmit={handleSearch} className="relative h-10 w-64 transition-all">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <Search className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -91,10 +104,10 @@ const Navbar = () => {
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-10 w-10 md:w-64 rounded-full bg-spotify-gray/50 
+                className="h-10 w-full rounded-full bg-spotify-gray/50 
                           border-none focus:ring-0 focus:outline-none
                           pl-10 pr-4 text-sm text-spotify-text placeholder:text-muted-foreground
-                          transition-all duration-300 focus:w-64"
+                          transition-all duration-300"
                 placeholder="Search courses..."
               />
             </form>
