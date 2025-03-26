@@ -6,6 +6,22 @@ const API_BASE_URL = process.env.NODE_ENV === 'development'
   ? 'http://localhost:8080/api' 
   : '/api';
 
+// Helper function to get headers with auth token
+const getHeaders = (includeAuth = true) => {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (includeAuth) {
+    const token = localStorage.getItem('token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+  
+  return headers;
+};
+
 export type PaymentFormData = {
   cardHolder: string;
   cardNumber: string;
@@ -22,20 +38,22 @@ export const apiService = {
   // Authentication methods
   login: async (email: string, password: string) => {
     try {
+      console.log("Attempting login to:", `${API_BASE_URL}/auth/login`);
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getHeaders(false),
         body: JSON.stringify({ email, password }),
         credentials: 'include'
       });
       
       if (!response.ok) {
-        throw new Error('Login failed');
+        const errorText = await response.text();
+        console.error("Login response error:", response.status, errorText);
+        throw new Error(`Login failed: ${response.status} ${errorText}`);
       }
       
       const data = await response.json();
+      console.log("Login successful, token received:", data.token ? "Yes" : "No");
       
       // Save token to localStorage for subsequent requests
       localStorage.setItem('token', data.token);
@@ -52,15 +70,15 @@ export const apiService = {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getHeaders(false),
         body: JSON.stringify({ name, email, password }),
         credentials: 'include'
       });
       
       if (!response.ok) {
-        throw new Error('Registration failed');
+        const errorText = await response.text();
+        console.error("Registration response error:", response.status, errorText);
+        throw new Error(`Registration failed: ${response.status} ${errorText}`);
       }
       
       const data = await response.json();
@@ -81,10 +99,7 @@ export const apiService = {
     try {
       const response = await fetch(`${API_BASE_URL}/premium/subscribe`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
+        headers: getHeaders(),
         body: JSON.stringify(paymentDetails),
         credentials: 'include'
       });
@@ -178,9 +193,7 @@ export const apiService = {
       console.log("Fetching courses from:", `${API_BASE_URL}/courses`);
       const response = await fetch(`${API_BASE_URL}/courses`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getHeaders(false),
         credentials: 'include'
       });
       
