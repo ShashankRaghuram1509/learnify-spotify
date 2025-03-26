@@ -1,6 +1,7 @@
 
 import { toast } from "sonner";
 
+// Use dynamic API base URL based on environment
 const API_BASE_URL = process.env.NODE_ENV === 'development' 
   ? 'http://localhost:8080/api' 
   : '/api';
@@ -27,6 +28,7 @@ export const apiService = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -54,6 +56,7 @@ export const apiService = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name, email, password }),
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -83,6 +86,7 @@ export const apiService = {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify(paymentDetails),
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -106,6 +110,7 @@ export const apiService = {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify({ message }),
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -129,6 +134,7 @@ export const apiService = {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify(scheduleData),
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -151,6 +157,7 @@ export const apiService = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -168,15 +175,17 @@ export const apiService = {
   // Course related methods
   getCourses: async () => {
     try {
+      console.log("Fetching courses from:", `${API_BASE_URL}/courses`);
       const response = await fetch(`${API_BASE_URL}/courses`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include'
       });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch courses');
+        throw new Error(`Failed to fetch courses: ${response.status} ${response.statusText}`);
       }
       
       return await response.json();
@@ -194,6 +203,7 @@ export const apiService = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -215,6 +225,7 @@ export const apiService = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -236,6 +247,7 @@ export const apiService = {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include'
       });
       
       if (!response.ok) {

@@ -1,4 +1,3 @@
-
 package com.learnify.controller;
 
 import com.learnify.model.Course;
@@ -13,7 +12,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 @RestController
-@RequestMapping("/api/courses")
+@RequestMapping("/courses")
 public class CourseController {
     private static final Logger logger = Logger.getLogger(CourseController.class.getName());
     
