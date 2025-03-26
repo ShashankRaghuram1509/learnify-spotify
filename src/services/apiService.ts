@@ -1,10 +1,7 @@
-
 import { toast } from "sonner";
 
 // Use dynamic API base URL based on environment
-const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:8080/api' 
-  : '/api';
+const API_BASE_URL = '/api';
 
 // Helper function to get headers with auth token
 const getHeaders = (includeAuth = true) => {
@@ -61,7 +58,6 @@ export const apiService = {
       return data;
     } catch (error) {
       console.error('Login error:', error);
-      toast.error("Failed to log in. Please check your credentials.");
       throw error;
     }
   },

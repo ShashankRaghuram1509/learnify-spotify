@@ -38,10 +38,13 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
+            System.out.println("Login attempt for email: " + loginRequest.getEmail());
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword())
             );
+            System.out.println("Authentication successful for: " + loginRequest.getEmail());
         } catch (BadCredentialsException e) {
+            System.out.println("Authentication failed for: " + loginRequest.getEmail() + " - " + e.getMessage());
             return ResponseEntity.badRequest().body("Invalid credentials");
         }
 
