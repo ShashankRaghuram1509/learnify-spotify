@@ -1,4 +1,3 @@
-
 package com.learnify.controller;
 
 import com.learnify.model.User;
@@ -12,10 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,17 +19,23 @@ import java.util.Map;
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
-    @Autowired
-    private AuthenticationManager authenticationManager;
+
+    private final AuthenticationManager authenticationManager;
+    private final UserService userService;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final JwtTokenUtil jwtTokenUtil;
 
     @Autowired
-    private UserService userService;
-
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
-
-    @Autowired
-    private JwtTokenUtil jwtTokenUtil;
+    public AuthController(AuthenticationManager authenticationManager, 
+                          UserService userService, 
+                          UserDetailsServiceImpl userDetailsService, 
+                          JwtTokenUtil jwtTokenUtil) {
+        this.authenticationManager = authenticationManager;
+        this.userService = userService;
+        this.userDetailsService = userDetailsService;
+        this.jwtTokenUtil = jwtTokenUtil;
+        System.out.println("AuthController Loaded!");
+    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
@@ -65,7 +67,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/register")
+    @PostMapping("/signup")
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
         try {
             User user = userService.registerUser(

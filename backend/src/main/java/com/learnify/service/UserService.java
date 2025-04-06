@@ -1,4 +1,3 @@
-
 package com.learnify.service;
 
 import com.learnify.model.Role;
@@ -28,7 +27,8 @@ public class UserService {
         user.setName(name);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
-        user.setRoles(Collections.singleton(Role.ROLE_USER));
+        user.setRoles(Collections.singleton(Role.ROLE_USER)); // Use ROLE_USER as defined in Role.java
+
 
         return userRepository.save(user);
     }

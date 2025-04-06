@@ -1,4 +1,3 @@
-
 package com.learnify.model;
 
 import jakarta.persistence.*;
@@ -21,6 +20,7 @@ public class Course {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false)
     private String courseId;
 
     @Column(nullable = false)
@@ -53,9 +53,13 @@ public class Course {
     @Column(length = 1000)
     private String description;
 
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Module> modules = new ArrayList<>();
 
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<Enrollment> enrollments = new HashSet<>();
+
+    public double getFinalPrice() {
+        return discountPrice > 0 ? discountPrice : price;
+    }
 }
