@@ -1,6 +1,4 @@
-import { toast } from "sonner";
-
-// Use dynamic API base URL based on environment
+// API base URL should point to our Spring Boot backend
 const API_BASE_URL = '/api';
 
 // Helper function to get headers with auth token
@@ -32,7 +30,6 @@ export type VideoCallSchedule = {
 };
 
 export const apiService = {
-  // Authentication methods
   login: async (email: string, password: string) => {
     try {
       console.log("Attempting login to:", `${API_BASE_URL}/auth/login`);
@@ -44,24 +41,20 @@ export const apiService = {
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Login response error:", response.status, errorText);
-        throw new Error(`Login failed: ${response.status} ${errorText}`);
+        throw new Error(`Login failed: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log("Login successful, token received:", data.token ? "Yes" : "No");
+      console.log("Login successful, token received");
       
-      // Save token to localStorage for subsequent requests
       localStorage.setItem('token', data.token);
-      
       return data;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
     }
   },
-  
+
   register: async (name: string, email: string, password: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -72,25 +65,18 @@ export const apiService = {
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Registration response error:", response.status, errorText);
-        throw new Error(`Registration failed: ${response.status} ${errorText}`);
+        throw new Error(`Registration failed: ${response.status}`);
       }
       
       const data = await response.json();
-      
-      // Save token to localStorage for subsequent requests
       localStorage.setItem('token', data.token);
-      
       return data;
     } catch (error) {
       console.error('Registration error:', error);
-      toast.error("Failed to register. Email may already be in use.");
       throw error;
     }
   },
-  
-  // Premium features methods
+
   subscribe: async (paymentDetails: PaymentFormData) => {
     try {
       const response = await fetch(`${API_BASE_URL}/premium/subscribe`, {
@@ -183,7 +169,6 @@ export const apiService = {
     }
   },
   
-  // Course related methods
   getCourses: async () => {
     try {
       console.log("Fetching courses from:", `${API_BASE_URL}/courses`);
@@ -194,17 +179,16 @@ export const apiService = {
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch courses: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to fetch courses: ${response.status}`);
       }
       
       return await response.json();
     } catch (error) {
       console.error('Courses fetch error:', error);
-      toast.error("Failed to load courses. Please try again.");
       throw error;
     }
   },
-  
+
   getCourseById: async (id: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/courses/${id}`, {
