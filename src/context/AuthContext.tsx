@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { apiService } from "@/services/apiService";
+import { authService } from "@/services";
 import { toast } from "sonner";
 
 interface User {
@@ -48,7 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await apiService.login(email, password);
+      const response = await authService.login(email, password);
       
       setUser(response.user);
       localStorage.setItem("user", JSON.stringify(response.user));
@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (name: string, email: string, password: string) => {
     try {
-      const response = await apiService.register(name, email, password);
+      const response = await authService.register(name, email, password);
       
       setUser(response.user);
       localStorage.setItem("user", JSON.stringify(response.user));

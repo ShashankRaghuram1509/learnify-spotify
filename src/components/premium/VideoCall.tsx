@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar, Clock, Video, Mic, MicOff, VideoOff, PhoneOff, Phone } from "lucide-react";
-import { apiService } from "@/services/apiService";
+import { premiumService } from "@/services";
 import { toast } from "sonner";
 
 const VideoCall = () => {
@@ -19,7 +19,7 @@ const VideoCall = () => {
   const handleScheduleCall = async () => {
     try {
       // This would call our Spring Boot backend in a real app
-      await apiService.scheduleVideoCall({
+      await premiumService.scheduleVideoCall({
         date: selectedDate,
         time: selectedTime,
       });
