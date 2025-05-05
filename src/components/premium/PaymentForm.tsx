@@ -9,15 +9,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CreditCard, Lock, ArrowRight } from "lucide-react";
 import { premiumService } from "@/services";
-import type { PaymentFormData } from "@/services/types";
+import { PaymentFormData } from "@/services/types";
 
-// Define the correct type for payment form data
-type PaymentFormData = {
-  cardHolder: string;
-  cardNumber: string;
-  expiryDate: string;
-  cvv: string;
-};
+// The local PaymentFormData type declaration is removed as we import it from types.ts
 
 const formSchema = z.object({
   cardHolder: z.string().min(3, {
