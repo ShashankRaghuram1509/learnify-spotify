@@ -3,8 +3,8 @@ import React, { useState, useRef } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Bot, ArrowUp, User, Sparkles, MessageSquare } from "lucide-react";
-import { apiService } from "@/services/apiService";
+import { Bot, ArrowUp, User, Sparkles } from "lucide-react";
+import { premiumService } from "@/services";
 
 type Message = {
   id: string;
@@ -42,7 +42,7 @@ const AIAssistant = () => {
 
     try {
       // This would call our Spring Boot backend in a real app
-      const response = await apiService.sendAiMessage(inputValue);
+      const response = await premiumService.sendAiMessage(inputValue);
       
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),

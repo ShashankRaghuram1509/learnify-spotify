@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -9,15 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CreditCard, Lock, ArrowRight } from "lucide-react";
-import { apiService } from "@/services/apiService";
+import { premiumService } from "@/services";
+import { PaymentFormData } from "@/services/types";
 
-// Define the correct type for payment form data
-type PaymentFormData = {
-  cardHolder: string;
-  cardNumber: string;
-  expiryDate: string;
-  cvv: string;
-};
+// The local PaymentFormData type declaration is removed as we import it from types.ts
 
 const formSchema = z.object({
   cardHolder: z.string().min(3, {
@@ -52,7 +46,7 @@ const PaymentForm = () => {
     
     try {
       // This would call our Spring Boot backend in a real app
-      await apiService.subscribe(values);
+      await premiumService.subscribe(values);
       
       toast.success("Payment processed successfully!");
       form.reset();
