@@ -6,14 +6,13 @@ import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    host: "127.0.0.1",
     port: 8080,
     proxy: {
       '/api': {
         target: 'http://localhost:9090',
         changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        secure: false
       }
     }
   },
