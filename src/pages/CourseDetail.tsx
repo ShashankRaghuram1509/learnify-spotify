@@ -1,355 +1,296 @@
-
 import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, Star, Users, Clock, BookOpen, Play, ShoppingCart, FileText } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Star, Clock, Award, Users, Check, Lock, BookOpen } from "lucide-react";
-import { toast } from "sonner";
-import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
-// Mock data for fallback
-const mockCourseDetails = {
-  id: "default-course",
-  courseId: "default-course",
-  title: "Course Not Available",
-  instructor: "Instructor",
-  rating: 0,
-  students: 0,
-  duration: "Unknown",
-  level: "All Levels",
-  price: 0,
-  discountPrice: 0,
-  image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2340&h=1560&auto=format&fit=crop",
-  description: "This course data couldn't be loaded from the server. Please try again later.",
-  premium: false,
-  modules: []
+// Mock course data for different course IDs
+const mockCourses = {
+  "web-dev-101": {
+    id: "web-dev-101",
+    title: "Web Development Fundamentals",
+    instructor: "Sarah Johnson",
+    rating: 4.8,
+    students: 1543,
+    duration: "8 weeks",
+    level: "Beginner",
+    price: 89.99,
+    discountPrice: 49.99,
+    image: "https://images.unsplash.com/photo-1537432376769-00f5c2f4c8d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
+    description: "Learn the fundamentals of web development including HTML, CSS, and JavaScript. Perfect for beginners who want to start their journey in web development.",
+    externalLink: "https://www.geeksforgeeks.org/web-development/",
+    modules: [
+      { title: "HTML Basics", content: "Learn the structure of web pages with HTML" },
+      { title: "CSS Styling", content: "Style your web pages with CSS" },
+      { title: "JavaScript Fundamentals", content: "Add interactivity to your web pages" },
+      { title: "Responsive Design", content: "Make your websites work on all devices" }
+    ]
+  },
+  "react-masterclass": {
+    id: "react-masterclass",
+    title: "React.js Masterclass",
+    instructor: "Amanda Lee",
+    rating: 4.8,
+    students: 1876,
+    duration: "10 weeks",
+    level: "Intermediate",
+    price: 89.99,
+    discountPrice: 59.99,
+    image: "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
+    description: "Master React.js with this comprehensive course covering hooks, context, state management, and modern React patterns.",
+    externalLink: null,
+    modules: [
+      { title: "React Fundamentals", content: "Components, JSX, and props" },
+      { title: "Hooks & State Management", content: "useState, useEffect, and custom hooks" },
+      { title: "Context API", content: "Global state management with Context" },
+      { title: "Advanced Patterns", content: "Higher-order components and render props" }
+    ]
+  },
+  "default": {
+    id: "default-course",
+    title: "Course Not Found",
+    instructor: "Instructor",
+    rating: 0,
+    students: 0,
+    duration: "Unknown",
+    level: "All Levels",
+    price: 0,
+    discountPrice: 0,
+    image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2340&h=1560&auto=format&fit=crop",
+    description: "This course could not be found. Please check the course ID or browse our available courses.",
+    externalLink: null,
+    modules: []
+  }
 };
 
 const CourseDetail = () => {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [enrollmentStatus, setEnrollmentStatus] = useState({
-    enrolled: false,
-    requiresPremium: false,
-    requiresAuth: false,
-    progress: 0
-  });
-  const [enrolling, setEnrolling] = useState(false);
-  const { isAuthenticated, user } = useAuth();
-  const navigate = useNavigate();
-  
-  // Define the backend API base URL with fallback
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
-  // Fetch course details
   useEffect(() => {
-    const fetchCourse = async () => {
-      if (!id) return;
-      
-      console.info(`Fetching course details for: ${id}`);
-      try {
-        setLoading(true);
-        const response = await fetch(`${apiBaseUrl}/courses/${id}`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log("Course data fetched:", data);
-        setCourse(data);
-      } catch (error) {
-        console.error("Error fetching course:", error);
-        toast.error("Failed to load course data. Using fallback data.");
-        
-        // Set fallback mock data if we can't get the actual course
-        setCourse(mockCourseDetails);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Mock course data - replace with actual API call
+    const mockCourse = mockCourses[id] || mockCourses.default;
 
-    fetchCourse();
-  }, [id, apiBaseUrl]);
+    // Simulate API delay
+    setTimeout(() => {
+      setCourse(mockCourse);
+      setLoading(false);
+    }, 1000);
+  }, [id]);
 
-  // Check enrollment status when user and course are loaded
-  useEffect(() => {
-    const checkEnrollment = async () => {
-      if (!id || !isAuthenticated) return;
-      
-      try {
-        const response = await fetch(`${apiBaseUrl}/enrollments/check/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to check enrollment status');
-        }
-        
-        const data = await response.json();
-        setEnrollmentStatus({
-          enrolled: data.enrolled,
-          requiresPremium: data.requiresPremium || false,
-          requiresAuth: data.requiresAuth || false,
-          progress: data.progress || 0
-        });
-      } catch (error) {
-        console.error('Error checking enrollment:', error);
-      }
-    };
-    
-    checkEnrollment();
-  }, [id, isAuthenticated, apiBaseUrl]);
-  
-  // Handle enrollment
-  const handleEnroll = async () => {
-    if (!isAuthenticated) {
-      // Redirect to login page if not authenticated
-      toast.info("Please log in to enroll in this course");
-      navigate('/login', { state: { redirectTo: `/courses/${id}` } });
-      return;
-    }
-    
-    if (enrollmentStatus.requiresPremium) {
-      // Redirect to premium page if premium course
-      toast.info("This is a premium course. Please upgrade to premium to enroll.");
-      navigate('/premium');
-      return;
-    }
-    
-    try {
-      setEnrolling(true);
-      const response = await fetch(`${apiBaseUrl}/enrollments/${id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to enroll in course');
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        toast.success("Successfully enrolled in course!");
-        setEnrollmentStatus({
-          ...enrollmentStatus,
-          enrolled: true
-        });
-      } else {
-        // Already enrolled or other issue
-        toast.info(data.message);
-      }
-    } catch (error) {
-      console.error('Error enrolling in course:', error);
-      toast.error("Failed to enroll in course. Please try again.");
-    } finally {
-      setEnrolling(false);
+  const handleEnroll = () => {
+    if (course?.externalLink) {
+      window.open(course.externalLink, '_blank');
+    } else {
+      toast.success("Enrolled successfully! Course content is now available.");
     }
   };
-  
-  // Loading state
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow pt-20">
-          <div className="container mx-auto px-4 py-16">
-            <div className="animate-pulse">
-              <div className="h-12 bg-spotify-gray/20 rounded-lg max-w-md mb-6"></div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="md:col-span-2 space-y-4">
-                  <div className="h-6 bg-spotify-gray/20 rounded max-w-sm"></div>
-                  <div className="h-6 bg-spotify-gray/20 rounded max-w-xs"></div>
-                  <div className="h-32 bg-spotify-gray/20 rounded"></div>
-                  <div className="h-64 bg-spotify-gray/20 rounded"></div>
-                </div>
-                <div className="space-y-4">
-                  <div className="h-60 bg-spotify-gray/20 rounded-xl"></div>
-                  <div className="h-12 bg-spotify-gray/20 rounded-lg"></div>
-                </div>
+          <section className="py-20 bg-spotify-dark">
+            <div className="container mx-auto px-4 md:px-6">
+              <div className="animate-pulse">
+                <div className="h-8 bg-spotify-gray/30 rounded-lg max-w-md mb-6"></div>
+                <div className="h-6 bg-spotify-gray/30 rounded max-w-sm mb-4"></div>
+                <div className="h-6 bg-spotify-gray/30 rounded max-w-xs mb-8"></div>
+                <div className="h-64 bg-spotify-gray/30 rounded-xl mb-8"></div>
+                <div className="h-12 bg-spotify-gray/30 rounded-lg max-w-xs"></div>
               </div>
             </div>
-          </div>
+          </section>
         </main>
         <Footer />
       </div>
     );
   }
 
-  // If course not found even after loading
   if (!course) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-grow pt-20">
-          <div className="container mx-auto px-4 py-16 text-center">
-            <h1 className="text-3xl font-bold mb-4">Course Not Found</h1>
-            <p className="text-spotify-text/70 mb-8">
-              The course you're looking for doesn't exist or has been removed.
-            </p>
-            <Link 
-              to="/courses" 
-              className="spotify-button px-6 py-3"
-            >
-              Browse All Courses
-            </Link>
-          </div>
+          <section className="py-20 bg-spotify-dark text-center">
+            <div className="container mx-auto px-4 md:px-6">
+              <h1 className="text-3xl font-bold mb-4">Course Not Found</h1>
+              <p className="text-spotify-text/70 mb-8">
+                The course you're looking for doesn't exist or has been removed.
+              </p>
+              <Link to="/courses" className="spotify-button">
+                Browse All Courses
+              </Link>
+            </div>
+          </section>
         </main>
         <Footer />
       </div>
     );
   }
 
-  // Course found and loaded
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <main className="flex-grow pt-20">
-        <section className="relative py-20 bg-spotify-dark">
+        {/* Breadcrumb */}
+        <section className="py-6 bg-spotify-dark border-b border-spotify-gray/20">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Course Image */}
-              <div className="md:order-2">
-                <img 
-                  src={course.image || mockCourseDetails.image}
-                  alt={course.title || mockCourseDetails.title}
-                  className="rounded-2xl shadow-xl aspect-video object-cover"
-                />
+            <div className="flex items-center space-x-2 text-sm text-spotify-text/70">
+              <Link to="/" className="hover:text-spotify transition-colors">Home</Link>
+              <span>/</span>
+              <Link to="/courses" className="hover:text-spotify transition-colors">Courses</Link>
+              <span>/</span>
+              <span className="text-spotify-text">{course.title}</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Course Hero */}
+        <section className="py-16 bg-spotify-dark relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#1DB95420,_transparent_50%)]"></div>
+          <div className="container mx-auto px-4 md:px-6 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <h1 className="text-4xl md:text-5xl font-bold mb-6 animate-fade-in">
+                  {course.title}
+                </h1>
+                <p className="text-xl text-spotify-text/80 mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
+                  {course.description}
+                </p>
+                
+                <div className="flex flex-wrap items-center gap-6 mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                  <div className="flex items-center">
+                    <Star className="h-5 w-5 text-yellow-500 mr-1" />
+                    <span className="font-medium">{course.rating}</span>
+                    <span className="text-spotify-text/70 ml-1">({course.students} students)</span>
+                  </div>
+                  
+                  <div className="flex items-center text-spotify-text/70">
+                    <Clock className="h-5 w-5 mr-1" />
+                    <span>{course.duration}</span>
+                  </div>
+                  
+                  <div className="flex items-center text-spotify-text/70">
+                    <BookOpen className="h-5 w-5 mr-1" />
+                    <span>{course.level}</span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-4 mb-8 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+                  {course.discountPrice > 0 ? (
+                    <>
+                      <span className="text-3xl font-bold text-spotify">${course.discountPrice}</span>
+                      <span className="text-xl text-spotify-text/50 line-through">${course.price}</span>
+                      <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        Save ${(course.price - course.discountPrice).toFixed(2)}
+                      </span>
+                    </>
+                  ) : course.price > 0 ? (
+                    <span className="text-3xl font-bold text-spotify">${course.price}</span>
+                  ) : (
+                    <span className="text-3xl font-bold text-green-500">Free</span>
+                  )}
+                </div>
+                
+                <Button 
+                  onClick={handleEnroll}
+                  className="spotify-button text-lg px-8 py-3 animate-fade-in"
+                  style={{ animationDelay: "0.4s" }}
+                >
+                  {course.externalLink ? "Visit Course" : "Enroll Now"}
+                  <ArrowLeft className="ml-2 h-5 w-5 rotate-180" />
+                </Button>
               </div>
               
-              {/* Course Details */}
-              <div className="md:order-1">
-                <h1 className="text-4xl font-bold mb-4">{course.title || mockCourseDetails.title}</h1>
-                <p className="text-spotify-text/80 mb-6">{course.description || mockCourseDetails.description}</p>
-                
-                <div className="flex items-center space-x-4 mb-4">
-                  <div className="flex items-center text-sm text-spotify-text/70">
-                    <Star className="h-5 w-5 mr-1 text-yellow-500" />
-                    <span>{course.rating || mockCourseDetails.rating} ({course.students || mockCourseDetails.students} students)</span>
-                  </div>
-                  <div className="flex items-center text-sm text-spotify-text/70">
-                    <Clock className="h-5 w-5 mr-1" />
-                    <span>{course.duration || mockCourseDetails.duration}</span>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-4 mb-6">
-                  <div>
-                    <span className="text-2xl font-bold">${course.discountPrice !== undefined ? course.discountPrice : course.price || mockCourseDetails.price}</span>
-                    {course.discountPrice !== undefined && course.discountPrice !== course.price && (
-                      <span className="text-lg line-through ml-2 text-spotify-text/70">${course.price || mockCourseDetails.price}</span>
-                    )}
-                  </div>
-                </div>
-                
-                {enrollmentStatus.enrolled ? (
-                  <div className="space-y-4">
-                    <div className="bg-green-500/20 text-green-500 px-4 py-3 rounded-lg flex items-center">
-                      <Check className="mr-2" />
-                      <span>You are enrolled in this course</span>
-                    </div>
-                    
-                    <Link to={`/my-courses/${id}`}>
-                      <Button className="w-full bg-spotify hover:bg-spotify/90 text-white flex items-center justify-center gap-2">
-                        <BookOpen size={20} />
-                        Continue Learning
-                      </Button>
-                    </Link>
-                  </div>
-                ) : course.premium ? (
-                  <Button 
-                    onClick={handleEnroll}
-                    disabled={enrolling}
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center gap-2"
-                  >
-                    {enrolling ? "Processing..." : "Enroll Now (Premium)"}
-                  </Button>
-                ) : course.externalLink ? (
-                  <a 
-                    href={course.externalLink} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="w-full inline-block text-center bg-spotify text-white font-medium rounded-lg py-3 px-4 hover:bg-spotify/90 transition-colors"
-                  >
-                    Enroll Now (External)
-                  </a>
-                ) : (
-                  <Button 
-                    onClick={handleEnroll}
-                    disabled={enrolling}
-                    className="w-full bg-spotify hover:bg-spotify/90 text-white"
-                  >
-                    {enrolling ? "Processing..." : "Enroll Now (Free)"}
-                  </Button>
-                )}
+              <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                <img 
+                  src={course.image}
+                  alt={course.title}
+                  className="rounded-2xl shadow-2xl w-full aspect-video object-cover"
+                />
               </div>
             </div>
           </div>
         </section>
         
-        {/* Course Features */}
+        {/* Course Info */}
         <section className="py-16 bg-spotify-gray/10">
           <div className="container mx-auto px-4 md:px-6">
-            <h2 className="text-3xl font-bold mb-8 text-center">Course Features</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Level */}
-              <div className="flex flex-col items-center">
-                <Award className="h-10 w-10 mb-2 text-spotify" />
-                <h3 className="font-semibold text-lg">Level</h3>
-                <p className="text-spotify-text/70">{course.level || mockCourseDetails.level}</p>
+              <div className="bg-spotify-gray/20 rounded-xl p-6 text-center">
+                <Users className="h-12 w-12 text-spotify mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Students</h3>
+                <p className="text-spotify-text/70">{course.students.toLocaleString()}</p>
               </div>
               
-              {/* Duration */}
-              <div className="flex flex-col items-center">
-                <Clock className="h-10 w-10 mb-2 text-spotify" />
-                <h3 className="font-semibold text-lg">Duration</h3>
-                <p className="text-spotify-text/70">{course.duration || mockCourseDetails.duration}</p>
+              <div className="bg-spotify-gray/20 rounded-xl p-6 text-center">
+                <Clock className="h-12 w-12 text-spotify mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Duration</h3>
+                <p className="text-spotify-text/70">{course.duration}</p>
               </div>
               
-              {/* Access */}
-              <div className="flex flex-col items-center">
-                <Lock className="h-10 w-10 mb-2 text-spotify" />
-                <h3 className="font-semibold text-lg">Access</h3>
-                <p className="text-spotify-text/70">Lifetime Access</p>
+              <div className="bg-spotify-gray/20 rounded-xl p-6 text-center">
+                <BookOpen className="h-12 w-12 text-spotify mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Level</h3>
+                <p className="text-spotify-text/70">{course.level}</p>
               </div>
             </div>
           </div>
         </section>
         
         {/* Course Modules */}
-        <section className="py-16 bg-spotify-dark">
-          <div className="container mx-auto px-4 md:px-6">
-            <h2 className="text-3xl font-bold mb-8">Course Modules</h2>
-            
-            {course.modules && course.modules.length > 0 ? (
-              <ul className="space-y-4">
+        {course.modules && course.modules.length > 0 && (
+          <section className="py-16 bg-spotify-dark">
+            <div className="container mx-auto px-4 md:px-6">
+              <h2 className="text-3xl font-bold mb-8">What You'll Learn</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {course.modules.map((module, index) => (
-                  <li key={index} className="bg-spotify-gray/20 rounded-xl p-6">
-                    <div className="flex items-center space-x-4">
-                      <Check className="h-6 w-6 text-green-500" />
-                      <span className="text-lg font-medium">{module.title}</span>
+                  <div 
+                    key={index}
+                    className="bg-spotify-gray/20 rounded-xl p-6 animate-fade-in"
+                    style={{ animationDelay: `${index * 0.1}s` }}
+                  >
+                    <div className="flex items-start space-x-4">
+                      <div className="w-8 h-8 bg-spotify rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                        <span className="text-white font-semibold text-sm">{index + 1}</span>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold mb-2">{module.title}</h3>
+                        <p className="text-spotify-text/70">{module.content}</p>
+                      </div>
                     </div>
-                    <p className="mt-2 text-spotify-text/70">{module.description}</p>
-                  </li>
+                  </div>
                 ))}
-              </ul>
-            ) : (
-              <div className="text-center py-12">
-                <h3 className="text-2xl font-semibold mb-2">No Modules Found</h3>
-                <p className="text-spotify-text/70">
-                  This course currently has no modules listed.
-                </p>
               </div>
-            )}
+            </div>
+          </section>
+        )}
+        
+        {/* Instructor */}
+        <section className="py-16 bg-spotify-gray/10">
+          <div className="container mx-auto px-4 md:px-6">
+            <h2 className="text-3xl font-bold mb-8">Meet Your Instructor</h2>
+            <div className="bg-spotify-gray/20 rounded-xl p-8">
+              <div className="flex items-center space-x-6">
+                <div className="w-20 h-20 bg-spotify rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-2xl">
+                    {course.instructor.split(' ').map(n => n[0]).join('')}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-semibold mb-2">{course.instructor}</h3>
+                  <p className="text-spotify-text/70">
+                    Experienced instructor with years of industry experience in web development and software engineering.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>

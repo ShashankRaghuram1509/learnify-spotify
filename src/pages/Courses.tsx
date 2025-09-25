@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -201,9 +200,6 @@ const Courses = () => {
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Define the backend API base URL with fallback
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
-  
   // Extract search query from URL if present
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -231,22 +227,17 @@ const Courses = () => {
     }
   }, [location.search]);
   
-  // Fetch courses from API
+  // Use only mock courses data - no backend calls
   useEffect(() => {
-    const fetchCourses = async () => {
+    const loadCourses = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${apiBaseUrl}/courses`);
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log("Courses data fetched:", data);
-        setCourses(data);
+        // Use mock data directly
+        console.log("Using mock courses data");
+        setCourses(allCourses);
       } catch (error) {
-        console.error("Error fetching courses:", error);
+        console.error("Error loading courses:", error);
         toast.error("Failed to load courses. Using fallback data.");
         
         // Use mock data as fallback
@@ -256,8 +247,8 @@ const Courses = () => {
       }
     };
 
-    fetchCourses();
-  }, [apiBaseUrl]);
+    loadCourses();
+  }, []);
   
   // Apply filters and search
   useEffect(() => {
@@ -487,39 +478,79 @@ const Courses = () => {
               </div>
             </div>
             
-            {/* Filters panel */}
+            {/* Mobile filters panel */}
             {showFilters && (
-              <div className="bg-spotify-gray/20 backdrop-blur-md rounded-xl p-6 mb-8 border border-white/10 animate-fade-in">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Categories (mobile only) */}
-                  <div className="md:hidden">
-                    <h3 className="text-sm font-medium mb-3">Categories</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {categories.map(category => (
-                        <button
-                          key={category.id}
-                          onClick={() => setSelectedCategory(category.id)}
-                          className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all duration-300 ${
-                            selectedCategory === category.id
-                              ? "bg-spotify text-white"
-                              : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
-                          }`}
-                        >
-                          {category.name}
-                        </button>
-                      ))}
-                    </div>
+              <div className="md:hidden bg-spotify-gray/20 rounded-xl p-4 mb-6 space-y-4 animate-fade-in">
+                {/* Categories */}
+                <div>
+                  <h3 className="font-semibold mb-2">Category</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map(category => (
+                      <button
+                        key={category.id}
+                        onClick={() => setSelectedCategory(category.id)}
+                        className={`px-3 py-1 rounded-full text-sm transition-all duration-300 ${
+                          selectedCategory === category.id
+                            ? "bg-spotify text-white"
+                            : "bg-spotify-gray/30 text-spotify-text/70"
+                        }`}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
                   </div>
-                  
-                  {/* Levels */}
+                </div>
+                
+                {/* Levels */}
+                <div>
+                  <h3 className="font-semibold mb-2">Level</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {levels.map(level => (
+                      <button
+                        key={level.id}
+                        onClick={() => setSelectedLevel(level.id)}
+                        className={`px-3 py-1 rounded-full text-sm transition-all duration-300 ${
+                          selectedLevel === level.id
+                            ? "bg-spotify text-white"
+                            : "bg-spotify-gray/30 text-spotify-text/70"
+                        }`}
+                      >
+                        {level.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Sort */}
+                <div>
+                  <h3 className="font-semibold mb-2">Sort By</h3>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full bg-spotify-gray/30 text-spotify-text rounded-lg border border-white/10 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-spotify/50"
+                  >
+                    <option value="popular">Most Popular</option>
+                    <option value="rating">Highest Rated</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                  </select>
+                </div>
+              </div>
+            )}
+            
+            {/* Filters display (desktop) */}
+            {showFilters && (
+              <div className="hidden md:block bg-spotify-gray/20 rounded-xl p-6 mb-8 animate-fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Level filter */}
                   <div>
-                    <h3 className="text-sm font-medium mb-3">Level</h3>
+                    <h3 className="font-semibold mb-3">Level</h3>
                     <div className="flex flex-wrap gap-2">
                       {levels.map(level => (
                         <button
                           key={level.id}
                           onClick={() => setSelectedLevel(level.id)}
-                          className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-all duration-300 ${
+                          className={`px-4 py-2 rounded-full transition-all duration-300 ${
                             selectedLevel === level.id
                               ? "bg-spotify text-white"
                               : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
@@ -530,38 +561,40 @@ const Courses = () => {
                       ))}
                     </div>
                   </div>
-                  
-                  {/* Sort by (mobile only) */}
-                  <div className="md:hidden">
-                    <h3 className="text-sm font-medium mb-3">Sort By</h3>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="w-full bg-spotify-gray/30 text-spotify-text rounded-lg border border-white/10 px-4 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-spotify/50"
-                    >
-                      <option value="popular">Most Popular</option>
-                      <option value="rating">Highest Rated</option>
-                      <option value="price-low">Price: Low to High</option>
-                      <option value="price-high">Price: High to Low</option>
-                    </select>
-                  </div>
                 </div>
               </div>
             )}
             
-            {/* Loading state */}
+            {/* Results count */}
+            <div className="mb-6">
+              <p className="text-spotify-text/70">
+                Showing {filteredCourses.length} of {courses.length} courses
+                {searchQuery && (
+                  <span> for "{searchQuery}"</span>
+                )}
+              </p>
+            </div>
+            
+            {/* Course Grid */}
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                {[1, 2, 3, 4, 5, 6].map((_, index) => (
-                  <div key={index} className="bg-spotify-gray/20 rounded-xl animate-pulse h-[400px]"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(8)].map((_, index) => (
+                  <div key={index} className="bg-spotify-gray/20 rounded-xl animate-pulse">
+                    <div className="h-48 bg-spotify-gray/30 rounded-t-xl mb-4"></div>
+                    <div className="p-4 space-y-2">
+                      <div className="h-4 bg-spotify-gray/30 rounded w-3/4"></div>
+                      <div className="h-4 bg-spotify-gray/30 rounded w-1/2"></div>
+                      <div className="h-4 bg-spotify-gray/30 rounded w-2/3"></div>
+                    </div>
+                  </div>
                 ))}
               </div>
             ) : filteredCourses.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredCourses.map((course) => (
-                  <CourseCard 
-                    key={course.id || course.courseId} 
-                    id={course.courseId}
+                  <CourseCard
+                    key={course.id}
+                    id={course.id}
                     title={course.title}
                     instructor={course.instructor}
                     rating={course.rating}
@@ -572,16 +605,15 @@ const Courses = () => {
                     discountPrice={course.discountPrice}
                     image={course.image}
                     featured={course.featured}
-                    premium={course.premium}
-                    externalLink={course.externalLink}
                   />
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <h3 className="text-2xl font-semibold mb-2">No Courses Found</h3>
-                <p className="text-spotify-text/70 mb-6">
-                  We couldn't find any courses matching your search criteria.
+              <div className="text-center py-16">
+                <h3 className="text-2xl font-semibold mb-4">No Courses Found</h3>
+                <p className="text-spotify-text/70 mb-8 max-w-md mx-auto">
+                  We couldn't find any courses matching your search criteria. 
+                  Try adjusting your filters or search query.
                 </p>
                 <button
                   onClick={resetFilters}

@@ -81,33 +81,22 @@ const FeaturedCourses = () => {
   const [error, setError] = useState(null);
   const { toast } = useToast();
   
-  // Define the backend API base URL
-  const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
-  
   useEffect(() => {
-    const fetchCourses = async () => {
+    const loadCourses = () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Use the API base URL from environment
-        console.log("Fetching courses from:", `${apiBaseUrl}/courses`);
-        const response = await fetch(`${apiBaseUrl}/courses`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch courses: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log("Courses fetched successfully:", data);
-        setCourses(data);
+        // Use only mock data since backend is removed
+        console.log("Using mock course data");
+        setCourses(mockCourses);
       } catch (error) {
-        console.error('Error fetching courses:', error);
+        console.error('Error loading courses:', error);
         setError(error.message);
         
         toast({
           title: "Error",
-          description: "Could not load courses from the server. Using local data instead.",
+          description: "Could not load courses. Using local data instead.",
           variant: "destructive",
         });
         
@@ -118,8 +107,8 @@ const FeaturedCourses = () => {
       }
     };
 
-    fetchCourses();
-  }, [toast, apiBaseUrl]);
+    loadCourses();
+  }, [toast]);
   
   const filteredCourses = courses.filter(course => {
     // Filter by category
