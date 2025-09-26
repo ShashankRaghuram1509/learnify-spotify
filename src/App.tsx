@@ -16,6 +16,15 @@ import SignupForm from "./pages/auth/Signup";
 import PremiumCourses from "./pages/PremiumCourses";
 import StudentDashboard from "./pages/dashboard/StudentDashboard";
 import TeacherDashboard from "./pages/dashboard/TeacherDashboard";
+import MyCoursesPage from "./pages/dashboard/student/MyCourses";
+import CertificatesPage from "./pages/dashboard/student/Certificates";
+import ProfilePage from "./pages/dashboard/student/Profile";
+import SettingsPage from "./pages/dashboard/student/Settings";
+import UpgradeToProPage from "./pages/dashboard/student/UpgradeToPro";
+import TeacherMyCourses from "./pages/dashboard/teacher/MyCourses";
+import TeacherAnalytics from "./pages/dashboard/teacher/Analytics";
+import TeacherSchedule from "./pages/dashboard/teacher/Schedule";
+import TeacherProfile from "./pages/dashboard/teacher/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import AIAssistant from "./components/AIAssistant";
@@ -44,11 +53,20 @@ const App = () => (
 
           {/* Protected Dashboard Routes */}
           <Route element={<DashboardLayout />}>
-            <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-              <Route path="/dashboard/student" element={<StudentDashboard />} />
+            <Route path="/dashboard/student" element={<ProtectedRoute allowedRoles={["student"]} />}>
+              <Route index element={<StudentDashboard />} />
+              <Route path="my-courses" element={<MyCoursesPage />} />
+              <Route path="certificates" element={<CertificatesPage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="upgrade" element={<UpgradeToProPage />} />
             </Route>
-            <Route element={<ProtectedRoute allowedRoles={["teacher"]} />}>
-              <Route path="/dashboard/teacher" element={<TeacherDashboard />} />
+            <Route path="/dashboard/teacher" element={<ProtectedRoute allowedRoles={["teacher"]} />}>
+              <Route index element={<TeacherDashboard />} />
+              <Route path="courses" element={<TeacherMyCourses />} />
+              <Route path="analytics" element={<TeacherAnalytics />} />
+              <Route path="schedule" element={<TeacherSchedule />} />
+              <Route path="profile" element={<TeacherProfile />} />
             </Route>
           </Route>
 
