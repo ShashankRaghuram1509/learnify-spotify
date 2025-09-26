@@ -4,10 +4,115 @@ import HeroSection from "@/components/HeroSection";
 import FeaturedCourses from "@/components/FeaturedCourses";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { ArrowRight, BookOpen, Users, Award, Clock, CheckCircle, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowRight, BookOpen, Users, Award, Clock, CheckCircle, Sparkles, LayoutDashboard } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import LoginForm from "./auth/Login";
+import SignupForm from "./auth/Signup";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const AuthSection = () => (
+  <section className="py-20 bg-spotify-dark">
+    <div className="container mx-auto px-4 md:px-6">
+      <Tabs defaultValue="login" className="max-w-xl mx-auto">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="login">Login</TabsTrigger>
+          <TabsTrigger value="signup">Sign Up</TabsTrigger>
+        </TabsList>
+        <TabsContent value="login">
+          <LoginForm />
+        </TabsContent>
+        <TabsContent value="signup">
+          <SignupForm />
+        </TabsContent>
+      </Tabs>
+    </div>
+  </section>
+);
+
+const StudentDashboardPreview = () => {
+  const navigate = useNavigate();
+  return (
+    <Card className="bg-spotify-gray/30 border-white/10">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <LayoutDashboard className="text-spotify" />
+          Student Dashboard
+        </CardTitle>
+        <CardDescription>A preview of your learning activity.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
+            <span>Enrolled Courses</span>
+            <span className="font-bold text-spotify">5</span>
+          </div>
+          <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
+            <span>Recent Notifications</span>
+            <span className="font-bold text-spotify">3</span>
+          </div>
+          <Button onClick={() => navigate("/dashboard/student")} className="w-full spotify-button mt-4">
+            Go to Dashboard
+            <ArrowRight size={18} className="ml-2" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+};
+
+const TeacherDashboardPreview = () => {
+  const navigate = useNavigate();
+  return (
+    <Card className="bg-spotify-gray/30 border-white/10">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <LayoutDashboard className="text-spotify" />
+          Teacher Dashboard
+        </CardTitle>
+        <CardDescription>A summary of your teaching activities.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
+            <span>Active Students</span>
+            <span className="font-bold text-spotify">128</span>
+          </div>
+          <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
+            <span>Upcoming Sessions</span>
+            <span className="font-bold text-spotify">2</span>
+          </div>
+          <Button onClick={() => navigate("/dashboard/teacher")} className="w-full spotify-button mt-4">
+            Go to Dashboard
+            <ArrowRight size={18} className="ml-2" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+};
+
+const DashboardPreview = () => {
+  const { user } = useAuth();
+
+  if (!user) return null;
+
+  return (
+    <section className="py-20 bg-spotify-dark">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="max-w-2xl mx-auto">
+          {user.role === 'student' ? <StudentDashboardPreview /> : <TeacherDashboardPreview />}
+        </div>
+      </div>
+    </section>
+  );
+};
 
 const Index = () => {
+  const { user } = useAuth();
+
   // Stats data
   const stats = [
     { label: "Courses", value: "200+", icon: BookOpen },
@@ -83,6 +188,9 @@ const Index = () => {
       <main>
         {/* Hero Section */}
         <HeroSection />
+
+        {/* Dynamic Section: Auth or Dashboard Preview */}
+        {user ? <DashboardPreview /> : <AuthSection />}
         
         {/* Stats Section */}
         <section className="py-16 bg-spotify-dark">
@@ -215,7 +323,7 @@ const Index = () => {
                     <path d="M16.5 10H18"></path>
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">AI Learning Assistant</h3>
+                <h3 className="text-xl font-semibold mb-3">AI Assistant Chatbot</h3>
                 <p className="text-spotify-text/70 mb-4">
                   Get personalized help from our AI assistant that's available 24/7 to answer questions, provide feedback, and guide your learning path.
                 </p>
@@ -227,16 +335,16 @@ const Index = () => {
                     <path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"></path>
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">1-on-1 Video Calls</h3>
+                <h3 className="text-xl font-semibold mb-3">1-on-1 Video Call Sessions</h3>
                 <p className="text-spotify-text/70 mb-4">
                   Schedule video calls with our expert instructors to receive direct guidance, clarify doubts, and get personalized feedback on your projects.
                 </p>
               </div>
             </div>
-            
+
             <div className="text-center">
-              <Link 
-                to="/premium" 
+              <Link
+                to="/premium"
                 className="spotify-button inline-flex items-center"
               >
                 Explore Premium Features

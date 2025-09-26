@@ -149,9 +149,20 @@ export default function SignupForm() {
         </div>
         <div className="mt-4 text-center text-sm">
           Already have an account?{" "}
-          <Link to="/login" className="underline">
+          <button
+            type="button"
+            className="underline"
+            onClick={() => {
+              const loginTab = document.querySelector(
+                'button[data-state="inactive"][value="login"]'
+              );
+              if (loginTab instanceof HTMLElement) {
+                loginTab.click();
+              }
+            }}
+          >
             Login
-          </Link>
+          </button>
         </div>
       </CardContent>
     </Card>
