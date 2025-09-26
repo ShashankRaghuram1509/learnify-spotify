@@ -1,10 +1,13 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X, Search, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/AuthContext";
+import { Button } from "./ui/button";
 
 const Navbar = () => {
+  const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -109,6 +112,30 @@ const Navbar = () => {
               />
             </form>
 
+            <div className="flex items-center gap-2">
+              {user ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate(`/dashboard/${user.role}`)}
+                    className="flex items-center gap-2"
+                  >
+                    <LayoutDashboard size={16} />
+                    Dashboard
+                  </Button>
+                  <Button onClick={logout} variant="outline" size="sm">Logout</Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild variant="ghost" size="sm">
+                    <Link to="/login">Login</Link>
+                  </Button>
+                  <Button asChild size="sm" className="spotify-button">
+                    <Link to="/signup">Sign Up</Link>
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Mobile menu button */}
@@ -166,6 +193,30 @@ const Navbar = () => {
                 />
               </form>
 
+              <div className="flex items-center gap-4 pt-4 border-t border-spotify-gray/30">
+                {user ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => navigate(`/dashboard/${user.role}`)}
+                    >
+                      Dashboard
+                    </Button>
+                    <Button onClick={logout} size="sm" className="w-full spotify-button">Logout</Button>
+                  </>
+                ) : (
+                  <>
+                    <Button asChild variant="outline" size="sm" className="w-full">
+                      <Link to="/login">Login</Link>
+                    </Button>
+                    <Button asChild size="sm" className="w-full spotify-button">
+                      <Link to="/signup">Sign Up</Link>
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
