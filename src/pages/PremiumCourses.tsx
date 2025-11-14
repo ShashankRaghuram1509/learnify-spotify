@@ -39,9 +39,9 @@ const premiumCourses = [
 ];
 
 export default function PremiumCourses() {
-  const { user, userRole } = useAuth();
+  const { user, isPremium } = useAuth();
 
-  if (!user || userRole !== "pro") {
+  if (!user || !isPremium) {
     return <Navigate to="/dashboard/student/upgrade" replace />;
   }
   return (
