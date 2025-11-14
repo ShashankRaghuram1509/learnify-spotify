@@ -69,6 +69,7 @@ const CourseDetail = () => {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isEnrolled, setIsEnrolled] = useState(false);
 
   useEffect(() => {
     // Mock course data - replace with actual API call
@@ -85,6 +86,7 @@ const CourseDetail = () => {
     if (course?.externalLink) {
       window.open(course.externalLink, '_blank');
     } else {
+      setIsEnrolled(true);
       toast.success("Enrolled successfully! Course content is now available.");
     }
   };
@@ -202,8 +204,9 @@ const CourseDetail = () => {
                   onClick={handleEnroll}
                   className="spotify-button text-lg px-8 py-3 animate-fade-in"
                   style={{ animationDelay: "0.4s" }}
+                  disabled={isEnrolled}
                 >
-                  {course.externalLink ? "Visit Course" : "Enroll Now"}
+                  {isEnrolled ? "Enrolled" : course.externalLink ? "Visit Course" : "Enroll Now"}
                   <ArrowLeft className="ml-2 h-5 w-5 rotate-180" />
                 </Button>
               </div>
