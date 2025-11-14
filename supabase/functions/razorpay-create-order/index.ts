@@ -12,7 +12,38 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Authentication required');
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      throw new Error('Unauthorized');
+    }
+
     const { amount, currency = 'INR', planName } = await req.json();
+    
+    // Input validation
+    const validPlans = ['Lite', 'Premium', 'Premium Pro'];
+    if (!validPlans.includes(planName)) {
+      throw new Error('Invalid plan name');
+    }
+    
+    if (typeof amount !== 'number' || amount <= 0 || amount > 100000) {
+      throw new Error('Invalid amount');
+    }
+    
+    if (currency !== 'INR' && currency !== 'USD') {
+      throw new Error('Invalid currency');
+    }
     
     const RAZORPAY_KEY_ID = Deno.env.get('RAZORPAY_KEY_ID');
     const RAZORPAY_KEY_SECRET = Deno.env.get('RAZORPAY_KEY_SECRET');
@@ -64,10 +95,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in razorpay-create-order:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Failed to create payment order. Please try again.' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
+        status: error.message === 'Unauthorized' || error.message === 'Authentication required' ? 401 : 500 
       }
     );
   }
