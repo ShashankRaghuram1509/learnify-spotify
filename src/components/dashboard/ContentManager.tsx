@@ -1,119 +1,132 @@
-import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Plus, Users, Edit, Trash } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
-const sampleCourses = [
-  {
-    id: "course-1",
-    title: "Introduction to Quantum Computing",
-    videos: 5,
-    articles: 8,
-  },
-  {
-    id: "course-2",
-    title: "Advanced Algorithms",
-    videos: 12,
-    articles: 15,
-  },
-  {
-    id: "course-3",
-    title: "The Art of Public Speaking",
-    videos: 7,
-    articles: 4,
-  },
-];
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  student_count: number;
+  price: number;
+  is_premium: boolean;
+}
 
 export default function ContentManager() {
-  const [courses, setCourses] = useState(sampleCourses);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const { user } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      fetchMyCourses();
+    }
+  }, [user]);
+
+  const fetchMyCourses = async () => {
+    try {
+      const { data: coursesData, error: coursesError } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("teacher_id", user?.id)
+        .limit(5);
+
+      if (coursesError) throw coursesError;
+
+      const coursesWithCounts = await Promise.all(
+        (coursesData || []).map(async (course) => {
+          const { count } = await supabase
+            .from("enrollments")
+            .select("*", { count: "exact", head: true })
+            .eq("course_id", course.id);
+
+          return {
+            id: course.id,
+            title: course.title,
+            description: course.description || "No description",
+            student_count: count || 0,
+            price: course.price || 0,
+            is_premium: course.is_premium || false,
+          };
+        })
+      );
+
+      setCourses(coursesWithCounts);
+    } catch (error: any) {
+      toast.error("Failed to load courses");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCourse = async (courseId: string) => {
+    if (!confirm("Are you sure you want to delete this course?")) return;
+
+    try {
+      const { error } = await supabase.from("courses").delete().eq("id", courseId);
+      if (error) throw error;
+
+      toast.success("Course deleted successfully!");
+      fetchMyCourses();
+    } catch (error: any) {
+      toast.error("Failed to delete course");
+      console.error(error);
+    }
+  };
+
+  if (loading) {
+    return <Card><CardContent className="py-6">Loading...</CardContent></Card>;
+  }
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>Content Manager</CardTitle>
-          <CardDescription>
-            Manage your course content, including videos and articles.
-          </CardDescription>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle>My Courses</CardTitle>
+          <Button size="sm">
+            <Plus className="h-4 w-4 mr-1" />
+            New Course
+          </Button>
         </div>
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="flex items-center gap-2">
-              <PlusCircle size={16} />
-              Upload Course
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upload New Course</DialogTitle>
-              <DialogDescription>
-                Fill in the details below to add a new course to your catalog.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="title">Course Title</Label>
-                <Input id="title" placeholder="e.g., Introduction to React" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="description">Course Description</Label>
-                <Textarea id="description" placeholder="A brief summary of the course." />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="video-url">Video Lecture URL</Label>
-                <Input id="video-url" placeholder="https://example.com/video.mp4" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="article">Article/Notes</Label>
-                <Textarea id="article" placeholder="Write your course content here." />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" onClick={() => setIsFormOpen(false)}>Upload</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {courses.map((course) => (
-            <div key={course.id} className="p-4 bg-spotify-gray/20 rounded-lg flex items-center justify-between">
-              <div>
-                <h4 className="font-semibold">{course.title}</h4>
-                <p className="text-sm text-spotify-text/70">
-                  {course.videos} videos, {course.articles} articles
-                </p>
+        {courses.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">
+            You haven't created any courses yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {courses.map((course) => (
+              <div key={course.id} className="border rounded-lg p-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold">{course.title}</h3>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                      <Users className="h-3 w-3" />
+                      {course.student_count} students
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="outline">
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteCourse(course.id)}
+                    >
+                      <Trash className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="text-spotify-text/80 hover:text-spotify">
-                  <Edit size={16} />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-red-500/80 hover:text-red-500">
-                  <Trash2 size={16} />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
