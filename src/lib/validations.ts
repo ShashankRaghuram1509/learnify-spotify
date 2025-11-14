@@ -16,7 +16,6 @@ export const signUpSchema = z.object({
     .trim()
     .min(1, "Full name is required")
     .max(100, "Full name too long"),
-  role: z.enum(["student", "teacher"]),
 });
 
 export const signInSchema = z.object({

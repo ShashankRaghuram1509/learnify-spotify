@@ -8,7 +8,7 @@ interface AuthContextType {
   session: Session | null;
   userRole: "student" | "teacher" | "admin" | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: "student" | "teacher") => Promise<void>;
+  signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, role: "student" | "teacher") => {
+  const signUp = async (email: string, password: string, fullName: string) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -92,15 +92,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (error) throw error;
-
-      // Update role if not student (student is default)
-      if (role === "teacher") {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from("user_roles").delete().eq("user_id", user.id);
-          await supabase.from("user_roles").insert({ user_id: user.id, role: "teacher" });
-        }
-      }
 
       toast.success("Account created successfully! You can now login.");
     } catch (error: any) {

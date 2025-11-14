@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { signUpSchema, signInSchema } from "@/lib/validations";
@@ -15,7 +14,6 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"student" | "teacher">("student");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
@@ -48,7 +46,7 @@ export default function Auth() {
         navigate("/");
       } else {
         // Validate signup input
-        const result = signUpSchema.safeParse({ email, password, fullName, role });
+        const result = signUpSchema.safeParse({ email, password, fullName });
         if (!result.success) {
           const fieldErrors: Record<string, string> = {};
           result.error.errors.forEach((err) => {
@@ -62,7 +60,7 @@ export default function Auth() {
           return;
         }
         
-        await signUp(email, password, fullName, role);
+        await signUp(email, password, fullName);
         setIsLogin(true);
       }
     } catch (error) {
@@ -139,26 +137,6 @@ export default function Auth() {
                 </p>
               )}
             </div>
-
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label>I am a...</Label>
-                <RadioGroup
-                  value={role}
-                  onValueChange={(value: "student" | "teacher") => setRole(value)}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="student" id="student" />
-                    <Label htmlFor="student">Student</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="teacher" id="teacher" />
-                    <Label htmlFor="teacher">Teacher</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            )}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Loading..." : isLogin ? "Login" : "Sign Up"}
