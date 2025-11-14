@@ -3,11 +3,11 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, Search, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "./ui/button";
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -117,13 +117,13 @@ const Navbar = () => {
                 <>
                   <Button
                     variant="ghost"
-                    onClick={() => navigate(`/dashboard/${user.role}`)}
+                    onClick={() => navigate(`/dashboard/${userRole}`)}
                     className="flex items-center gap-2"
                   >
                     <LayoutDashboard size={16} />
                     Dashboard
                   </Button>
-                  <Button onClick={logout} variant="outline" size="sm">Logout</Button>
+                  <Button onClick={signOut} variant="outline" size="sm">Logout</Button>
                 </>
               ) : (
                 <>
@@ -200,11 +200,11 @@ const Navbar = () => {
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => navigate(`/dashboard/${user.role}`)}
+                      onClick={() => navigate(`/dashboard/${userRole}`)}
                     >
                       Dashboard
                     </Button>
-                    <Button onClick={logout} size="sm" className="w-full spotify-button">Logout</Button>
+                    <Button onClick={signOut} size="sm" className="w-full spotify-button">Logout</Button>
                   </>
                 ) : (
                   <>

@@ -4,15 +4,14 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
-import AuthLayout from "./pages/auth/AuthLayout";
-import LoginForm from "./pages/auth/Login";
-import SignupForm from "./pages/auth/Signup";
+import Auth from "./pages/auth/Auth";
 import PremiumCourses from "./pages/PremiumCourses";
 import StudentDashboard from "./pages/dashboard/StudentDashboard";
 import TeacherDashboard from "./pages/dashboard/TeacherDashboard";
@@ -37,6 +36,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <AuthProvider>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/courses" element={<Courses />} />
@@ -46,10 +46,7 @@ const App = () => (
           <Route path="/premium-courses" element={<PremiumCourses />} />
 
           {/* Authentication Routes */}
-          <Route element={<AuthLayout />}>
-            <Route path="/login" element={<LoginForm />} />
-            <Route path="/signup" element={<SignupForm />} />
-          </Route>
+          <Route path="/auth" element={<Auth />} />
 
           {/* Protected Dashboard Routes */}
           <Route element={<DashboardLayout />}>
@@ -74,6 +71,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
         <AIAssistant />
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
