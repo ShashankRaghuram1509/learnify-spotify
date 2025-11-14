@@ -39,9 +39,7 @@ export default function EnrolledCoursesList() {
             title,
             description,
             thumbnail_url,
-            profiles!courses_teacher_id_fkey (
-              full_name
-            )
+            teacher_id
           )
         `)
         .eq("student_id", user?.id)
@@ -49,13 +47,29 @@ export default function EnrolledCoursesList() {
 
       if (error) throw error;
 
+      // Fetch teacher profiles separately
+      const teacherIds = data?.map((e: any) => e.courses.teacher_id).filter(Boolean) || [];
+      let teacherProfiles: any = {};
+      
+      if (teacherIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", teacherIds);
+        
+        teacherProfiles = profiles?.reduce((acc: any, profile: any) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {}) || {};
+      }
+
       const formattedCourses = data?.map((enrollment: any) => ({
         id: enrollment.courses.id,
         title: enrollment.courses.title,
         description: enrollment.courses.description || "No description available",
         progress: enrollment.progress || 0,
         thumbnail_url: enrollment.courses.thumbnail_url,
-        teacher_name: enrollment.courses.profiles?.full_name || "Unknown Teacher",
+        teacher_name: teacherProfiles[enrollment.courses.teacher_id]?.full_name || "Unknown Teacher",
       })) || [];
 
       setCourses(formattedCourses);
