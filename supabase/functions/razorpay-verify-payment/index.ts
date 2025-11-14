@@ -93,6 +93,22 @@ serve(async (req) => {
       throw new Error('Payment storage failed');
     }
 
+    // Upgrade user role based on plan
+    const { error: roleError } = await supabaseClient
+      .from('user_roles')
+      .upsert({
+        user_id: user.id,
+        role: 'pro'
+      }, {
+        onConflict: 'user_id'
+      });
+
+    if (roleError) {
+      console.error('Error upgrading user role:', roleError);
+      // Decide if this should be a critical failure.
+      // For now, we'll log it but not fail the entire transaction.
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
