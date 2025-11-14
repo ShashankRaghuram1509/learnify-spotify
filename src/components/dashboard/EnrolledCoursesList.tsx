@@ -6,15 +6,14 @@ import { BookOpen, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
 
 interface EnrolledCourse {
   id: string;
   title: string;
   description: string;
-  thumbnail_url: string | null;
   progress: number;
-  enrollment_id: string;
+  thumbnail_url: string | null;
+  teacher_name: string;
 }
 
 export default function EnrolledCoursesList() {
@@ -30,7 +29,7 @@ export default function EnrolledCoursesList() {
 
   const fetchEnrolledCourses = async () => {
     try {
-      const { data: enrollments, error } = await supabase
+      const { data, error } = await supabase
         .from("enrollments")
         .select(`
           id,
@@ -39,109 +38,77 @@ export default function EnrolledCoursesList() {
             id,
             title,
             description,
-            thumbnail_url
+            thumbnail_url,
+            profiles!courses_teacher_id_fkey (
+              full_name
+            )
           )
         `)
-        .eq("student_id", user?.id);
+        .eq("student_id", user?.id)
+        .limit(3);
 
       if (error) throw error;
 
-      const formattedCourses = enrollments?.map((enrollment: any) => ({
+      const formattedCourses = data?.map((enrollment: any) => ({
         id: enrollment.courses.id,
         title: enrollment.courses.title,
-        description: enrollment.courses.description,
+        description: enrollment.courses.description || "No description available",
+        progress: enrollment.progress || 0,
         thumbnail_url: enrollment.courses.thumbnail_url,
-        progress: enrollment.progress,
-        enrollment_id: enrollment.id,
+        teacher_name: enrollment.courses.profiles?.full_name || "Unknown Teacher",
       })) || [];
 
       setCourses(formattedCourses);
     } catch (error: any) {
-      toast.error("Failed to load enrolled courses");
-      console.error("Error fetching courses:", error);
+      toast.error("Failed to load courses");
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="text-primary" />
-            My Enrolled Courses
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">Loading courses...</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (courses.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="text-primary" />
-            My Enrolled Courses
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">You haven't enrolled in any courses yet.</p>
-            <Link to="/courses">
-              <Button>Browse Courses</Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <Card><CardContent className="py-6">Loading...</CardContent></Card>;
   }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <BookOpen className="text-primary" />
+          <BookOpen className="h-5 w-5" />
           My Enrolled Courses
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {courses.map((course) => (
-            <div
-              key={course.id}
-              className="flex items-center gap-4 p-4 bg-secondary/20 rounded-lg"
-            >
-              {course.thumbnail_url && (
-                <img
-                  src={course.thumbnail_url}
-                  alt={course.title}
-                  className="w-20 h-20 object-cover rounded-lg"
-                />
-              )}
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg">{course.title}</h3>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {course.description}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Progress value={course.progress} className="flex-1" />
-                  <span className="text-sm font-medium">{course.progress}%</span>
+        {courses.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">
+            You haven't enrolled in any courses yet.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {courses.map((course) => (
+              <div key={course.id} className="border rounded-lg p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h3 className="font-semibold">{course.title}</h3>
+                    <p className="text-sm text-muted-foreground">By {course.teacher_name}</p>
+                  </div>
+                  <Button size="sm" variant="outline">
+                    <Play className="h-4 w-4 mr-1" />
+                    Continue
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Progress</span>
+                    <span className="font-medium">{course.progress}%</span>
+                  </div>
+                  <Progress value={course.progress} />
                 </div>
               </div>
-              <Link to={`/courses/${course.id}`}>
-                <Button size="sm">
-                  <Play className="mr-2 h-4 w-4" />
-                  Continue
-                </Button>
-              </Link>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
