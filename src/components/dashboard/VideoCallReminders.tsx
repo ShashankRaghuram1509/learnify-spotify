@@ -36,12 +36,9 @@ export default function VideoCallReminders() {
           scheduled_at,
           meeting_url,
           status,
+          teacher_id,
           courses (
             title
-          ),
-          profiles!video_call_schedules_teacher_id_fkey (
-            full_name,
-            email
           )
         `)
         .eq("student_id", user?.id)
@@ -52,10 +49,26 @@ export default function VideoCallReminders() {
 
       if (error) throw error;
 
+      // Fetch teacher profiles separately
+      const teacherIds = data?.map((s: any) => s.teacher_id).filter(Boolean) || [];
+      let teacherProfiles: any = {};
+      
+      if (teacherIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", teacherIds);
+        
+        teacherProfiles = profiles?.reduce((acc: any, profile: any) => {
+          acc[profile.id] = profile;
+          return acc;
+        }, {}) || {};
+      }
+
       const formattedSessions = data?.map((session: any) => ({
         id: session.id,
         scheduled_at: session.scheduled_at,
-        teacher_name: session.profiles?.full_name || session.profiles?.email || "Teacher",
+        teacher_name: teacherProfiles[session.teacher_id]?.full_name || teacherProfiles[session.teacher_id]?.email || "Teacher",
         course_title: session.courses?.title || "Course",
         meeting_url: session.meeting_url,
         status: session.status,
