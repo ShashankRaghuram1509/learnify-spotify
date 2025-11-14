@@ -6,31 +6,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ArrowRight, BookOpen, Users, Award, Clock, CheckCircle, Sparkles, LayoutDashboard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import LoginForm from "./auth/Login";
-import SignupForm from "./auth/Signup";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-const AuthSection = () => (
-  <section className="py-20 bg-spotify-dark">
-    <div className="container mx-auto px-4 md:px-6">
-      <Tabs defaultValue="login" className="max-w-xl mx-auto">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="login">Login</TabsTrigger>
-          <TabsTrigger value="signup">Sign Up</TabsTrigger>
-        </TabsList>
-        <TabsContent value="login">
-          <LoginForm />
-        </TabsContent>
-        <TabsContent value="signup">
-          <SignupForm />
-        </TabsContent>
-      </Tabs>
-    </div>
-  </section>
-);
 
 const StudentDashboardPreview = () => {
   const navigate = useNavigate();
@@ -95,7 +73,7 @@ const TeacherDashboardPreview = () => {
 };
 
 const DashboardPreview = () => {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
 
   if (!user) return null;
 
@@ -103,7 +81,7 @@ const DashboardPreview = () => {
     <section className="py-20 bg-spotify-dark">
       <div className="container mx-auto px-4 md:px-6">
         <div className="max-w-2xl mx-auto">
-          {user.role === 'student' ? <StudentDashboardPreview /> : <TeacherDashboardPreview />}
+          {userRole === "teacher" ? <TeacherDashboardPreview /> : <StudentDashboardPreview />}
         </div>
       </div>
     </section>
@@ -190,7 +168,7 @@ const Index = () => {
         <HeroSection />
 
         {/* Dynamic Section: Auth or Dashboard Preview */}
-        {user ? <DashboardPreview /> : <AuthSection />}
+        {user ? <DashboardPreview /> : <FeaturedCourses />}
         
         {/* Stats Section */}
         <section className="py-16 bg-spotify-dark">

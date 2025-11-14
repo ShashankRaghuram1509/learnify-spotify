@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "@/hooks/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 const studentNavItems = [
@@ -45,10 +45,10 @@ const teacherNavItems = [
 ];
 
 export default function DashboardLayout() {
-  const { user, logout } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const location = useLocation();
 
-  const navItems = user?.role === "student" ? studentNavItems : teacherNavItems;
+  const navItems = userRole === "student" ? studentNavItems : teacherNavItems;
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -96,14 +96,14 @@ export default function DashboardLayout() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{user?.name || 'My Account'}</DropdownMenuLabel>
+              <DropdownMenuLabel>{user?.email || 'My Account'}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to={`/dashboard/${user?.role}/settings`}>Settings</Link>
+                <Link to={`/dashboard/${userRole}/settings`}>Settings</Link>
               </DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>Logout</DropdownMenuItem>
+              <DropdownMenuItem onClick={signOut}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>

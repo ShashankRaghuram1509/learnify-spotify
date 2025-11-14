@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Award, Eye } from "lucide-react";
-import { useAuth } from "@/hooks/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Dialog,
   DialogContent,
@@ -85,7 +85,7 @@ export default function CertificatesPage() {
               <DialogTitle>Certificate of Completion</DialogTitle>
             </DialogHeader>
             <CertificateView
-              studentName={user?.name || "Student Name"}
+              studentName={user?.email || "Student Name"}
               courseName={selectedCert.courseName}
               completionDate={selectedCert.completionDate}
             />
