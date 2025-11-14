@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "sonner";
+import { signUpSchema, signInSchema } from "@/lib/validations";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,24 +17,56 @@ export default function Auth() {
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<"student" | "teacher">("student");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
     setLoading(true);
 
     try {
       if (isLogin) {
+        // Validate login input
+        const result = signInSchema.safeParse({ email, password });
+        if (!result.success) {
+          const fieldErrors: Record<string, string> = {};
+          result.error.errors.forEach((err) => {
+            if (err.path[0]) {
+              fieldErrors[err.path[0] as string] = err.message;
+            }
+          });
+          setErrors(fieldErrors);
+          toast.error("Please fix the errors in the form");
+          setLoading(false);
+          return;
+        }
+        
         await signIn(email, password);
         navigate("/");
       } else {
+        // Validate signup input
+        const result = signUpSchema.safeParse({ email, password, fullName, role });
+        if (!result.success) {
+          const fieldErrors: Record<string, string> = {};
+          result.error.errors.forEach((err) => {
+            if (err.path[0]) {
+              fieldErrors[err.path[0] as string] = err.message;
+            }
+          });
+          setErrors(fieldErrors);
+          toast.error("Please fix the errors in the form");
+          setLoading(false);
+          return;
+        }
+        
         await signUp(email, password, fullName, role);
         setIsLogin(true);
       }
     } catch (error) {
-      console.error("Auth error:", error);
+      // Error already handled by useAuth with toast
     } finally {
       setLoading(false);
     }
@@ -61,7 +95,11 @@ export default function Auth() {
                   onChange={(e) => setFullName(e.target.value)}
                   required={!isLogin}
                   placeholder="John Doe"
+                  maxLength={100}
                 />
+                {errors.fullName && (
+                  <p className="text-sm text-destructive">{errors.fullName}</p>
+                )}
               </div>
             )}
             
@@ -74,7 +112,11 @@ export default function Auth() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
+                maxLength={255}
               />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -86,7 +128,16 @@ export default function Auth() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
+                maxLength={100}
               />
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password}</p>
+              )}
+              {!isLogin && !errors.password && (
+                <p className="text-xs text-muted-foreground">
+                  Must be 8+ characters with uppercase, lowercase, and number
+                </p>
+              )}
             </div>
 
             {!isLogin && (
