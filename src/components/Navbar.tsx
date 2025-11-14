@@ -128,10 +128,10 @@ const Navbar = () => {
               ) : (
                 <>
                   <Button asChild variant="ghost" size="sm">
-                    <Link to="/login">Login</Link>
+                    <Link to="/auth">Login</Link>
                   </Button>
                   <Button asChild size="sm" className="spotify-button">
-                    <Link to="/signup">Sign Up</Link>
+                    <Link to="/auth">Sign Up</Link>
                   </Button>
                 </>
               )}
@@ -209,10 +209,10 @@ const Navbar = () => {
                 ) : (
                   <>
                     <Button asChild variant="outline" size="sm" className="w-full">
-                      <Link to="/login">Login</Link>
+                      <Link to="/auth">Login</Link>
                     </Button>
                     <Button asChild size="sm" className="w-full spotify-button">
-                      <Link to="/signup">Sign Up</Link>
+                      <Link to="/auth">Sign Up</Link>
                     </Button>
                   </>
                 )}
