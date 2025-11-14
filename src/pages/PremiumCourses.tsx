@@ -1,3 +1,5 @@
+import { useAuth } from "@/hooks/useAuth";
+import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,6 +39,11 @@ const premiumCourses = [
 ];
 
 export default function PremiumCourses() {
+  const { user, role } = useAuth();
+
+  if (!user || role !== "pro") {
+    return <Navigate to="/dashboard/student/upgrade" replace />;
+  }
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center">
