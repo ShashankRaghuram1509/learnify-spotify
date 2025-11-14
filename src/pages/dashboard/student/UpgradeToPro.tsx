@@ -115,6 +115,9 @@ export default function UpgradeToProPage() {
                   amount: orderData.amount,
                   planName: plan.name,
                 },
+                headers: {
+                  Authorization: `Bearer ${session.access_token}`,
+                },
               }
             );
 
