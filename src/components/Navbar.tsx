@@ -47,6 +47,9 @@ const Navbar = () => {
   }, [location]);
 
   const isActive = (path: string) => {
+    if (path === "/courses") {
+      return location.pathname.startsWith(path);
+    }
     return location.pathname === path;
   };
 
