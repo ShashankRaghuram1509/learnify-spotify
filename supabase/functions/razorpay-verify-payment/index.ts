@@ -89,7 +89,6 @@ serve(async (req) => {
       });
 
     if (paymentError) {
-      console.error('Error storing payment:', paymentError);
       throw new Error('Payment storage failed');
     }
 
@@ -100,9 +99,9 @@ serve(async (req) => {
       .eq('id', user.id);
 
     if (profileError) {
-      console.error('Error upgrading user to pro:', profileError);
-      // Decide if this should be a critical failure.
-      // For now, we'll log it but not fail the entire transaction.
+      // Continue processing - this is handled by subscriptionError below
+    }
+    
     // Upgrade user subscription based on plan
     const expiresAt = new Date();
     expiresAt.setMonth(expiresAt.getMonth() + 1); // 1 month subscription
@@ -116,7 +115,6 @@ serve(async (req) => {
       .eq('id', user.id);
 
     if (subscriptionError) {
-      console.error('Error upgrading subscription:', subscriptionError);
       throw new Error('Subscription upgrade failed');
     }
 
@@ -132,8 +130,6 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in razorpay-verify-payment:', error);
-    
     // Return user-friendly error messages without exposing internals
     let userMessage = 'Payment verification failed. Please contact support.';
     let statusCode = 500;

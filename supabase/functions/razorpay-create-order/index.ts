@@ -55,14 +55,10 @@ serve(async (req) => {
     });
 
     if (!orderResponse.ok) {
-      const errorText = await orderResponse.text();
-      console.error('Razorpay order creation failed:', errorText);
       throw new Error('Failed to create Razorpay order');
     }
 
     const order = await orderResponse.json();
-
-    console.log('Razorpay order created:', order.id);
 
     return new Response(
       JSON.stringify({ 
@@ -77,7 +73,6 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in razorpay-create-order:', error);
     return new Response(
       JSON.stringify({ error: 'Failed to create payment order. Please try again.' }),
       { 
