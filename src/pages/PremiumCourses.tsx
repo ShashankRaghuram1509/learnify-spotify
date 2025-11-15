@@ -38,10 +38,42 @@ const premiumCourses = [
   },
 ];
 
-export default function PremiumCourses() {
-  const { user, isPremium } = useAuth();
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-  if (!user || !isPremium) {
+export default function PremiumCourses() {
+  const { user } = useAuth();
+  const [isPro, setIsPro] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("is_pro")
+          .eq("id", user.id)
+          .single();
+        if (error) throw error;
+        setIsPro(data?.is_pro || false);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [user]);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user || !isPro) {
     return <Navigate to="/dashboard/student/upgrade" replace />;
   }
   return (

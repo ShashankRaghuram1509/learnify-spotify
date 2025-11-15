@@ -7,8 +7,6 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: "student" | "teacher" | "admin" | null;
-  subscriptionTier: string | null;
-  isPremium: boolean;
   loading: boolean;
   signUp: (email: string, password: string, fullName: string, role: "student" | "teacher") => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -21,7 +19,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<"student" | "teacher" | "admin" | null>(null);
-  const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer role and subscription fetching
+          // Defer role fetching
           setTimeout(async () => {
             try {
               const { data: roleData } = await supabase
@@ -42,21 +39,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 .single();
               
               setUserRole(roleData?.role ?? null);
-
-              const { data: profileData } = await supabase
-                .from("profiles")
-                .select("subscription_tier")
-                .eq("id", session.user.id)
-                .single();
-              
-              setSubscriptionTier(profileData?.subscription_tier ?? 'free');
             } catch (error) {
-              console.error("Error fetching user data:", error);
+              console.error("Error fetching user role:", error);
             }
           }, 0);
         } else {
           setUserRole(null);
-          setSubscriptionTier(null);
         }
         
         setLoading(false);
@@ -78,16 +66,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               .single();
             
             setUserRole(roleData?.role ?? null);
-
-            const { data: profileData } = await supabase
-              .from("profiles")
-              .select("subscription_tier")
-              .eq("id", session.user.id)
-              .single();
-            
-            setSubscriptionTier(profileData?.subscription_tier ?? 'free');
           } catch (error) {
-            console.error("Error fetching user data:", error);
+            console.error("Error fetching user role:", error);
           }
         }, 0);
       }
@@ -100,19 +80,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, fullName: string, role: "student" | "teacher") => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
-            role: role,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
       if (error) throw error;
+
+      if (data.user) {
+        const { error: roleError } = await supabase.from("user_roles").insert({
+          user_id: data.user.id,
+          role: role,
+        });
+
+        if (roleError) throw roleError;
+      }
 
       toast.success("Account created successfully! You can now login.");
     } catch (error: any) {
@@ -145,7 +133,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       setSession(null);
       setUserRole(null);
-      setSubscriptionTier(null);
       
       toast.success("Signed out successfully");
     } catch (error: any) {
@@ -154,10 +141,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const isPremium = subscriptionTier !== null && subscriptionTier !== 'free';
-
   return (
-    <AuthContext.Provider value={{ user, session, userRole, subscriptionTier, isPremium, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, userRole, loading, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

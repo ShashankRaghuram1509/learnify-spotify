@@ -103,21 +103,6 @@ serve(async (req) => {
       console.error('Error upgrading user to pro:', profileError);
       // Decide if this should be a critical failure.
       // For now, we'll log it but not fail the entire transaction.
-    // Upgrade user subscription based on plan
-    const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + 1); // 1 month subscription
-
-    const { error: subscriptionError } = await supabaseClient
-      .from('profiles')
-      .update({
-        subscription_tier: planName.toLowerCase().replace(' ', '_'),
-        subscription_expires_at: expiresAt.toISOString()
-      })
-      .eq('id', user.id);
-
-    if (subscriptionError) {
-      console.error('Error upgrading subscription:', subscriptionError);
-      throw new Error('Subscription upgrade failed');
     }
 
     return new Response(

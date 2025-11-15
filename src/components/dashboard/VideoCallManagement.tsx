@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -15,22 +15,64 @@ import { CalendarIcon, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
-
-const upcomingSessions = [
-  { student: "Alice Johnson", time: "2024-10-01 10:00 AM" },
-  { student: "Bob Williams", time: "2024-10-02 02:30 PM" },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function VideoCallManagement() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState<string>("14:00");
+  const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSchedule = () => {
-    if (date && time) {
-      toast.success(`Session scheduled for ${format(date, "PPP")} at ${time}`);
+  useEffect(() => {
+    const fetchSessions = async () => {
+      if (!user) return;
+      try {
+        const { data, error } = await supabase
+          .from("video_sessions")
+          .select("*")
+          .eq("teacher_id", user.id);
+        if (error) throw error;
+        setUpcomingSessions(data);
+      } catch (error) {
+        console.error("Error fetching sessions:", error);
+      }
+    };
+    fetchSessions();
+  }, [user]);
+
+  const handleSchedule = async () => {
+    if (date && time && user) {
+      const roomID = Math.random().toString(36).substring(2, 9);
+      const sessionTime = `${format(date, "yyyy-MM-dd")}T${time}`;
+      try {
+        const { error } = await supabase.from("video_sessions").insert({
+          teacher_id: user.id,
+          room_id: roomID,
+          session_time: sessionTime,
+        });
+        if (error) throw error;
+        toast.success(`Session scheduled for ${format(date, "PPP")} at ${time}`);
+        // Refresh sessions
+        const { data, error: fetchError } = await supabase
+          .from("video_sessions")
+          .select("*")
+          .eq("teacher_id", user.id);
+        if (fetchError) throw fetchError;
+        setUpcomingSessions(data);
+      } catch (error) {
+        toast.error("Failed to schedule session.");
+        console.error("Error scheduling session:", error);
+      }
     } else {
       toast.error("Please select a date and time.");
     }
+  };
+
+  const handleJoinCall = (roomID: string) => {
+    navigate(`/video-call/${roomID}`);
   };
 
   return (
@@ -87,10 +129,10 @@ export default function VideoCallManagement() {
           {upcomingSessions.map((session, index) => (
             <div key={index} className="flex items-center justify-between p-3 bg-spotify-gray/20 rounded-lg">
               <div>
-                <p className="font-semibold">{session.student}</p>
-                <p className="text-sm text-spotify-text/70">{session.time}</p>
+                <p className="font-semibold">Session with {session.student_id || "a student"}</p>
+                <p className="text-sm text-spotify-text/70">{format(new Date(session.session_time), "PPP p")}</p>
               </div>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={() => handleJoinCall(session.room_id)}>
                 <Video className="h-5 w-5 text-spotify" />
               </Button>
             </div>
