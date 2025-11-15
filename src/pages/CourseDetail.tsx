@@ -5,87 +5,77 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-
-// Mock course data for different course IDs
-const mockCourses = {
-  "web-dev-101": {
-    id: "web-dev-101",
-    title: "Web Development Fundamentals",
-    instructor: "Sarah Johnson",
-    rating: 4.8,
-    students: 1543,
-    duration: "8 weeks",
-    level: "Beginner",
-    price: 89.99,
-    discountPrice: 49.99,
-    image: "https://images.unsplash.com/photo-1537432376769-00f5c2f4c8d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    description: "Learn the fundamentals of web development including HTML, CSS, and JavaScript. Perfect for beginners who want to start their journey in web development.",
-    externalLink: "https://www.geeksforgeeks.org/web-development/",
-    modules: [
-      { title: "HTML Basics", content: "Learn the structure of web pages with HTML" },
-      { title: "CSS Styling", content: "Style your web pages with CSS" },
-      { title: "JavaScript Fundamentals", content: "Add interactivity to your web pages" },
-      { title: "Responsive Design", content: "Make your websites work on all devices" }
-    ]
-  },
-  "react-masterclass": {
-    id: "react-masterclass",
-    title: "React.js Masterclass",
-    instructor: "Amanda Lee",
-    rating: 4.8,
-    students: 1876,
-    duration: "10 weeks",
-    level: "Intermediate",
-    price: 89.99,
-    discountPrice: 59.99,
-    image: "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    description: "Master React.js with this comprehensive course covering hooks, context, state management, and modern React patterns.",
-    externalLink: null,
-    modules: [
-      { title: "React Fundamentals", content: "Components, JSX, and props" },
-      { title: "Hooks & State Management", content: "useState, useEffect, and custom hooks" },
-      { title: "Context API", content: "Global state management with Context" },
-      { title: "Advanced Patterns", content: "Higher-order components and render props" }
-    ]
-  },
-  "default": {
-    id: "default-course",
-    title: "Course Not Found",
-    instructor: "Instructor",
-    rating: 0,
-    students: 0,
-    duration: "Unknown",
-    level: "All Levels",
-    price: 0,
-    discountPrice: 0,
-    image: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2340&h=1560&auto=format&fit=crop",
-    description: "This course could not be found. Please check the course ID or browse our available courses.",
-    externalLink: null,
-    modules: []
-  }
-};
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const CourseDetail = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isEnrolling, setIsEnrolling] = useState(false);
 
   useEffect(() => {
-    // Mock course data - replace with actual API call
-    const mockCourse = mockCourses[id] || mockCourses.default;
+    const fetchCourse = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from("courses")
+          .select("*")
+          .eq("id", id)
+          .single();
 
-    // Simulate API delay
-    setTimeout(() => {
-      setCourse(mockCourse);
-      setLoading(false);
-    }, 1000);
+        if (error) {
+          throw error;
+        }
+
+        setCourse(data);
+      } catch (error) {
+        console.error("Error fetching course:", error);
+        toast.error("Failed to load course details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchCourse();
+    }
   }, [id]);
 
-  const handleEnroll = () => {
+  const handleEnroll = async () => {
     if (course?.externalLink) {
       window.open(course.externalLink, '_blank');
-    } else {
+      return;
+    }
+
+    if (!user || !course) {
+      toast.error("You must be logged in to enroll.");
+      return;
+    }
+
+    setIsEnrolling(true);
+
+    try {
+      const { error } = await supabase.from('enrollments').insert([
+        {
+          student_id: user.id,
+          course_id: course.id,
+        },
+      ]);
+
+      if (error) {
+        throw error;
+      }
+
+      setIsEnrolled(true);
       toast.success("Enrolled successfully! Course content is now available.");
+    } catch (error) {
+      toast.error("Failed to enroll in the course. Please try again.");
+      console.error("Enrollment error:", error);
+    } finally {
+      setIsEnrolling(false);
     }
   };
 
@@ -202,8 +192,9 @@ const CourseDetail = () => {
                   onClick={handleEnroll}
                   className="spotify-button text-lg px-8 py-3 animate-fade-in"
                   style={{ animationDelay: "0.4s" }}
+                  disabled={isEnrolled || isEnrolling}
                 >
-                  {course.externalLink ? "Visit Course" : "Enroll Now"}
+                  {isEnrolling ? "Enrolling..." : isEnrolled ? "Enrolled" : course.externalLink ? "Visit Course" : "Enroll Now"}
                   <ArrowLeft className="ml-2 h-5 w-5 rotate-180" />
                 </Button>
               </div>

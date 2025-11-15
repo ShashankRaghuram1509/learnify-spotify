@@ -238,9 +238,9 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'full_name', '')
   );
   
-  -- Assign default student role
+  -- Assign role from metadata, defaulting to 'student'
   INSERT INTO public.user_roles (user_id, role)
-  VALUES (NEW.id, 'student');
+  VALUES (NEW.id, COALESCE((NEW.raw_user_meta_data->>'role')::public.app_role, 'student'));
   
   RETURN NEW;
 END;
