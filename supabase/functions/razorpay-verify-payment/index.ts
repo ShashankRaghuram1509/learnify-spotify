@@ -89,7 +89,6 @@ serve(async (req) => {
       });
 
     if (paymentError) {
-      console.error('Error storing payment:', paymentError);
       throw new Error('Payment storage failed');
     }
 
@@ -117,8 +116,6 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in razorpay-verify-payment:', error);
-    
     // Return user-friendly error messages without exposing internals
     let userMessage = 'Payment verification failed. Please contact support.';
     let statusCode = 500;

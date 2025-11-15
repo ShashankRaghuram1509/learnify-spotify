@@ -1,7 +1,7 @@
 project_id = "anhglcjmbkqezqfyunby"
 
 [functions.ai-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.razorpay-create-order]
 verify_jwt = false
