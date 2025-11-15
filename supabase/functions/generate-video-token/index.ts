@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createHmac } from "https://deno.land/std@0.168.0/node/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,25 +8,16 @@ const corsHeaders = {
 };
 
 // ZegoCloud token generation
-function generateToken(appId: number, serverSecret: string, userId: string, roomId: string): string {
+async function generateToken(appId: number, serverSecret: string, userId: string, roomId: string): Promise<string> {
   const time = Math.floor(Date.now() / 1000) + 3600; // 1 hour expiry
   const nonce = Math.floor(Math.random() * 2147483647);
   const body = { app_id: appId, user_id: userId, room_id: roomId, privilege: { 1: 1, 2: 1 }, stream_id_list: null };
   const payload = JSON.stringify(body);
   
-  // Create signature
-  const hash = `${appId}${roomId}${userId}${time}${serverSecret}${nonce}`;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(hash);
-  
-  // Simple hash (in production, use proper HMAC-SHA256)
-  let hashValue = 0;
-  for (let i = 0; i < data.length; i++) {
-    hashValue = ((hashValue << 5) - hashValue) + data[i];
-    hashValue = hashValue & hashValue;
-  }
-  
-  const signature = Math.abs(hashValue).toString(16);
+  // Create signature using HMAC-SHA256
+  const hmac = createHmac('sha256', serverSecret);
+  hmac.update(`${appId}${roomId}${userId}${time}${nonce}`);
+  const signature = hmac.digest('hex');
   
   const tokenData = {
     app_id: appId,
@@ -99,7 +91,7 @@ serve(async (req) => {
     }
 
     // Generate token
-    const token = generateToken(appId, serverSecret, user.id, room_id);
+    const token = await generateToken(appId, serverSecret, user.id, room_id);
 
     return new Response(
       JSON.stringify({ 

@@ -55,7 +55,7 @@ serve(async (req) => {
       .select('id')
       .eq('student_id', user.id)
       .eq('course_id', course_id)
-      .single();
+      .maybeSingle();
 
     if (existingEnrollment) {
       return new Response(

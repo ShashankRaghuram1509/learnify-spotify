@@ -19,10 +19,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
+interface VideoSession {
+  id: string;
+  teacher_id: string;
+  student_id: string | null;
+  scheduled_at: string;
+  meeting_url: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+}
+
 export default function VideoCallManagement() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState<string>("14:00");
-  const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const [upcomingSessions, setUpcomingSessions] = useState<VideoSession[]>([]);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -52,7 +61,7 @@ export default function VideoCallManagement() {
           .from("video_call_schedules")
           .insert({
             teacher_id: user.id,
-            student_id: user.id, // TODO: Replace with actual student ID when selecting students
+            student_id: null, // FIXME: hardcoded student_id
             scheduled_at: sessionTime,
             meeting_url: roomID,
             status: 'scheduled'
@@ -133,7 +142,7 @@ export default function VideoCallManagement() {
       <div className="px-6 pb-6">
         <h3 className="text-lg font-semibold mt-6 mb-4">Upcoming Sessions</h3>
         <div className="space-y-3">
-          {upcomingSessions.map((session: any) => (
+          {upcomingSessions.map((session: VideoSession) => (
             <div key={session.id} className="flex items-center justify-between p-3 bg-spotify-gray/20 rounded-lg">
               <div>
                 <p className="font-semibold">Session with {session.student_id || "a student"}</p>
