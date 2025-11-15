@@ -37,8 +37,12 @@ const CourseCard: React.FC<CourseCardProps> = ({
   externalLink,
   className,
 }) => {
+  const safeRating = rating ?? 0;
+  const safePrice = price ?? 0;
+  const safeDiscountPrice = discountPrice ?? 0;
+  
   const hasDiscount = discountPrice !== undefined && discountPrice > 0;
-  const isFree = price === 0 || (discountPrice !== undefined && discountPrice === 0);
+  const isFree = safePrice === 0 || (discountPrice !== undefined && safeDiscountPrice === 0);
   
   const CardContent = () => (
     <>
@@ -76,12 +80,12 @@ const CourseCard: React.FC<CourseCardProps> = ({
         <div className="flex items-center mb-3">
           <div className="flex items-center text-yellow-400">
             <Star size={16} fill="currentColor" stroke="none" />
-            <span className="ml-1 text-sm font-medium">{rating.toFixed(1)}</span>
+            <span className="ml-1 text-sm font-medium">{safeRating.toFixed(1)}</span>
           </div>
           <span className="mx-2 text-spotify-text/40">•</span>
           <div className="flex items-center text-spotify-text/70 text-sm">
             <Users size={14} className="mr-1" />
-            {students} students
+            {students ?? 0} students
           </div>
         </div>
         
@@ -96,13 +100,13 @@ const CourseCard: React.FC<CourseCardProps> = ({
               <span className="text-green-500 font-bold">Free</span>
             ) : hasDiscount ? (
               <>
-                <span className="text-spotify font-bold">${discountPrice.toFixed(2)}</span>
+                <span className="text-spotify font-bold">${safeDiscountPrice.toFixed(2)}</span>
                 <span className="text-spotify-text/50 line-through text-sm ml-2">
-                  ${price.toFixed(2)}
+                  ${safePrice.toFixed(2)}
                 </span>
               </>
             ) : (
-              <span className="text-spotify font-bold">${price.toFixed(2)}</span>
+              <span className="text-spotify font-bold">${safePrice.toFixed(2)}</span>
             )}
           </div>
           
