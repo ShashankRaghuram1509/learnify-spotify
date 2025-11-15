@@ -34,4 +34,5 @@ export default defineConfig(({ mode }) => {
     environment: 'jsdom',
     setupFiles: './src/tests/setup.ts',
   }
-}));
+  };
+});

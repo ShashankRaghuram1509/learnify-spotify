@@ -55,11 +55,11 @@ export default function PremiumCourses() {
       try {
         const { data, error } = await supabase
           .from("profiles")
-          .select("is_pro")
+          .select("subscription_tier")
           .eq("id", user.id)
           .single();
         if (error) throw error;
-        setIsPro(data?.is_pro || false);
+        setIsPro(data?.subscription_tier !== 'free' && data?.subscription_tier !== null);
       } catch (error) {
         console.error("Error fetching profile:", error);
       } finally {
