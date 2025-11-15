@@ -20,9 +20,15 @@ const CourseDetail = () => {
     const fetchCourse = async () => {
       try {
         setLoading(true);
+        
+        // Fetch course with enrollment count
         const { data, error } = await supabase
           .from("courses")
-          .select("*")
+          .select(`
+            *,
+            modules:modules(count),
+            enrollments:enrollments(count)
+          `)
           .eq("id", id)
           .single();
 
@@ -30,8 +36,21 @@ const CourseDetail = () => {
           throw error;
         }
 
-        setCourse(data);
+        // Calculate student count from enrollments
+        const studentCount = data?.enrollments?.[0]?.count || 0;
+        const moduleCount = data?.modules?.[0]?.count || 0;
+
+        setCourse({
+          ...data,
+          students: studentCount,
+          rating: 4.5, // Default rating
+          instructor: "Expert Instructor",
+          duration: `${moduleCount} modules`,
+          level: "All Levels",
+          image: data?.thumbnail_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600"
+        });
       } catch (error) {
+        console.error("Course fetch error:", error);
         toast.error("Failed to load course details.");
       } finally {
         setLoading(false);
@@ -155,32 +174,32 @@ const CourseDetail = () => {
                 <div className="flex flex-wrap items-center gap-6 mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
                   <div className="flex items-center">
                     <Star className="h-5 w-5 text-yellow-500 mr-1" />
-                    <span className="font-medium">{course.rating}</span>
-                    <span className="text-spotify-text/70 ml-1">({course.students} students)</span>
+                    <span className="font-medium">{course?.rating ?? 4.5}</span>
+                    <span className="text-spotify-text/70 ml-1">({(course?.students ?? 0).toLocaleString()} students)</span>
                   </div>
                   
                   <div className="flex items-center text-spotify-text/70">
                     <Clock className="h-5 w-5 mr-1" />
-                    <span>{course.duration}</span>
+                    <span>{course?.duration ?? "Self-paced"}</span>
                   </div>
                   
                   <div className="flex items-center text-spotify-text/70">
                     <BookOpen className="h-5 w-5 mr-1" />
-                    <span>{course.level}</span>
+                    <span>{course?.level ?? "All Levels"}</span>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-4 mb-8 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-                  {course.discountPrice > 0 ? (
+                  {(course?.discountPrice ?? 0) > 0 ? (
                     <>
-                      <span className="text-3xl font-bold text-spotify">${course.discountPrice}</span>
-                      <span className="text-xl text-spotify-text/50 line-through">${course.price}</span>
+                      <span className="text-3xl font-bold text-spotify">${(course?.discountPrice ?? 0).toFixed(2)}</span>
+                      <span className="text-xl text-spotify-text/50 line-through">${(course?.price ?? 0).toFixed(2)}</span>
                       <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                        Save ${(course.price - course.discountPrice).toFixed(2)}
+                        Save ${((course?.price ?? 0) - (course?.discountPrice ?? 0)).toFixed(2)}
                       </span>
                     </>
-                  ) : course.price > 0 ? (
-                    <span className="text-3xl font-bold text-spotify">${course.price}</span>
+                  ) : (course?.price ?? 0) > 0 ? (
+                    <span className="text-3xl font-bold text-spotify">${(course?.price ?? 0).toFixed(2)}</span>
                   ) : (
                     <span className="text-3xl font-bold text-green-500">Free</span>
                   )}
@@ -199,8 +218,8 @@ const CourseDetail = () => {
               
               <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
                 <img 
-                  src={course.image}
-                  alt={course.title}
+                  src={course?.image ?? course?.thumbnail_url ?? "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600"}
+                  alt={course?.title ?? "Course"}
                   className="rounded-2xl shadow-2xl w-full aspect-video object-cover"
                 />
               </div>
@@ -215,19 +234,19 @@ const CourseDetail = () => {
               <div className="bg-spotify-gray/20 rounded-xl p-6 text-center">
                 <Users className="h-12 w-12 text-spotify mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Students</h3>
-                <p className="text-spotify-text/70">{course.students.toLocaleString()}</p>
+                <p className="text-spotify-text/70">{(course?.students ?? 0).toLocaleString()}</p>
               </div>
               
               <div className="bg-spotify-gray/20 rounded-xl p-6 text-center">
                 <Clock className="h-12 w-12 text-spotify mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Duration</h3>
-                <p className="text-spotify-text/70">{course.duration}</p>
+                <p className="text-spotify-text/70">{course?.duration ?? "Self-paced"}</p>
               </div>
               
               <div className="bg-spotify-gray/20 rounded-xl p-6 text-center">
                 <BookOpen className="h-12 w-12 text-spotify mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Level</h3>
-                <p className="text-spotify-text/70">{course.level}</p>
+                <p className="text-spotify-text/70">{course?.level ?? "All Levels"}</p>
               </div>
             </div>
           </div>
@@ -269,11 +288,11 @@ const CourseDetail = () => {
               <div className="flex items-center space-x-6">
                 <div className="w-20 h-20 bg-spotify rounded-full flex items-center justify-center">
                   <span className="text-white font-bold text-2xl">
-                    {course.instructor.split(' ').map(n => n[0]).join('')}
+                    {(course?.instructor ?? "Expert Instructor").split(' ').map(n => n[0]).join('')}
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-2xl font-semibold mb-2">{course.instructor}</h3>
+                  <h3 className="text-2xl font-semibold mb-2">{course?.instructor ?? "Expert Instructor"}</h3>
                   <p className="text-spotify-text/70">
                     Experienced instructor with years of industry experience in web development and software engineering.
                   </p>
