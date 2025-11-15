@@ -92,16 +92,6 @@ const Courses = () => {
         setLoading(true);
         let query = supabase.from("courses").select("*");
 
-        // Apply category filter
-        if (selectedCategory !== "all") {
-          query = query.eq("category", selectedCategory);
-        }
-
-        // Apply level filter
-        if (selectedLevel !== "all") {
-          query = query.eq("level", selectedLevel);
-        }
-
         // Apply search query
         if (searchQuery) {
           query = query.ilike("title", `%${searchQuery}%`);
@@ -109,20 +99,20 @@ const Courses = () => {
 
         // Apply sorting
         switch (sortBy) {
-          case "popular":
-            query = query.order("students", { ascending: false });
+          case "newest":
+            query = query.order("created_at", { ascending: false });
+            break;
+          case "oldest":
+            query = query.order("created_at", { ascending: true });
             break;
           case "price-low":
-            query = query.order("price", { ascending: true });
+            query = query.order("price", { ascending: true, nullsFirst: false });
             break;
           case "price-high":
-            query = query.order("price", { ascending: false });
-            break;
-          case "rating":
-            query = query.order("rating", { ascending: false });
+            query = query.order("price", { ascending: false, nullsFirst: false });
             break;
           default:
-            break;
+            query = query.order("created_at", { ascending: false });
         }
 
         const { data, error } = await query;

@@ -22,8 +22,8 @@ const StudentDashboardPreview = () => {
         const { count } = await supabase
           .from("enrollments")
           .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id);
-        setEnrolledCount(count);
+          .eq("student_id", user.id);
+        setEnrolledCount(count || 0);
       } catch (error) {
         console.error("Error fetching enrolled courses count:", error);
       }
@@ -72,8 +72,8 @@ const TeacherDashboardPreview = () => {
         // This is a simplified count. A more complex query would be needed for a real app.
         const { count } = await supabase
           .from("enrollments")
-          .select("user_id", { count: "exact", head: true });
-        setStudentCount(count);
+          .select("student_id", { count: "exact", head: true });
+        setStudentCount(count || 0);
       } catch (error) {
         console.error("Error fetching student count:", error);
       }
@@ -126,7 +126,7 @@ const DashboardPreview = () => {
   );
 };
 
-import { supabase } from "@/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { user } = useAuth();
