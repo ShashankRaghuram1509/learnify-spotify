@@ -29,6 +29,7 @@ import AuthRedirect from "./components/AuthRedirect";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import AIAssistant from "./components/AIAssistant";
 import Live from "./pages/Live";
+import VideoCall from "./pages/VideoCall";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
 
           {/* Live Video Call Route */}
           <Route path="/live" element={<Live />} />
+          <Route path="/video-call/:roomID" element={<VideoCall />} />
 
           {/* Protected Dashboard Routes */}
           <Route element={<DashboardLayout />}>
