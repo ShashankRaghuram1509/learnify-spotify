@@ -25,3 +25,6 @@ dist-ssr
 
 # Maven
 /backend/target/
+
+# Coverage
+coverage/
