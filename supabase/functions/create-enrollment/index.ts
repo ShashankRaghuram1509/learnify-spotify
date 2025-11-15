@@ -17,9 +17,10 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
+    // Create client with user's JWT for authentication
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
           headers: { Authorization: authHeader },
@@ -27,10 +28,14 @@ serve(async (req) => {
       }
     );
 
+    // Get authenticated user
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
+      console.error('Auth error:', userError);
       throw new Error('Unauthorized');
     }
+
+    console.log('User authenticated:', user.id);
 
     const { course_id } = await req.json();
 
@@ -46,8 +51,11 @@ serve(async (req) => {
       .single();
 
     if (courseError || !course) {
+      console.error('Course error:', courseError);
       throw new Error('Course not found');
     }
+
+    console.log('Course found:', course);
 
     // Check if already enrolled
     const { data: existingEnrollment } = await supabaseClient
@@ -58,6 +66,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingEnrollment) {
+      console.log('Already enrolled');
       return new Response(
         JSON.stringify({ success: true, message: 'Already enrolled' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -74,15 +83,24 @@ serve(async (req) => {
         .eq('status', 'success')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (paymentError || !payment) {
+        console.error('Payment error:', paymentError);
         throw new Error('Payment required for premium course');
       }
     }
 
+    // Create service role client for enrollment creation (bypasses RLS)
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    console.log('Creating enrollment...');
+
     // Create enrollment using service role to bypass RLS
-    const { data: enrollment, error: enrollmentError } = await supabaseClient
+    const { data: enrollment, error: enrollmentError } = await serviceClient
       .from('enrollments')
       .insert({
         student_id: user.id,
@@ -92,8 +110,11 @@ serve(async (req) => {
       .single();
 
     if (enrollmentError) {
+      console.error('Enrollment error:', enrollmentError);
       throw new Error('Failed to create enrollment');
     }
+
+    console.log('Enrollment created:', enrollment);
 
     return new Response(
       JSON.stringify({ success: true, enrollment }),
@@ -101,6 +122,7 @@ serve(async (req) => {
     );
   } catch (error) {
     const err = error as Error;
+    console.error('Edge function error:', err);
     return new Response(
       JSON.stringify({ error: err.message || 'Failed to create enrollment' }),
       { 
