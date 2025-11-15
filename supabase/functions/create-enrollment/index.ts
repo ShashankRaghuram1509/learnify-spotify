@@ -28,14 +28,20 @@ serve(async (req) => {
       }
     );
 
-    // Get authenticated user
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !user) {
-      console.error('Auth error:', userError);
+    // Extract user from verified JWT (avoids GoTrue session requirement)
+    const token = authHeader.replace('Bearer ', '');
+    let userId: string | null = null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1] || ''));
+      userId = payload?.sub || null;
+    } catch (e) {
+      console.error('JWT parse error:', e);
+    }
+    if (!userId) {
       throw new Error('Unauthorized');
     }
 
-    console.log('User authenticated:', user.id);
+    console.log('User authenticated:', userId);
 
     const { course_id } = await req.json();
 
@@ -61,7 +67,7 @@ serve(async (req) => {
     const { data: existingEnrollment } = await supabaseClient
       .from('enrollments')
       .select('id')
-      .eq('student_id', user.id)
+      .eq('student_id', userId)
       .eq('course_id', course_id)
       .maybeSingle();
 
@@ -78,7 +84,7 @@ serve(async (req) => {
       const { data: payment, error: paymentError } = await supabaseClient
         .from('payments')
         .select('id, status')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('course_id', course_id)
         .eq('status', 'success')
         .order('created_at', { ascending: false })
@@ -103,7 +109,7 @@ serve(async (req) => {
     const { data: enrollment, error: enrollmentError } = await serviceClient
       .from('enrollments')
       .insert({
-        student_id: user.id,
+        student_id: userId,
         course_id: course_id,
       })
       .select()
