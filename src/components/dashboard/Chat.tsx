@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,70 +11,45 @@ import {
 import { Input } from "@/components/ui/input";
 import { Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import ZIM from "zego-zim-web";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
-const appID = 1272193580;
-// Note: In a production app, the token should be generated on a server and fetched by the client.
-// We are generating it here for demonstration purposes only.
-const serverSecret = "831429defc85d636c08678164bb9a87f";
-
+interface Message {
+  id: string;
+  message: string;
+  sender_id: string;
+  recipient_id: string;
+  created_at: string;
+}
 
 export default function Chat() {
   const { user } = useAuth();
-  const [zim, setZim] = useState<ZIM | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
-  const [conversationID, setConversationID] = useState("default-conversation"); // In a real app, this would be dynamic
+  const [recipientId, setRecipientId] = useState<string>(""); // In a real app, this would be selected from a list
 
-  const zimRef = useRef<ZIM | null>(null);
+  const handleSendMessage = async () => {
+    if (!inputText.trim() || !user || !recipientId) return;
 
-  useEffect(() => {
-    if (user && !zimRef.current) {
-      const newZim = ZIM.getInstance();
-      if(newZim){
-        zimRef.current = newZim;
-        setZim(newZim);
+    try {
+      const { data, error } = await supabase
+        .from("chat_messages")
+        .insert({
+          message: inputText,
+          sender_id: user.id,
+          recipient_id: recipientId,
+        })
+        .select()
+        .single();
 
-        newZim.on("receivePeerMessage", (zim, { messageList }) => {
-          setMessages((prev) => [...prev, ...messageList]);
-        });
-
-        const token = ZIM.generateToken(appID, user.id, serverSecret, 60 * 60 * 24);
-
-        newZim.login({ userID: user.id, userName: user.email }, token)
-          .then(() => {
-            console.log("ZIM login success");
-          })
-          .catch((err) => {
-            console.error("ZIM login error", err);
-          });
-      }
+      if (error) throw error;
+      
+      setMessages((prev) => [...prev, data]);
+      setInputText("");
+    } catch (error) {
+      console.error("Failed to send message", error);
+      toast.error("Failed to send message");
     }
-
-    return () => {
-      zimRef.current?.logout();
-    }
-  }, [user]);
-
-  const handleSendMessage = () => {
-    if (!zim || !inputText.trim() || !user) return;
-
-    const toConversationID = conversationID; // In a 1:1 chat, this would be the other user's ID
-    const message = {
-      type: 1,
-      message: inputText,
-      toConversationID,
-      conversationType: 0,
-    };
-
-    zim.sendMessage(message)
-      .then(({ message }) => {
-        setMessages((prev) => [...prev, message]);
-        setInputText("");
-      })
-      .catch((err) => {
-        console.error("Failed to send message", err);
-      });
   };
 
   return (
@@ -83,17 +58,20 @@ export default function Chat() {
         <CardTitle>1:1 Chat</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 h-64 overflow-y-auto">
-        {messages.map((msg, index) => (
-          <div key={index} className={`flex items-start gap-4 ${msg.senderUserID === user?.id ? 'justify-end' : ''}`}>
-             {msg.senderUserID !== user?.id && (
+        {messages.length === 0 && (
+          <p className="text-muted-foreground text-center">No messages yet. Start a conversation!</p>
+        )}
+        {messages.map((msg) => (
+          <div key={msg.id} className={`flex items-start gap-4 ${msg.sender_id === user?.id ? 'justify-end' : ''}`}>
+             {msg.sender_id !== user?.id && (
               <Avatar>
-                <AvatarFallback>{msg.senderUserID?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{msg.sender_id?.substring(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
              )}
-            <div className={`rounded-lg p-3 text-sm ${msg.senderUserID === user?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+            <div className={`rounded-lg p-3 text-sm ${msg.sender_id === user?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
               <p>{msg.message}</p>
             </div>
-             {msg.senderUserID === user?.id && (
+             {msg.sender_id === user?.id && (
               <Avatar>
                 <AvatarFallback>ME</AvatarFallback>
               </Avatar>

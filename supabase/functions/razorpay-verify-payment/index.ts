@@ -117,16 +117,17 @@ serve(async (req) => {
     );
   } catch (error) {
     // Return user-friendly error messages without exposing internals
+    const err = error as Error;
     let userMessage = 'Payment verification failed. Please contact support.';
     let statusCode = 500;
     
-    if (error.message === 'Invalid payment signature') {
+    if (err.message === 'Invalid payment signature') {
       userMessage = 'Payment verification failed. Please try again.';
       statusCode = 400;
-    } else if (error.message === 'Unauthorized' || error.message === 'No authorization header') {
+    } else if (err.message === 'Unauthorized' || err.message === 'No authorization header') {
       userMessage = 'Authentication required.';
       statusCode = 401;
-    } else if (error.message.includes('Invalid')) {
+    } else if (err.message.includes('Invalid')) {
       userMessage = 'Invalid payment data provided.';
       statusCode = 400;
     }

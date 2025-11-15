@@ -73,11 +73,12 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    const err = error as Error;
     return new Response(
       JSON.stringify({ error: 'Failed to create payment order. Please try again.' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: error.message === 'Unauthorized' || error.message === 'Authentication required' ? 401 : 500 
+        status: err.message === 'Unauthorized' || err.message === 'Authentication required' ? 401 : 500 
       }
     );
   }

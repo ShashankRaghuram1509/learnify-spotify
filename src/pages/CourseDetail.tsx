@@ -60,7 +60,7 @@ const CourseDetail = () => {
     try {
       const { error } = await supabase.from('enrollments').insert([
         {
-          user_id: user.id,
+          student_id: user.id,
           course_id: course.id,
         },
       ]);

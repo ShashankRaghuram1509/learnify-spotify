@@ -31,7 +31,7 @@ export default function VideoCallManagement() {
       if (!user) return;
       try {
         const { data, error } = await supabase
-          .from("video_sessions")
+          .from("video_call_schedules")
           .select("*")
           .eq("teacher_id", user.id);
         if (error) throw error;
@@ -48,16 +48,18 @@ export default function VideoCallManagement() {
       const roomID = Math.random().toString(36).substring(2, 9);
       const sessionTime = `${format(date, "yyyy-MM-dd")}T${time}`;
       try {
-        const { error } = await supabase.from("video_sessions").insert({
+        const { error } = await supabase.from("video_call_schedules").insert({
           teacher_id: user.id,
-          room_id: roomID,
-          session_time: sessionTime,
+          student_id: user.id, // TODO: Replace with actual student ID when selecting students
+          scheduled_at: sessionTime,
+          meeting_url: `https://app.lovable.dev/video-call/${roomID}`,
+          status: 'scheduled'
         });
         if (error) throw error;
         toast.success(`Session scheduled for ${format(date, "PPP")} at ${time}`);
         // Refresh sessions
         const { data, error: fetchError } = await supabase
-          .from("video_sessions")
+          .from("video_call_schedules")
           .select("*")
           .eq("teacher_id", user.id);
         if (fetchError) throw fetchError;
