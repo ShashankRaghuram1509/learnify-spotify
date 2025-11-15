@@ -5,172 +5,7 @@ import Footer from "@/components/Footer";
 import CourseCard from "@/components/CourseCard";
 import { Search, Filter, SlidersHorizontal, SortAsc, SortDesc, X } from "lucide-react";
 import { toast } from "sonner";
-
-// Mock data - in a real app, this would come from an API
-const allCourses = [
-  {
-    id: "web-dev-101",
-    title: "Web Development Fundamentals",
-    instructor: "Sarah Johnson",
-    rating: 4.8,
-    students: 1543,
-    duration: "8 weeks",
-    level: "Beginner",
-    price: 89.99,
-    discountPrice: 49.99,
-    image: "https://images.unsplash.com/photo-1537432376769-00f5c2f4c8d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    featured: true,
-    category: "development"
-  },
-  {
-    id: "ui-ux-design",
-    title: "UI/UX Design Mastery",
-    instructor: "Michael Chang",
-    rating: 4.7,
-    students: 982,
-    duration: "10 weeks",
-    level: "Intermediate",
-    price: 99.99,
-    discountPrice: 69.99,
-    image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    featured: true,
-    category: "design"
-  },
-  {
-    id: "data-science-python",
-    title: "Data Science with Python",
-    instructor: "Emily Rodriguez",
-    rating: 4.9,
-    students: 2102,
-    duration: "12 weeks",
-    level: "Intermediate",
-    price: 119.99,
-    discountPrice: 79.99,
-    image: "https://images.unsplash.com/photo-1551033406-611cf9a28f67?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    featured: true,
-    category: "data-science"
-  },
-  {
-    id: "digital-marketing",
-    title: "Digital Marketing Strategies",
-    instructor: "Alex Thompson",
-    rating: 4.6,
-    students: 1287,
-    duration: "6 weeks",
-    level: "All Levels",
-    price: 79.99,
-    discountPrice: 39.99,
-    image: "https://images.unsplash.com/photo-1533750516457-a7f992034fec?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2326&q=80",
-    featured: true,
-    category: "marketing"
-  },
-  {
-    id: "ai-machine-learning",
-    title: "AI & Machine Learning Fundamentals",
-    instructor: "David Chen",
-    rating: 4.8,
-    students: 1843,
-    duration: "14 weeks",
-    level: "Advanced",
-    price: 129.99,
-    discountPrice: 89.99,
-    image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2301&q=80",
-    featured: true,
-    category: "ai"
-  },
-  {
-    id: "mobile-app-dev",
-    title: "Mobile App Development",
-    instructor: "Jessica Lee",
-    rating: 4.7,
-    students: 1204,
-    duration: "10 weeks",
-    level: "Intermediate",
-    price: 99.99,
-    discountPrice: 59.99,
-    image: "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    featured: true,
-    category: "development"
-  },
-  {
-    id: "js-advanced",
-    title: "Advanced JavaScript Concepts",
-    instructor: "Ryan Miller",
-    rating: 4.9,
-    students: 2341,
-    duration: "8 weeks",
-    level: "Advanced",
-    price: 94.99,
-    discountPrice: 64.99,
-    image: "https://images.unsplash.com/photo-1555099962-4199c345e5dd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    category: "development"
-  },
-  {
-    id: "react-masterclass",
-    title: "React.js Masterclass",
-    instructor: "Amanda Lee",
-    rating: 4.8,
-    students: 1876,
-    duration: "10 weeks",
-    level: "Intermediate",
-    price: 89.99,
-    discountPrice: 59.99,
-    image: "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    category: "development"
-  },
-  {
-    id: "digital-illustration",
-    title: "Digital Illustration for Beginners",
-    instructor: "Carlos Mendez",
-    rating: 4.6,
-    students: 1032,
-    duration: "6 weeks",
-    level: "Beginner",
-    price: 69.99,
-    discountPrice: 39.99,
-    image: "https://images.unsplash.com/photo-1618788372246-79faff0c3742?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2342&q=80",
-    category: "design"
-  },
-  {
-    id: "adobe-photoshop",
-    title: "Adobe Photoshop Essential Training",
-    instructor: "Maria Garcia",
-    rating: 4.7,
-    students: 1543,
-    duration: "8 weeks",
-    level: "Beginner",
-    price: 74.99,
-    discountPrice: 49.99,
-    image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2342&q=80",
-    category: "design"
-  },
-  {
-    id: "python-data-analysis",
-    title: "Python for Data Analysis",
-    instructor: "Andrew Wilson",
-    rating: 4.9,
-    students: 2103,
-    duration: "10 weeks",
-    level: "Intermediate",
-    price: 99.99,
-    discountPrice: 69.99,
-    image: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    category: "data-science"
-  },
-  {
-    id: "seo-fundamentals",
-    title: "SEO Fundamentals",
-    instructor: "Laura Martinez",
-    rating: 4.6,
-    students: 987,
-    duration: "4 weeks",
-    level: "Beginner",
-    price: 59.99,
-    discountPrice: 29.99,
-    image: "https://images.unsplash.com/photo-1571156425562-4a49b0d409c3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    category: "marketing"
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
 
 const categories = [
   { id: "all", name: "All Categories" },
@@ -227,88 +62,86 @@ const Courses = () => {
     }
   }, [location.search]);
   
-  // Use only mock courses data - no backend calls
+  // Fetch courses from Supabase
   useEffect(() => {
-    const loadCourses = async () => {
+    const fetchCourses = async () => {
       try {
         setLoading(true);
-        
-        // Use mock data directly
-        console.log("Using mock courses data");
-        setCourses(allCourses);
+        const { data, error } = await supabase.from("courses").select("*");
+
+        if (error) {
+          throw error;
+        }
+
+        setCourses(data);
       } catch (error) {
         console.error("Error loading courses:", error);
-        toast.error("Failed to load courses. Using fallback data.");
-        
-        // Use mock data as fallback
-        setCourses(allCourses);
+        toast.error("Failed to load courses.");
       } finally {
         setLoading(false);
       }
     };
 
-    loadCourses();
+    fetchCourses();
   }, []);
   
   // Apply filters and search
   useEffect(() => {
-    if (!courses || courses.length === 0) {
-      setFilteredCourses([]);
-      return;
-    }
-    
-    let result = [...courses];
-    
-    // Apply category filter
-    if (selectedCategory !== "all") {
-      result = result.filter(course => 
-        course.category && course.category.toLowerCase() === selectedCategory.toLowerCase()
-      );
-    }
-    
-    // Apply level filter
-    if (selectedLevel !== "all") {
-      result = result.filter(course => 
-        course.level && course.level.toLowerCase() === selectedLevel.toLowerCase()
-      );
-    }
-    
-    // Apply search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        course => 
-          (course.title && course.title.toLowerCase().includes(query)) || 
-          (course.instructor && course.instructor.toLowerCase().includes(query))
-      );
-    }
-    
-    // Apply sorting
-    switch (sortBy) {
-      case "popular":
-        result.sort((a, b) => (b.students || 0) - (a.students || 0));
-        break;
-      case "price-low":
-        result.sort((a, b) => 
-          ((a.discountPrice !== undefined ? a.discountPrice : a.price) || 0) - 
-          ((b.discountPrice !== undefined ? b.discountPrice : b.price) || 0)
-        );
-        break;
-      case "price-high":
-        result.sort((a, b) => 
-          ((b.discountPrice !== undefined ? b.discountPrice : b.price) || 0) - 
-          ((a.discountPrice !== undefined ? a.discountPrice : a.price) || 0)
-        );
-        break;
-      case "rating":
-        result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      default:
-        break;
-    }
-    
-    setFilteredCourses(result);
-  }, [selectedCategory, selectedLevel, searchQuery, sortBy, courses]);
+    const fetchCourses = async () => {
+      try {
+        setLoading(true);
+        let query = supabase.from("courses").select("*");
+
+        // Apply category filter
+        if (selectedCategory !== "all") {
+          query = query.eq("category", selectedCategory);
+        }
+
+        // Apply level filter
+        if (selectedLevel !== "all") {
+          query = query.eq("level", selectedLevel);
+        }
+
+        // Apply search query
+        if (searchQuery) {
+          query = query.ilike("title", `%${searchQuery}%`);
+        }
+
+        // Apply sorting
+        switch (sortBy) {
+          case "popular":
+            query = query.order("students", { ascending: false });
+            break;
+          case "price-low":
+            query = query.order("price", { ascending: true });
+            break;
+          case "price-high":
+            query = query.order("price", { ascending: false });
+            break;
+          case "rating":
+            query = query.order("rating", { ascending: false });
+            break;
+          default:
+            break;
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          throw error;
+        }
+
+        setFilteredCourses(data);
+      } catch (error) {
+        console.error("Error loading courses:", error);
+        toast.error("Failed to load courses.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, [selectedCategory, selectedLevel, searchQuery, sortBy]);
   
   // Update URL with search parameters
   useEffect(() => {

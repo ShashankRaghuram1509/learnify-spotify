@@ -14,6 +14,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState<"student" | "teacher">("student");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
@@ -43,7 +44,7 @@ export default function Auth() {
         }
         
         await signIn(email, password);
-        navigate("/");
+        navigate("/auth/redirect");
       } else {
         // Validate signup input
         const result = signUpSchema.safeParse({ email, password, fullName });
@@ -60,7 +61,7 @@ export default function Auth() {
           return;
         }
         
-        await signUp(email, password, fullName);
+        await signUp(email, password, fullName, role);
         setIsLogin(true);
       }
     } catch (error) {
@@ -137,6 +138,26 @@ export default function Auth() {
                 </p>
               )}
             </div>
+
+            {!isLogin && (
+              <div className="space-y-3">
+                <Label>I am a...</Label>
+                <RadioGroup
+                  defaultValue="student"
+                  className="flex items-center space-x-4"
+                  onValueChange={(value) => setRole(value as "student" | "teacher")}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="student" id="student" />
+                    <Label htmlFor="student">Student</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="teacher" id="teacher" />
+                    <Label htmlFor="teacher">Teacher</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Loading..." : isLogin ? "Login" : "Sign Up"}

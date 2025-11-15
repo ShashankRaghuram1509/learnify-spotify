@@ -12,6 +12,25 @@ import { Button } from "@/components/ui/button";
 
 const StudentDashboardPreview = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [enrolledCount, setEnrolledCount] = React.useState(0);
+
+  React.useEffect(() => {
+    const fetchEnrolledCount = async () => {
+      if (!user) return;
+      try {
+        const { count } = await supabase
+          .from("enrollments")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
+        setEnrolledCount(count);
+      } catch (error) {
+        console.error("Error fetching enrolled courses count:", error);
+      }
+    };
+    fetchEnrolledCount();
+  }, [user]);
+
   return (
     <Card className="bg-spotify-gray/30 border-white/10">
       <CardHeader>
@@ -25,7 +44,7 @@ const StudentDashboardPreview = () => {
         <div className="space-y-4">
           <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
             <span>Enrolled Courses</span>
-            <span className="font-bold text-spotify">5</span>
+            <span className="font-bold text-spotify">{enrolledCount}</span>
           </div>
           <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
             <span>Recent Notifications</span>
@@ -43,6 +62,25 @@ const StudentDashboardPreview = () => {
 
 const TeacherDashboardPreview = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [studentCount, setStudentCount] = React.useState(0);
+
+  React.useEffect(() => {
+    const fetchStudentCount = async () => {
+      if (!user) return;
+      try {
+        // This is a simplified count. A more complex query would be needed for a real app.
+        const { count } = await supabase
+          .from("enrollments")
+          .select("user_id", { count: "exact", head: true });
+        setStudentCount(count);
+      } catch (error) {
+        console.error("Error fetching student count:", error);
+      }
+    };
+    fetchStudentCount();
+  }, [user]);
+
   return (
     <Card className="bg-spotify-gray/30 border-white/10">
       <CardHeader>
@@ -56,7 +94,7 @@ const TeacherDashboardPreview = () => {
         <div className="space-y-4">
           <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
             <span>Active Students</span>
-            <span className="font-bold text-spotify">128</span>
+            <span className="font-bold text-spotify">{studentCount}</span>
           </div>
           <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
             <span>Upcoming Sessions</span>
@@ -88,16 +126,60 @@ const DashboardPreview = () => {
   );
 };
 
+import { supabase } from "@/supabaseClient";
+
 const Index = () => {
   const { user } = useAuth();
-
-  // Stats data
-  const stats = [
-    { label: "Courses", value: "200+", icon: BookOpen },
-    { label: "Students", value: "15k+", icon: Users },
-    { label: "Instructors", value: "50+", icon: Award },
+  const [stats, setStats] = React.useState([
+    { label: "Courses", value: "...", icon: BookOpen },
+    { label: "Students", value: "...", icon: Users },
+    { label: "Instructors", value: "...", icon: Award },
     { label: "Course Hours", value: "1,200+", icon: Clock },
-  ];
+  ]);
+
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { count: courseCount } = await supabase
+          .from("courses")
+          .select("*", { count: "exact", head: true });
+
+        const { count: studentCount } = await supabase
+          .from("user_roles")
+          .select("*", { count: "exact", head: true })
+          .eq("role", "student");
+
+        const { count: teacherCount } = await supabase
+          .from("user_roles")
+          .select("*", { count: "exact", head: true })
+          .eq("role", "teacher");
+
+        // Formatting numbers for display
+        const formatCount = (count) => {
+          if (count > 1000) return `${(count / 1000).toFixed(1)}k+`;
+          return `${count}+`;
+        };
+
+        setStats([
+          { label: "Courses", value: formatCount(courseCount), icon: BookOpen },
+          { label: "Students", value: formatCount(studentCount), icon: Users },
+          { label: "Instructors", value: formatCount(teacherCount), icon: Award },
+          { label: "Course Hours", value: "1,200+", icon: Clock }, // Stays hardcoded for now
+        ]);
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+        // Set fallback stats on error
+        setStats([
+          { label: "Courses", value: "200+", icon: BookOpen },
+          { label: "Students", value: "15k+", icon: Users },
+          { label: "Instructors", value: "50+", icon: Award },
+          { label: "Course Hours", value: "1,200+", icon: Clock },
+        ]);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   // Benefits data
   const benefits = [

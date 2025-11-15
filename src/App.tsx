@@ -25,8 +25,10 @@ import TeacherAnalytics from "./pages/dashboard/teacher/Analytics";
 import TeacherSchedule from "./pages/dashboard/teacher/Schedule";
 import TeacherProfile from "./pages/dashboard/teacher/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AuthRedirect from "./components/AuthRedirect";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import AIAssistant from "./components/AIAssistant";
+import Live from "./pages/Live";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +49,10 @@ const App = () => (
 
           {/* Authentication Routes */}
           <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/redirect" element={<AuthRedirect />} />
+
+          {/* Live Video Call Route */}
+          <Route path="/live" element={<Live />} />
 
           {/* Protected Dashboard Routes */}
           <Route element={<DashboardLayout />}>
