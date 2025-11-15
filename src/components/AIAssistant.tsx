@@ -127,7 +127,6 @@ export default function AIAssistant() {
         }
       }
     } catch (error) {
-      console.error("Chat error:", error);
       toast.error("Failed to get AI response. Please try again.");
       setMessages((prev) => prev.slice(0, -1));
     } finally {

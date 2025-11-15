@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               
               setUserRole(roleData?.role ?? null);
             } catch (error) {
-              console.error("Error fetching user role:", error);
+              // Silent fail - role will remain null
             }
           }, 0);
         } else {
@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             setUserRole(roleData?.role ?? null);
           } catch (error) {
-            console.error("Error fetching user role:", error);
+            // Silent fail - role will remain null
           }
         }, 0);
       }

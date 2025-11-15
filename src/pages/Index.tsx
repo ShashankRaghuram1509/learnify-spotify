@@ -25,7 +25,7 @@ const StudentDashboardPreview = () => {
           .eq("student_id", user.id);
         setEnrolledCount(count || 0);
       } catch (error) {
-        console.error("Error fetching enrolled courses count:", error);
+        // Silent fail - count remains 0
       }
     };
     fetchEnrolledCount();
@@ -75,7 +75,7 @@ const TeacherDashboardPreview = () => {
           .select("student_id", { count: "exact", head: true });
         setStudentCount(count || 0);
       } catch (error) {
-        console.error("Error fetching student count:", error);
+        // Silent fail - count remains 0
       }
     };
     fetchStudentCount();
@@ -167,7 +167,6 @@ const Index = () => {
           { label: "Course Hours", value: "1,200+", icon: Clock }, // Stays hardcoded for now
         ]);
       } catch (error) {
-        console.error("Error fetching stats:", error);
         // Set fallback stats on error
         setStats([
           { label: "Courses", value: "200+", icon: BookOpen },

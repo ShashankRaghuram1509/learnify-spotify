@@ -41,7 +41,7 @@ export default function ProgressTracker() {
         averageProgress,
       });
     } catch (error) {
-      console.error("Error fetching progress:", error);
+      // Silent fail - progress will show as 0
     } finally {
       setLoading(false);
     }

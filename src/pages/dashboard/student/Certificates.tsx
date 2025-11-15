@@ -63,7 +63,6 @@ export default function CertificatesPage() {
       setCertificates(formattedCerts);
     } catch (error: any) {
       toast.error("Failed to load certificates");
-      console.error("Error fetching certificates:", error);
     } finally {
       setLoading(false);
     }

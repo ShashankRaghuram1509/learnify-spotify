@@ -66,7 +66,6 @@ export default function MyCoursesPage() {
       setCourses(coursesWithCounts);
     } catch (error: any) {
       toast.error("Failed to load courses");
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -90,7 +89,6 @@ export default function MyCoursesPage() {
       fetchMyCourses();
     } catch (error: any) {
       toast.error("Failed to create course");
-      console.error(error);
     }
   };
 
@@ -106,7 +104,6 @@ export default function MyCoursesPage() {
       fetchMyCourses();
     } catch (error: any) {
       toast.error("Failed to delete course");
-      console.error(error);
     }
   };
 

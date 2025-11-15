@@ -37,7 +37,7 @@ export default function VideoCallManagement() {
         if (error) throw error;
         setUpcomingSessions(data);
       } catch (error) {
-        console.error("Error fetching sessions:", error);
+        // Silent fail - sessions will show as empty
       }
     };
     fetchSessions();
@@ -66,7 +66,6 @@ export default function VideoCallManagement() {
         setUpcomingSessions(data);
       } catch (error) {
         toast.error("Failed to schedule session.");
-        console.error("Error scheduling session:", error);
       }
     } else {
       toast.error("Please select a date and time.");

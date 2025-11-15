@@ -92,16 +92,20 @@ serve(async (req) => {
       throw new Error('Payment storage failed');
     }
 
-    // Upgrade user to pro status
+    // Upgrade user subscription tier
+    const expiryDate = new Date();
+    expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year from now
+
     const { error: profileError } = await supabaseClient
       .from('profiles')
-      .update({ is_pro: true })
+      .update({ 
+        subscription_tier: planName,
+        subscription_expires_at: expiryDate.toISOString()
+      })
       .eq('id', user.id);
 
     if (profileError) {
-      console.error('Error upgrading user to pro:', profileError);
-      // Decide if this should be a critical failure.
-      // For now, we'll log it but not fail the entire transaction.
+      throw new Error('Failed to upgrade subscription');
     }
 
     return new Response(

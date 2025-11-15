@@ -47,7 +47,6 @@ export default function Chat() {
       setMessages((prev) => [...prev, data]);
       setInputText("");
     } catch (error) {
-      console.error("Failed to send message", error);
       toast.error("Failed to send message");
     }
   };

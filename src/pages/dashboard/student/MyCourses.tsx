@@ -82,7 +82,6 @@ export default function MyCoursesPage() {
       setCourses(formattedCourses);
     } catch (error: any) {
       toast.error("Failed to load courses");
-      console.error(error);
     } finally {
       setLoading(false);
     }

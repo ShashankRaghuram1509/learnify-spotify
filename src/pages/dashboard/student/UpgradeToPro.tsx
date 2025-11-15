@@ -130,7 +130,6 @@ export default function UpgradeToProPage() {
               description: `You've upgraded to ${plan.name}!`,
             });
           } catch (error) {
-            console.error('Payment verification error:', error);
             toast({
               title: "Error",
               description: "Payment verification failed",
@@ -150,7 +149,6 @@ export default function UpgradeToProPage() {
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (error) {
-      console.error('Payment error:', error);
       toast({
         title: "Error",
         description: "Failed to process payment",
