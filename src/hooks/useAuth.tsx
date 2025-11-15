@@ -22,27 +22,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let roleTimeout: NodeJS.Timeout;
+
+    const fetchUserRole = async (userId: string) => {
+      try {
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId)
+          .single();
+
+        setUserRole(roleData?.role ?? null);
+      } catch (error) {
+        // Silent fail - role will remain null
+      }
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Defer role fetching
-          setTimeout(async () => {
-            try {
-              const { data: roleData } = await supabase
-                .from("user_roles")
-                .select("role")
-                .eq("user_id", session.user.id)
-                .single();
-              
-              setUserRole(roleData?.role ?? null);
-            } catch (error) {
-              // Silent fail - role will remain null
-            }
-          }, 0);
+          roleTimeout = setTimeout(() => fetchUserRole(session.user.id), 0);
         } else {
           setUserRole(null);
         }
@@ -57,25 +60,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        setTimeout(async () => {
-          try {
-            const { data: roleData } = await supabase
-              .from("user_roles")
-              .select("role")
-              .eq("user_id", session.user.id)
-              .single();
-            
-            setUserRole(roleData?.role ?? null);
-          } catch (error) {
-            // Silent fail - role will remain null
-          }
-        }, 0);
+        roleTimeout = setTimeout(() => fetchUserRole(session.user.id), 0);
       }
       
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (roleTimeout) {
+        clearTimeout(roleTimeout);
+      }
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, role: "student" | "teacher") => {
