@@ -61,7 +61,7 @@ export default function PremiumCourses() {
         if (error) throw error;
         setIsPro(data?.subscription_tier !== 'free' && data?.subscription_tier !== null);
       } catch (error) {
-        console.error("Error fetching profile:", error);
+        // Silent fail - isPro remains false
       } finally {
         setLoading(false);
       }

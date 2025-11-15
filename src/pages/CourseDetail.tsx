@@ -32,7 +32,6 @@ const CourseDetail = () => {
 
         setCourse(data);
       } catch (error) {
-        console.error("Error fetching course:", error);
         toast.error("Failed to load course details.");
       } finally {
         setLoading(false);
@@ -73,7 +72,6 @@ const CourseDetail = () => {
       toast.success("Enrolled successfully! Course content is now available.");
     } catch (error) {
       toast.error("Failed to enroll in the course. Please try again.");
-      console.error("Enrollment error:", error);
     } finally {
       setIsEnrolling(false);
     }

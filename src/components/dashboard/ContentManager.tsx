@@ -57,7 +57,6 @@ export default function ContentManager() {
       setCourses(coursesWithCounts);
     } catch (error: any) {
       toast.error("Failed to load courses");
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -74,7 +73,6 @@ export default function ContentManager() {
       fetchMyCourses();
     } catch (error: any) {
       toast.error("Failed to delete course");
-      console.error(error);
     }
   };
 

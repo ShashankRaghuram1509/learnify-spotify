@@ -76,7 +76,7 @@ export default function VideoCallReminders() {
 
       setUpcomingSessions(formattedSessions);
     } catch (error) {
-      console.error("Error fetching sessions:", error);
+      // Silent fail - sessions will show as empty
     } finally {
       setLoading(false);
     }

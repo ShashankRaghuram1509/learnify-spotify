@@ -1,30 +1,85 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface CertificateViewProps {
   studentName: string;
   courseName: string;
   completionDate: string;
+  certificateId?: string;
+  userId?: string;
+  courseId?: string;
 }
 
-const CertificateView: React.FC<CertificateViewProps> = ({ studentName, courseName, completionDate }) => {
+const CertificateView: React.FC<CertificateViewProps> = ({ 
+  studentName, 
+  courseName, 
+  completionDate,
+  certificateId,
+  userId,
+  courseId
+}) => {
   const certificateRef = useRef<HTMLDivElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleDownload = () => {
-    if (certificateRef.current) {
-      html2canvas(certificateRef.current, { scale: 2 }).then((canvas) => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: 'landscape',
-          unit: 'px',
-          format: [canvas.width, canvas.height],
-        });
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save(`Certificate-${courseName.replace(/\s+/g, '_')}-${studentName.replace(/\s+/g, '_')}.pdf`);
+  const handleDownload = async () => {
+    if (!certificateRef.current) return;
+
+    try {
+      setIsUploading(true);
+      const canvas = await html2canvas(certificateRef.current, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [canvas.width, canvas.height],
       });
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      
+      // Generate PDF blob
+      const pdfBlob = pdf.output('blob');
+      
+      // Upload to Supabase storage if certificate details are provided
+      if (certificateId && userId && courseId) {
+        const fileName = `${userId}/${courseId}_${Date.now()}.pdf`;
+        const { data, error: uploadError } = await supabase.storage
+          .from('certificates')
+          .upload(fileName, pdfBlob);
+
+        if (uploadError) {
+          toast.error('Failed to save certificate');
+          return;
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('certificates')
+          .getPublicUrl(fileName);
+
+        // Update certificate record with URL
+        const { error: updateError } = await supabase
+          .from('certificates')
+          .update({ certificate_url: urlData.publicUrl })
+          .eq('id', certificateId);
+
+        if (updateError) {
+          toast.error('Failed to update certificate record');
+          return;
+        }
+
+        toast.success('Certificate saved successfully');
+      }
+      
+      // Download locally
+      pdf.save(`Certificate-${courseName.replace(/\s+/g, '_')}-${studentName.replace(/\s+/g, '_')}.pdf`);
+    } catch (error) {
+      toast.error('Failed to generate certificate');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -46,9 +101,18 @@ const CertificateView: React.FC<CertificateViewProps> = ({ studentName, courseNa
         </div>
       </div>
       <div className="mt-8 text-center">
-        <Button onClick={handleDownload}>
-          <Download className="mr-2 h-4 w-4" />
-          Download Certificate
+        <Button onClick={handleDownload} disabled={isUploading}>
+          {isUploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Download className="mr-2 h-4 w-4" />
+              Download Certificate
+            </>
+          )}
         </Button>
       </div>
     </div>

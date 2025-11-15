@@ -91,8 +91,7 @@ const FeaturedCourses = () => {
         console.log("Using mock course data");
         setCourses(mockCourses);
       } catch (error) {
-        console.error('Error loading courses:', error);
-        setError(error.message);
+        setError('Failed to load courses');
         
         toast({
           title: "Error",

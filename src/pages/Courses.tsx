@@ -75,7 +75,6 @@ const Courses = () => {
 
         setCourses(data);
       } catch (error) {
-        console.error("Error loading courses:", error);
         toast.error("Failed to load courses.");
       } finally {
         setLoading(false);
@@ -123,7 +122,6 @@ const Courses = () => {
 
         setFilteredCourses(data);
       } catch (error) {
-        console.error("Error loading courses:", error);
         toast.error("Failed to load courses.");
       } finally {
         setLoading(false);

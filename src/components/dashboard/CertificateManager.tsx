@@ -48,7 +48,7 @@ export default function CertificateManager() {
 
       setCertificates(formattedCerts);
     } catch (error) {
-      console.error("Error fetching certificates:", error);
+      // Silent fail - will show "no certificates" message
     } finally {
       setLoading(false);
     }
