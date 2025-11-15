@@ -3,11 +3,11 @@ project_id = "anhglcjmbkqezqfyunby"
 [functions.ai-chat]
 verify_jwt = true
 
-[functions.razorpay-create-order]
-verify_jwt = false
+[functions.create-enrollment]
+verify_jwt = true
 
-[functions.razorpay-verify-payment]
-verify_jwt = false
+[functions.generate-video-token]
+verify_jwt = true
 
 [functions.razorpay-create-order]
 verify_jwt = true

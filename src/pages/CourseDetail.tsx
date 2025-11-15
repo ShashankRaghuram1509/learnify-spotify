@@ -57,21 +57,21 @@ const CourseDetail = () => {
     setIsEnrolling(true);
 
     try {
-      const { error } = await supabase.from('enrollments').insert([
-        {
-          student_id: user.id,
-          course_id: course.id,
-        },
-      ]);
+      const { data, error } = await supabase.functions.invoke('create-enrollment', {
+        body: { course_id: course.id }
+      });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       setIsEnrolled(true);
       toast.success("Enrolled successfully! Course content is now available.");
-    } catch (error) {
-      toast.error("Failed to enroll in the course. Please try again.");
+    } catch (error: any) {
+      if (error.message === 'Payment required for premium course') {
+        toast.error("This is a premium course. Please complete payment first.");
+      } else {
+        toast.error("Failed to enroll in the course. Please try again.");
+      }
     } finally {
       setIsEnrolling(false);
     }
