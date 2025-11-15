@@ -48,15 +48,21 @@ export default function VideoCallManagement() {
       const roomID = Math.random().toString(36).substring(2, 9);
       const sessionTime = `${format(date, "yyyy-MM-dd")}T${time}`;
       try {
-        const { error } = await supabase.from("video_call_schedules").insert({
-          teacher_id: user.id,
-          student_id: user.id, // TODO: Replace with actual student ID when selecting students
-          scheduled_at: sessionTime,
-          meeting_url: `https://app.lovable.dev/video-call/${roomID}`,
-          status: 'scheduled'
-        });
+        const { data: newSession, error } = await supabase
+          .from("video_call_schedules")
+          .insert({
+            teacher_id: user.id,
+            student_id: user.id, // TODO: Replace with actual student ID when selecting students
+            scheduled_at: sessionTime,
+            meeting_url: roomID,
+            status: 'scheduled'
+          })
+          .select()
+          .single();
+        
         if (error) throw error;
         toast.success(`Session scheduled for ${format(date, "PPP")} at ${time}`);
+        
         // Refresh sessions
         const { data, error: fetchError } = await supabase
           .from("video_call_schedules")
@@ -72,8 +78,8 @@ export default function VideoCallManagement() {
     }
   };
 
-  const handleJoinCall = (roomID: string) => {
-    navigate(`/video-call/${roomID}`);
+  const handleJoinCall = (sessionId: string, roomId: string) => {
+    navigate(`/video-call?sessionId=${sessionId}&roomId=${roomId}`);
   };
 
   return (
@@ -127,13 +133,17 @@ export default function VideoCallManagement() {
       <div className="px-6 pb-6">
         <h3 className="text-lg font-semibold mt-6 mb-4">Upcoming Sessions</h3>
         <div className="space-y-3">
-          {upcomingSessions.map((session, index) => (
-            <div key={index} className="flex items-center justify-between p-3 bg-spotify-gray/20 rounded-lg">
+          {upcomingSessions.map((session: any) => (
+            <div key={session.id} className="flex items-center justify-between p-3 bg-spotify-gray/20 rounded-lg">
               <div>
                 <p className="font-semibold">Session with {session.student_id || "a student"}</p>
-                <p className="text-sm text-spotify-text/70">{format(new Date(session.session_time), "PPP p")}</p>
+                <p className="text-sm text-spotify-text/70">{format(new Date(session.scheduled_at), "PPP p")}</p>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => handleJoinCall(session.room_id)}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => handleJoinCall(session.id, session.meeting_url)}
+              >
                 <Video className="h-5 w-5 text-spotify" />
               </Button>
             </div>
