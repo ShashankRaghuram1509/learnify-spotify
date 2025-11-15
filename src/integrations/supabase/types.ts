@@ -505,6 +505,44 @@ export type Database = {
         }
         Relationships: []
       }
+      transcripts: {
+        Row: {
+          created_at: string | null
+          enrollment_id: string | null
+          id: string
+          summary: string | null
+          transcript: string | null
+          updated_at: string | null
+          video_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          enrollment_id?: string | null
+          id?: string
+          summary?: string | null
+          transcript?: string | null
+          updated_at?: string | null
+          video_url: string
+        }
+        Update: {
+          created_at?: string | null
+          enrollment_id?: string | null
+          id?: string
+          summary?: string | null
+          transcript?: string | null
+          updated_at?: string | null
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transcripts_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
