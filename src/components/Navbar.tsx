@@ -120,7 +120,7 @@ const Navbar = () => {
                 <>
                   <Button
                     variant="ghost"
-                    onClick={() => navigate(`/dashboard/${userRole}`)}
+                    onClick={() => navigate(userRole === 'admin' ? '/admin' : `/dashboard/${userRole}`)}
                     className="flex items-center gap-2"
                   >
                     <LayoutDashboard size={16} />
@@ -203,7 +203,7 @@ const Navbar = () => {
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => navigate(`/dashboard/${userRole}`)}
+                      onClick={() => navigate(userRole === 'admin' ? '/admin' : `/dashboard/${userRole}`)}
                     >
                       Dashboard
                     </Button>
