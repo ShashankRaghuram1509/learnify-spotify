@@ -1,23 +1,25 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Video, Calendar } from "lucide-react";
+import { Video, Calendar, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface VideoCall {
   id: string;
   scheduled_at: string;
-  teacher_name: string;
+  student_name: string;
   course_title: string;
   meeting_url: string | null;
   status: string;
 }
 
-export default function VideoCallReminders() {
+export default function TeacherVideoCallReminders() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [upcomingSessions, setUpcomingSessions] = useState<VideoCall[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,30 +40,29 @@ export default function VideoCallReminders() {
           scheduled_at,
           meeting_url,
           status,
-          teacher_id,
+          student_id,
           courses (
             title
           )
         `)
-        .eq("student_id", user?.id)
+        .eq("teacher_id", user?.id)
         .eq("status", "scheduled")
         .gte("scheduled_at", now)
         .order("scheduled_at", { ascending: true })
-        .limit(3);
+        .limit(5);
 
       if (error) throw error;
 
-      // Fetch teacher profiles separately
-      const teacherIds = data?.map((s: any) => s.teacher_id).filter(Boolean) || [];
-      let teacherProfiles: any = {};
+      const studentIds = data?.map((s: any) => s.student_id).filter(Boolean) || [];
+      let studentProfiles: any = {};
       
-      if (teacherIds.length > 0) {
+      if (studentIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name, email")
-          .in("id", teacherIds);
+          .in("id", studentIds);
         
-        teacherProfiles = profiles?.reduce((acc: any, profile: any) => {
+        studentProfiles = profiles?.reduce((acc: any, profile: any) => {
           acc[profile.id] = profile;
           return acc;
         }, {}) || {};
@@ -70,7 +71,7 @@ export default function VideoCallReminders() {
       const formattedSessions = data?.map((session: any) => ({
         id: session.id,
         scheduled_at: session.scheduled_at,
-        teacher_name: teacherProfiles[session.teacher_id]?.full_name || teacherProfiles[session.teacher_id]?.email || "Teacher",
+        student_name: studentProfiles[session.student_id]?.full_name || studentProfiles[session.student_id]?.email || "Student",
         course_title: session.courses?.title || "Course",
         meeting_url: session.meeting_url,
         status: session.status,
@@ -89,26 +90,17 @@ export default function VideoCallReminders() {
 
   const setupRealtimeSubscription = () => {
     const channel = supabase
-      .channel('student-video-calls')
+      .channel('teacher-video-calls')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'video_call_schedules',
-          filter: `student_id=eq.${user?.id}`
+          filter: `teacher_id=eq.${user?.id}`
         },
-        (payload) => {
-          console.log("Video call update:", payload);
+        () => {
           fetchUpcomingSessions();
-          
-          // Show notification when teacher starts the call
-          if (payload.eventType === 'UPDATE' && (payload.new as any).status === 'in-progress') {
-            toast.info("Your teacher has started the video call!", {
-              description: "Click 'Join Session' to enter",
-              duration: 10000,
-            });
-          }
         }
       )
       .subscribe();
@@ -126,17 +118,42 @@ export default function VideoCallReminders() {
       
       // Notify if session is within 5 minutes
       if (timeDiff > 0 && timeDiff <= 5 * 60 * 1000) {
-        toast.info(`Upcoming session: ${session.course_title}`, {
-          description: `Starts in ${Math.round(timeDiff / 60000)} minutes with ${session.teacher_name}`,
+        toast.info(`Upcoming session with ${session.student_name}`, {
+          description: `Starts in ${Math.round(timeDiff / 60000)} minutes`,
+          icon: <Bell className="h-4 w-4" />,
           duration: 10000,
         });
       }
     });
   };
 
-  const handleJoinCall = (meetingUrl: string | null) => {
-    if (meetingUrl) {
-      window.open(meetingUrl, "_blank");
+  const handleStartCall = (session: VideoCall) => {
+    if (session.meeting_url) {
+      // Update status to 'in-progress'
+      supabase
+        .from("video_call_schedules")
+        .update({ status: "in-progress" })
+        .eq("id", session.id)
+        .then(() => {
+          window.open(session.meeting_url!, "_blank");
+          toast.success("Starting video call...");
+        });
+    } else {
+      // Generate meeting URL
+      const roomId = `room_${session.id}`;
+      const meetingUrl = `/video-call/${roomId}?sessionId=${session.id}`;
+      
+      supabase
+        .from("video_call_schedules")
+        .update({ 
+          meeting_url: meetingUrl,
+          status: "in-progress" 
+        })
+        .eq("id", session.id)
+        .then(() => {
+          navigate(meetingUrl);
+          toast.success("Starting video call...");
+        });
     }
   };
 
@@ -146,7 +163,7 @@ export default function VideoCallReminders() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Video className="text-primary" />
-            Upcoming Sessions
+            Scheduled Sessions
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -161,7 +178,7 @@ export default function VideoCallReminders() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Video className="text-primary" />
-          Upcoming Sessions
+          Scheduled Sessions
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -180,7 +197,7 @@ export default function VideoCallReminders() {
                   <div className="flex-1">
                     <p className="font-semibold">{session.course_title}</p>
                     <p className="text-sm text-muted-foreground">
-                      with {session.teacher_name}
+                      with {session.student_name}
                     </p>
                     <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                       <Calendar className="h-3 w-3" />
@@ -188,16 +205,14 @@ export default function VideoCallReminders() {
                     </div>
                   </div>
                 </div>
-                {session.meeting_url && (
-                  <Button
-                    onClick={() => handleJoinCall(session.meeting_url)}
-                    size="sm"
-                    className="w-full"
-                  >
-                    <Video className="mr-2 h-4 w-4" />
-                    Join Session
-                  </Button>
-                )}
+                <Button
+                  onClick={() => handleStartCall(session)}
+                  size="sm"
+                  className="w-full"
+                >
+                  <Video className="mr-2 h-4 w-4" />
+                  Start Session
+                </Button>
               </div>
             ))}
           </div>
