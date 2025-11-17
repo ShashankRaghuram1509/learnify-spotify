@@ -24,8 +24,9 @@ import { Database } from "@/integrations/supabase/types";
 type VideoSession = Database["public"]["Tables"]["video_call_schedules"]["Row"];
 
 interface EnrolledStudent {
-  id: string;
+  id: string; // enrollment id
   student_id: string;
+  course_id: string;
   profiles: {
     full_name: string | null;
     email: string;
@@ -96,11 +97,12 @@ export default function VideoCallManagement() {
               return {
                 id: enrollment?.id || studentId,
                 student_id: studentId,
+                course_id: enrollment?.course_id || "",
                 profiles: profile ? {
                   full_name: profile.full_name,
                   email: profile.email
                 } : null
-              };
+              } as EnrolledStudent;
             });
             
             console.log("Enriched students:", uniqueStudents);
@@ -140,19 +142,23 @@ export default function VideoCallManagement() {
       return;
     }
 
-    const roomID = Math.random().toString(36).substring(2, 9);
-    const sessionTime = `${format(date, "yyyy-MM-dd")}T${time}`;
-    
-    try {
-      const { error } = await supabase
-        .from("video_call_schedules")
-        .insert({
-          teacher_id: user.id,
-          student_id: selectedStudentId,
-          scheduled_at: sessionTime,
-          meeting_url: roomID,
-          status: 'scheduled'
-        });
+  const roomID = Math.random().toString(36).substring(2, 9);
+  const sessionTime = `${format(date, "yyyy-MM-dd")}T${time}`;
+  
+  try {
+    const selected = enrolledStudents.find(s => s.student_id === selectedStudentId);
+    const courseId = selected?.course_id || null;
+
+    const { error } = await supabase
+      .from("video_call_schedules")
+      .insert({
+        teacher_id: user.id,
+        student_id: selectedStudentId,
+        course_id: courseId,
+        scheduled_at: sessionTime,
+        meeting_url: roomID,
+        status: 'scheduled'
+      });
       
       if (error) throw error;
       toast.success(`Session scheduled for ${format(date, "PPP")} at ${time}`);
