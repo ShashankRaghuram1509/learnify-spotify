@@ -28,14 +28,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserData = async (userId: string) => {
     try {
-      // Fetch role
-      const { data: roleData } = await supabase
+      // Fetch all roles and use highest priority (admin > teacher > student)
+      const { data: rolesData, error: rolesError } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", userId)
-        .single();
+        .eq("user_id", userId);
 
-      setUserRole(roleData?.role ?? null);
+      if (!rolesError && rolesData && rolesData.length > 0) {
+        // Priority: admin > teacher > student
+        const roles = rolesData.map(r => r.role);
+        if (roles.includes('admin')) {
+          setUserRole('admin');
+        } else if (roles.includes('teacher')) {
+          setUserRole('teacher');
+        } else {
+          setUserRole('student');
+        }
+      } else {
+        setUserRole(null);
+      }
 
       // Fetch subscription data from profiles
       const { data: profileData } = await supabase
@@ -47,6 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSubscriptionTier(profileData?.subscription_tier ?? null);
       setSubscriptionExpiresAt(profileData?.subscription_expires_at ?? null);
     } catch (error) {
+      console.error('Error fetching user data:', error);
       // Silent fail - data will remain null
     }
   };
