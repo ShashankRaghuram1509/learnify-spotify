@@ -21,12 +21,12 @@ const CourseDetail = () => {
       try {
         setLoading(true);
         
-        // Fetch course with enrollment count
+        // Fetch course with full module data and enrollment count
         const { data, error } = await supabase
           .from("courses")
           .select(`
             *,
-            modules:modules(count),
+            modules!inner(*),
             enrollments:enrollments(count)
           `)
           .eq("id", id)
@@ -38,7 +38,7 @@ const CourseDetail = () => {
 
         // Calculate student count from enrollments
         const studentCount = data?.enrollments?.[0]?.count || 0;
-        const moduleCount = data?.modules?.[0]?.count || 0;
+        const moduleCount = data?.modules?.length || 0;
 
         setCourse({
           ...data,
@@ -61,6 +61,30 @@ const CourseDetail = () => {
       fetchCourse();
     }
   }, [id]);
+
+  // Check enrollment status after course loads
+  useEffect(() => {
+    const checkEnrollment = async () => {
+      if (!user || !course) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('enrollments')
+          .select('id')
+          .eq('student_id', user.id)
+          .eq('course_id', course.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          setIsEnrolled(true);
+        }
+      } catch (error) {
+        console.error('Enrollment check error:', error);
+      }
+    };
+
+    checkEnrollment();
+  }, [user, course]);
 
   const handleEnroll = async () => {
     if (course?.externalLink) {
@@ -86,8 +110,8 @@ const CourseDetail = () => {
       setIsEnrolled(true);
       toast.success("Enrolled successfully! Course content is now available.");
     } catch (error: any) {
-      if (error.message === 'Payment required for premium course') {
-        toast.error("This is a premium course. Please complete payment first.");
+      if (error.message === 'Active subscription required for premium course') {
+        toast.error("This is a premium course. Please upgrade your subscription to access it.");
       } else {
         toast.error("Failed to enroll in the course. Please try again.");
       }
