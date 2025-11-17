@@ -100,13 +100,13 @@ const CourseCard: React.FC<CourseCardProps> = ({
               <span className="text-green-500 font-bold">Free</span>
             ) : hasDiscount ? (
               <>
-                <span className="text-spotify font-bold">${safeDiscountPrice.toFixed(2)}</span>
+                <span className="text-spotify font-bold">₹{safeDiscountPrice.toFixed(2)}</span>
                 <span className="text-spotify-text/50 line-through text-sm ml-2">
-                  ${safePrice.toFixed(2)}
+                  ₹{safePrice.toFixed(2)}
                 </span>
               </>
             ) : (
-              <span className="text-spotify font-bold">${safePrice.toFixed(2)}</span>
+              <span className="text-spotify font-bold">₹{safePrice.toFixed(2)}</span>
             )}
           </div>
           

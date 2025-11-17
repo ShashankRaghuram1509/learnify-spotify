@@ -25,8 +25,9 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // SECURITY: Verify token signature and get authenticated user
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    // Extract bearer token and verify user
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
 
     if (authError || !user) {
       console.error('Auth verification failed:', authError);
@@ -113,7 +114,7 @@ serve(async (req) => {
       user_id: userId,
       amount: amount / 100, // Convert from paise to rupees
       currency: 'INR',
-      status: 'completed',
+      status: 'success',
       payment_method: 'razorpay',
       transaction_id: razorpay_payment_id,
     };

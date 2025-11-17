@@ -171,7 +171,7 @@ export default function CourseViewer() {
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
-                  amount: orderData.amount / 100,
+                  amount: orderData.amount, // Send paise amount as returned by create-order
                   course_id: course.id,
                 },
                 headers: {
