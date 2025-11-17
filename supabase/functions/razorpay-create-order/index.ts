@@ -38,12 +38,13 @@ serve(async (req) => {
     console.log('User authenticated:', userId);
 
     const requestBody = await req.json();
-    const { amount, currency = 'INR', planName } = requestBody;
-    console.log('Request body:', { amount, currency, planName });
+    const { amount, currency = 'INR', planName, courseId } = requestBody;
+    console.log('Request body:', { amount, currency, planName, courseId });
     
     // Input validation
     const validPlans = ['Lite', 'Premium', 'Premium Pro'];
-    if (!validPlans.includes(planName)) {
+    // Allow course purchases or subscription plans
+    if (planName && !planName.startsWith('Course:') && !validPlans.includes(planName)) {
       throw new Error('Invalid plan name');
     }
     
@@ -74,6 +75,7 @@ serve(async (req) => {
       notes: {
         plan: planName,
         user_id: userId,
+        course_id: courseId || null,
       },
     };
     
