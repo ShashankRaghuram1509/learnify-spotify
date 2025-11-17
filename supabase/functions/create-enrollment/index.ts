@@ -79,22 +79,34 @@ serve(async (req) => {
       );
     }
 
-    // If course is premium, verify payment
+    // If course is premium, verify user has active subscription
     if (course.is_premium && course.price && course.price > 0) {
-      const { data: payment, error: paymentError } = await supabaseClient
-        .from('payments')
-        .select('id, status')
-        .eq('user_id', userId)
-        .eq('course_id', course_id)
-        .eq('status', 'success')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      console.log('Checking subscription status for premium course...');
+      
+      const { data: profile, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('subscription_tier, subscription_expires_at')
+        .eq('id', userId)
+        .single();
 
-      if (paymentError || !payment) {
-        console.error('Payment error:', paymentError);
-        throw new Error('Payment required for premium course');
+      if (profileError || !profile) {
+        console.error('Profile error:', profileError);
+        throw new Error('Failed to verify subscription status');
       }
+
+      console.log('User subscription:', profile);
+
+      // Check if user has an active premium subscription
+      const validTiers = ['Lite', 'Premium', 'Premium Pro'];
+      const hasValidTier = profile.subscription_tier && validTiers.includes(profile.subscription_tier);
+      const isNotExpired = !profile.subscription_expires_at || new Date(profile.subscription_expires_at) > new Date();
+
+      if (!hasValidTier || !isNotExpired) {
+        console.error('Invalid or expired subscription:', { tier: profile.subscription_tier, expires: profile.subscription_expires_at });
+        throw new Error('Active subscription required for premium course');
+      }
+
+      console.log('Subscription verified successfully');
     }
 
     // Create service role client for enrollment creation (bypasses RLS)

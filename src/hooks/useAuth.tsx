@@ -106,21 +106,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         options: {
           data: {
             full_name: fullName,
+            role: role,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },
       });
 
       if (error) throw error;
-
-      if (data.user) {
-        const { error: roleError } = await supabase.from("user_roles").insert({
-          user_id: data.user.id,
-          role: role,
-        });
-
-        if (roleError) throw roleError;
-      }
 
       toast.success("Account created successfully! You can now login.");
     } catch (error: any) {
