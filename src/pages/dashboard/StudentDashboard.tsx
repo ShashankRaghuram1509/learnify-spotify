@@ -1,7 +1,7 @@
 import CertificateManager from "@/components/dashboard/CertificateManager";
 import EnrolledCoursesList from "@/components/dashboard/EnrolledCoursesList";
 import ProgressTracker from "@/components/dashboard/ProgressTracker";
-import VideoCallReminders from "@/components/dashboard/VideoCallReminders";
+import StudentTimetable from "@/components/dashboard/StudentTimetable";
 import PremiumChatList from "@/components/dashboard/PremiumChatList";
 
 export default function StudentDashboard() {
@@ -17,7 +17,7 @@ export default function StudentDashboard() {
         <CertificateManager />
       </div>
       <div className="md:col-span-2 lg:col-span-2">
-        <VideoCallReminders />
+        <StudentTimetable />
       </div>
       <div className="md:col-span-2 lg:col-span-4">
         <PremiumChatList />
