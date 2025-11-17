@@ -143,7 +143,11 @@ export default function VideoCallManagement() {
     }
 
   const roomID = Math.random().toString(36).substring(2, 9);
-  const sessionTime = `${format(date, "yyyy-MM-dd")}T${time}`;
+  
+  // Create a proper Date object with the selected date and time
+  const [hours, minutes] = time.split(':').map(Number);
+  const sessionDate = new Date(date);
+  sessionDate.setHours(hours, minutes, 0, 0);
   
   try {
     const selected = enrolledStudents.find(s => s.student_id === selectedStudentId);
@@ -155,7 +159,7 @@ export default function VideoCallManagement() {
         teacher_id: user.id,
         student_id: selectedStudentId,
         course_id: courseId,
-        scheduled_at: sessionTime,
+        scheduled_at: sessionDate.toISOString(),
         meeting_url: roomID,
         status: 'scheduled'
       });
