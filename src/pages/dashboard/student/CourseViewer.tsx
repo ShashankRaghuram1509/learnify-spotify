@@ -48,12 +48,6 @@ export default function CourseViewer() {
         .single();
 
       if (courseError) throw courseError;
-      console.log('Course data loaded:', {
-        title: courseData.title,
-        video_url: courseData.video_url,
-        is_premium: courseData.is_premium,
-        price: courseData.price
-      });
       setCourse(courseData);
 
       // Fetch enrollment
@@ -73,8 +67,6 @@ export default function CourseViewer() {
 
       // Check payment for premium courses
       if (courseData.is_premium && courseData.price > 0) {
-        console.log('Checking payment for premium course:', courseData.title);
-        
         const { data: paymentData } = await supabase
           .from("payments")
           .select("id")
@@ -83,8 +75,6 @@ export default function CourseViewer() {
           .eq("status", "completed")
           .maybeSingle();
 
-        console.log('Payment data:', paymentData);
-
         // Also check subscription
         const { data: profileData } = await supabase
           .from("profiles")
@@ -92,15 +82,11 @@ export default function CourseViewer() {
           .eq("id", user?.id)
           .single();
 
-        console.log('Profile data:', profileData);
-
         const hasSubscription = profileData?.subscription_tier && 
           ['Lite', 'Premium', 'Premium Pro'].includes(profileData.subscription_tier) &&
           (!profileData.subscription_expires_at || new Date(profileData.subscription_expires_at) > new Date());
 
-        console.log('Has subscription:', hasSubscription);
         const accessGranted = !!(paymentData || hasSubscription);
-        console.log('Access granted:', accessGranted);
 
         setHasPaid(accessGranted);
       } else {
@@ -231,24 +217,16 @@ export default function CourseViewer() {
   };
 
   const getYouTubeEmbedUrl = (url: string | null) => {
-    if (!url) {
-      console.log('No video URL provided');
-      return null;
-    }
-    
-    console.log('Original video URL:', url);
+    if (!url) return null;
     
     // Extract video ID from various YouTube URL formats
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     
     if (match && match[2].length === 11) {
-      const embedUrl = `https://www.youtube.com/embed/${match[2]}`;
-      console.log('Converted to embed URL:', embedUrl);
-      return embedUrl;
+      return `https://www.youtube.com/embed/${match[2]}`;
     }
     
-    console.log('Using URL as-is:', url);
     return url;
   };
 
