@@ -46,34 +46,72 @@ export default function VideoCallManagement() {
       if (!user) return;
       try {
         // Fetch enrolled students for the teacher's courses
-        const { data: courses } = await supabase
+        const { data: courses, error: coursesError } = await supabase
           .from("courses")
           .select("id")
           .eq("teacher_id", user.id);
 
+        if (coursesError) {
+          console.error("Error fetching courses:", coursesError);
+          toast.error("Failed to fetch courses");
+          return;
+        }
+
         if (courses && courses.length > 0) {
           const courseIds = courses.map((c) => c.id);
-          const { data: enrollments } = await supabase
+          const { data: enrollments, error: enrollmentsError } = await supabase
             .from("enrollments")
-            .select("id, student_id")
+            .select("id, student_id, course_id")
             .in("course_id", courseIds);
 
-          if (enrollments) {
-            // Fetch profile data separately
-            const studentIds = enrollments.map(e => e.student_id);
-            const { data: profilesData } = await supabase
+          if (enrollmentsError) {
+            console.error("Error fetching enrollments:", enrollmentsError);
+            toast.error("Failed to fetch enrolled students");
+            return;
+          }
+
+          if (enrollments && enrollments.length > 0) {
+            // Get unique student IDs
+            const studentIds = [...new Set(enrollments.map(e => e.student_id))];
+            
+            const { data: profilesData, error: profilesError } = await supabase
               .from("profiles")
               .select("id, full_name, email")
               .in("id", studentIds);
 
-            // Combine the data
-            const enriched = enrollments.map(enrollment => ({
-              ...enrollment,
-              profiles: profilesData?.find(p => p.id === enrollment.student_id) || null
-            }));
+            if (profilesError) {
+              console.error("Error fetching profiles:", profilesError);
+              toast.error("Failed to fetch student profiles");
+              return;
+            }
+
+            console.log("Profiles data:", profilesData);
+            console.log("Enrollments data:", enrollments);
+
+            // Combine the data - use unique students
+            const uniqueStudents = studentIds.map(studentId => {
+              const enrollment = enrollments.find(e => e.student_id === studentId);
+              const profile = profilesData?.find(p => p.id === studentId);
+              
+              return {
+                id: enrollment?.id || studentId,
+                student_id: studentId,
+                profiles: profile ? {
+                  full_name: profile.full_name,
+                  email: profile.email
+                } : null
+              };
+            });
             
-            setEnrolledStudents(enriched as EnrolledStudent[]);
+            console.log("Enriched students:", uniqueStudents);
+            setEnrolledStudents(uniqueStudents as EnrolledStudent[]);
+          } else {
+            console.log("No enrollments found for teacher's courses");
+            setEnrolledStudents([]);
           }
+        } else {
+          console.log("No courses found for teacher");
+          setEnrolledStudents([]);
         }
 
         // Fetch upcoming sessions
@@ -85,6 +123,7 @@ export default function VideoCallManagement() {
         setUpcomingSessions(data || []);
       } catch (error) {
         console.error("Error fetching data:", error);
+        toast.error("Failed to load scheduling data");
       }
     };
     fetchData();
@@ -152,13 +191,24 @@ export default function VideoCallManagement() {
               <SelectValue placeholder="Select a student" />
             </SelectTrigger>
             <SelectContent>
-              {enrolledStudents.map((enrollment) => (
-                <SelectItem key={enrollment.id} value={enrollment.student_id}>
-                  {enrollment.profiles?.full_name || enrollment.profiles?.email || "Unknown Student"}
+              {enrolledStudents.length === 0 ? (
+                <SelectItem value="no-students" disabled>
+                  No enrolled students found
                 </SelectItem>
-              ))}
+              ) : (
+                enrolledStudents.map((enrollment) => (
+                  <SelectItem key={enrollment.student_id} value={enrollment.student_id}>
+                    {enrollment.profiles?.full_name || enrollment.profiles?.email || "Unknown Student"}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
+          {enrolledStudents.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Students must be enrolled in your courses to schedule calls.
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label>Date</Label>
