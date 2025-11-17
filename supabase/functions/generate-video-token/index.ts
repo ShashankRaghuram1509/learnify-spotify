@@ -82,17 +82,29 @@ serve(async (req) => {
       throw new Error('Not authorized to join this video call');
     }
 
-    // If student, verify payment for the course
+    // If student, verify payment for the course OR check subscription
     if (session.student_id === user.id && session.course_id) {
-      const { data: payment, error: paymentError } = await supabaseClient
+      // Check for course payment
+      const { data: payment } = await supabaseClient
         .from('payments')
         .select('id')
         .eq('user_id', user.id)
         .eq('course_id', session.course_id)
         .eq('status', 'completed')
+        .maybeSingle();
+
+      // Check subscription
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('subscription_tier, subscription_expires_at')
+        .eq('id', user.id)
         .single();
 
-      if (paymentError || !payment) {
+      const hasSubscription = profile?.subscription_tier && 
+        ['Lite', 'Premium', 'Premium Pro'].includes(profile.subscription_tier) &&
+        (!profile.subscription_expires_at || new Date(profile.subscription_expires_at) > new Date());
+
+      if (!payment && !hasSubscription) {
         throw new Error('Payment required');
       }
     }

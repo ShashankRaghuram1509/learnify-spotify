@@ -141,6 +141,25 @@ serve(async (req) => {
     }
     console.log('Payment record stored successfully');
 
+    // If this is a course purchase, create enrollment
+    if (course_id) {
+      console.log('Creating enrollment for course:', course_id);
+      const { error: enrollmentError } = await supabaseClient
+        .from('enrollments')
+        .insert({
+          student_id: userId,
+          course_id: course_id,
+          progress: 0
+        });
+
+      if (enrollmentError) {
+        console.error('Enrollment creation error:', enrollmentError);
+        // Don't throw - payment is already recorded
+      } else {
+        console.log('Enrollment created successfully');
+      }
+    }
+
     // If this is a subscription payment (not a course purchase), update subscription
     if (planName && !course_id) {
       console.log('Upgrading subscription tier to:', planName);

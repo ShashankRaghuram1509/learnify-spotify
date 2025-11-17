@@ -72,7 +72,7 @@ export default function CourseViewer() {
           .select("id")
           .eq("user_id", user?.id)
           .eq("course_id", id)
-          .eq("status", "success")
+          .eq("status", "completed")
           .maybeSingle();
 
         // Also check subscription
