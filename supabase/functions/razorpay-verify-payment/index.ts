@@ -14,7 +14,25 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('No authorization header');
       throw new Error('No authorization header');
+    }
+
+    // Extract user ID from JWT token
+    const token = authHeader.replace('Bearer ', '');
+    let userId: string | null = null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1] || ''));
+      userId = payload?.sub || null;
+      console.log('User authenticated:', userId);
+    } catch (e) {
+      console.error('JWT parse error:', e);
+      throw new Error('Unauthorized');
+    }
+
+    if (!userId) {
+      console.error('No user ID in token');
+      throw new Error('Unauthorized');
     }
 
     const supabaseClient = createClient(
@@ -23,12 +41,9 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !user) {
-      throw new Error('Unauthorized');
-    }
-
     const requestData = await req.json();
+    console.log('Request data:', JSON.stringify(requestData, null, 2));
+    
     const { 
       razorpay_order_id, 
       razorpay_payment_id, 
@@ -65,22 +80,25 @@ serve(async (req) => {
     }
 
     // Verify signature
+    console.log('Verifying payment signature...');
     const crypto = await import("https://deno.land/std@0.160.0/node/crypto.ts");
     const hmac = crypto.createHmac('sha256', RAZORPAY_KEY_SECRET);
     hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
     const generatedSignature = hmac.digest('hex');
 
     if (generatedSignature !== razorpay_signature) {
+      console.error('Signature mismatch:', { generatedSignature, razorpay_signature });
       throw new Error('Invalid payment signature');
     }
 
-    console.log('Payment verified successfully for user:', user.id);
+    console.log('Payment verified successfully for user:', userId);
 
     // Store payment in database
+    console.log('Storing payment record...');
     const { error: paymentError } = await supabaseClient
       .from('payments')
       .insert({
-        user_id: user.id,
+        user_id: userId,
         amount: amount / 100, // Convert from paise to rupees
         currency: 'INR',
         status: 'completed',
@@ -89,10 +107,13 @@ serve(async (req) => {
       });
 
     if (paymentError) {
+      console.error('Payment storage error:', paymentError);
       throw new Error('Payment storage failed');
     }
+    console.log('Payment record stored successfully');
 
     // Upgrade user subscription tier
+    console.log('Upgrading subscription tier to:', planName);
     const expiryDate = new Date();
     expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year from now
 
@@ -102,11 +123,13 @@ serve(async (req) => {
         subscription_tier: planName,
         subscription_expires_at: expiryDate.toISOString()
       })
-      .eq('id', user.id);
+      .eq('id', userId);
 
     if (profileError) {
+      console.error('Profile update error:', profileError);
       throw new Error('Failed to upgrade subscription');
     }
+    console.log('Subscription upgraded successfully');
 
     return new Response(
       JSON.stringify({ 
