@@ -137,9 +137,6 @@ export default function CourseViewer() {
             planName: `Course: ${course.title}`,
             courseId: course.id 
           },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
         }
       );
 
@@ -157,9 +154,6 @@ export default function CourseViewer() {
         order_id: orderData.orderId,
         handler: async (response: any) => {
           try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) throw new Error('Not authenticated');
-
             const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
               'razorpay-verify-payment',
               {
@@ -167,11 +161,8 @@ export default function CourseViewer() {
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
-                  amount: orderData.amount / 100, // Convert from paise to rupees
+                  amount: orderData.amount / 100,
                   course_id: course.id,
-                },
-                headers: {
-                  Authorization: `Bearer ${session.access_token}`,
                 },
               }
             );
