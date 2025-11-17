@@ -17,6 +17,7 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
+  const [userSubscription, setUserSubscription] = useState<{tier: string | null, expires: string | null} | null>(null);
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -73,29 +74,53 @@ const CourseDetail = () => {
     }
   }, [id]);
 
-  // Check enrollment status after course loads
+  // Check enrollment status and subscription after course loads
   useEffect(() => {
-    const checkEnrollment = async () => {
+    const checkEnrollmentAndSubscription = async () => {
       if (!user || !course) return;
 
       try {
-        const { data, error } = await supabase
+        // Check if already enrolled
+        const { data: enrollmentData, error: enrollmentError } = await supabase
           .from('enrollments')
           .select('id')
           .eq('student_id', user.id)
           .eq('course_id', course.id)
           .maybeSingle();
 
-        if (!error && data) {
+        if (!enrollmentError && enrollmentData) {
           setIsEnrolled(true);
         }
+
+        // Check user's subscription status
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('subscription_tier, subscription_expires_at')
+          .eq('id', user.id)
+          .single();
+
+        if (!profileError && profileData) {
+          setUserSubscription({
+            tier: profileData.subscription_tier,
+            expires: profileData.subscription_expires_at
+          });
+        }
       } catch (error) {
-        console.error('Enrollment check error:', error);
+        console.error('Enrollment/subscription check error:', error);
       }
     };
 
-    checkEnrollment();
+    checkEnrollmentAndSubscription();
   }, [user, course]);
+
+  // Check if user has valid subscription for premium courses
+  const hasValidSubscription = () => {
+    if (!userSubscription) return false;
+    const validTiers = ['Lite', 'Premium', 'Premium Pro'];
+    const hasValidTier = userSubscription.tier && validTiers.includes(userSubscription.tier);
+    const isNotExpired = !userSubscription.expires || new Date(userSubscription.expires) > new Date();
+    return hasValidTier && isNotExpired;
+  };
 
   const handleEnroll = async () => {
     if (course?.externalLink) {
@@ -105,6 +130,13 @@ const CourseDetail = () => {
 
     if (!user || !course) {
       toast.error("You must be logged in to enroll.");
+      return;
+    }
+
+    // Check if premium course requires subscription
+    if (course.is_premium && course.price > 0 && !hasValidSubscription()) {
+      toast.error("This is a premium course. Please upgrade your subscription to access it.");
+      navigate('/dashboard/student/upgrade');
       return;
     }
 
@@ -123,6 +155,7 @@ const CourseDetail = () => {
     } catch (error: any) {
       if (error.message === 'Active subscription required for premium course') {
         toast.error("This is a premium course. Please upgrade your subscription to access it.");
+        navigate('/dashboard/student/upgrade');
       } else {
         toast.error("Failed to enroll in the course. Please try again.");
       }
@@ -240,15 +273,39 @@ const CourseDetail = () => {
                   )}
                 </div>
                 
-                <Button 
-                  onClick={handleEnroll}
-                  className="spotify-button text-lg px-8 py-3 animate-fade-in"
-                  style={{ animationDelay: "0.4s" }}
-                  disabled={isEnrolled || isEnrolling}
-                >
-                  {isEnrolling ? "Enrolling..." : isEnrolled ? "Enrolled" : course.externalLink ? "Visit Course" : "Enroll Now"}
-                  <ArrowLeft className="ml-2 h-5 w-5 rotate-180" />
-                </Button>
+                {isEnrolled ? (
+                  <Button 
+                    className="spotify-button text-lg px-8 py-3 animate-fade-in"
+                    style={{ animationDelay: "0.4s" }}
+                    disabled
+                  >
+                    Enrolled
+                    <ArrowLeft className="ml-2 h-5 w-5 rotate-180" />
+                  </Button>
+                ) : course.is_premium && course.price > 0 && !hasValidSubscription() ? (
+                  <div className="animate-fade-in" style={{ animationDelay: "0.4s" }}>
+                    <Button 
+                      onClick={() => navigate('/dashboard/student/upgrade')}
+                      className="spotify-button text-lg px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+                    >
+                      Upgrade to Access
+                      <ArrowLeft className="ml-2 h-5 w-5 rotate-180" />
+                    </Button>
+                    <p className="text-sm text-spotify-text/70 mt-2">
+                      This premium course requires a subscription
+                    </p>
+                  </div>
+                ) : (
+                  <Button 
+                    onClick={handleEnroll}
+                    className="spotify-button text-lg px-8 py-3 animate-fade-in"
+                    style={{ animationDelay: "0.4s" }}
+                    disabled={isEnrolling}
+                  >
+                    {isEnrolling ? "Enrolling..." : course.externalLink ? "Visit Course" : "Enroll Now"}
+                    <ArrowLeft className="ml-2 h-5 w-5 rotate-180" />
+                  </Button>
+                )}
               </div>
               
               <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
