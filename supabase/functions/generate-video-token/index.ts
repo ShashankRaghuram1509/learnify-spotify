@@ -33,6 +33,7 @@ async function generateToken(appId: number, serverSecret: string, userId: string
 }
 
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -42,6 +43,9 @@ serve(async (req) => {
     if (!authHeader) {
       throw new Error('Unauthorized');
     }
+
+    // Extract raw access token ("Bearer <token>" -> "<token>")
+    const accessToken = authHeader.replace('Bearer', '').trim();
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '';
@@ -55,12 +59,13 @@ serve(async (req) => {
       supabaseKey,
       {
         global: {
-          headers: { Authorization: authHeader },
+          headers: { Authorization: `Bearer ${accessToken}` },
         },
       }
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // IMPORTANT: pass the access token explicitly for reliability in edge envs
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(accessToken);
     if (userError || !user) {
       throw new Error('Unauthorized');
     }
