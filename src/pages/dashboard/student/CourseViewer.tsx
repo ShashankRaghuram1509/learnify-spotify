@@ -72,7 +72,7 @@ export default function CourseViewer() {
           .select("id")
           .eq("user_id", user?.id)
           .eq("course_id", id)
-          .eq("status", "completed")
+          .eq("status", "success")
           .maybeSingle();
 
         // Also check subscription
@@ -167,7 +167,7 @@ export default function CourseViewer() {
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
-                  amount: orderData.amount,
+                  amount: orderData.amount / 100, // Convert from paise to rupees
                   course_id: course.id,
                 },
                 headers: {
