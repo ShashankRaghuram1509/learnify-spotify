@@ -22,9 +22,20 @@ export default function VideoCall() {
 
     const initializeVideoCall = async () => {
       try {
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast.error('Please login to join video call');
+          navigate('/auth');
+          return;
+        }
+
         // Get video token from Edge Function
         const { data, error } = await supabase.functions.invoke('generate-video-token', {
-          body: { session_id: sessionId, room_id: roomId }
+          body: { session_id: sessionId, room_id: roomId },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         });
 
         if (error) throw error;
@@ -51,6 +62,8 @@ export default function VideoCall() {
         console.error('Video call error:', error);
         if (error.message === 'Not authorized to join this video call') {
           toast.error('You are not authorized to join this video call');
+        } else if (error.message === 'Payment required') {
+          toast.error('Please purchase the course to access video calls');
         } else {
           toast.error('Failed to join video call');
         }
