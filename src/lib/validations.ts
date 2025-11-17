@@ -32,6 +32,9 @@ export const paymentVerificationSchema = z.object({
   planName: z.enum(["Lite", "Premium", "Premium Pro"]),
 });
 
+// UUID schema for URL parameters
+export const uuidSchema = z.string().uuid("Invalid course ID format");
+
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type SignInInput = z.infer<typeof signInSchema>;
 export type PaymentVerificationInput = z.infer<typeof paymentVerificationSchema>;

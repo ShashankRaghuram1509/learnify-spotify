@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, Users, Clock, BookOpen, Play, ShoppingCart, FileText } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { uuidSchema } from "@/lib/validations";
 
 const CourseDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,6 +22,15 @@ const CourseDetail = () => {
     const fetchCourse = async () => {
       try {
         setLoading(true);
+        
+        // Validate UUID before making database call
+        const validationResult = uuidSchema.safeParse(id);
+        if (!validationResult.success) {
+          console.error("Invalid course ID:", id);
+          toast.error("Invalid course ID. Redirecting to courses page.");
+          navigate("/courses");
+          return;
+        }
         
         // Fetch course with full module data and enrollment count
         const { data, error } = await supabase
