@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import CourseCard from "./CourseCard";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // In a real app, this would be fetched from your backend
 const categories = [
@@ -82,24 +83,53 @@ const FeaturedCourses = () => {
   const { toast } = useToast();
   
   useEffect(() => {
-    const loadCourses = () => {
+    const loadCourses = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Use only mock data since backend is removed
-        console.log("Using mock course data");
-        setCourses(mockCourses);
+        // Fetch courses from database
+        const { data, error } = await supabase
+          .from('courses')
+          .select(`
+            *,
+            enrollments(count)
+          `)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        // Transform database courses to match expected format
+        const transformedCourses = data?.map(course => ({
+          id: course.id,
+          courseId: course.id,
+          title: course.title,
+          instructor: "Expert Instructor",
+          rating: 4.5,
+          students: course.enrollments?.[0]?.count || 0,
+          duration: "8 weeks",
+          level: "All Levels",
+          price: course.price || 0,
+          discountPrice: course.price ? course.price * 0.8 : 0,
+          image: course.thumbnail_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600",
+          featured: true,
+          premium: course.is_premium || false,
+          category: "programming",
+          externalLink: null
+        })) || [];
+        
+        setCourses(transformedCourses);
       } catch (error) {
+        console.error('Failed to load courses:', error);
         setError('Failed to load courses');
         
         toast({
           title: "Error",
-          description: "Could not load courses. Using local data instead.",
+          description: "Could not load courses. Using fallback data.",
           variant: "destructive",
         });
         
-        // Use the mock data as fallback
+        // Use mock data as fallback
         setCourses(mockCourses);
       } finally {
         setLoading(false);
