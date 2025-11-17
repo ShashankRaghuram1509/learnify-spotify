@@ -140,9 +140,11 @@ export default function MyCoursesPage() {
                       <span>Completed on {new Date(course.completed_at).toLocaleDateString()}</span>
                     </div>
                   )}
-                  <Button className="w-full">
-                    <Play className="mr-2 h-4 w-4" />
-                    {course.progress === 100 ? "Review Course" : "Continue Learning"}
+                  <Button className="w-full" asChild>
+                    <Link to={`/dashboard/student/course/${course.id}`}>
+                      <Play className="mr-2 h-4 w-4" />
+                      {course.progress === 100 ? "Review Course" : "Continue Learning"}
+                    </Link>
                   </Button>
                 </div>
               </CardContent>
