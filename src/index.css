@@ -56,6 +56,11 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
+  svg {
+    height: 1em;
+    width: 1em;
+  }
+
   /* For Firefox */
   * {
     scrollbar-width: thin;
