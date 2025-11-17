@@ -38,7 +38,7 @@ const CourseDetail = () => {
           .from("courses")
           .select(`
             *,
-            modules!inner(*),
+            modules(*),
             enrollments:enrollments(count)
           `)
           .eq("id", id);
@@ -142,11 +142,26 @@ const CourseDetail = () => {
       return;
     }
 
-    // Check if premium course requires subscription
-    if (course.is_premium && course.price > 0 && !hasValidSubscription()) {
-      toast.error("This is a premium course. Please upgrade your subscription to access it.");
-      navigate('/dashboard/student/upgrade');
-      return;
+    // For premium courses, check subscription or offer direct payment
+    if (course.is_premium && course.price > 0) {
+      if (!hasValidSubscription()) {
+        // Show payment dialog for direct course purchase
+        const confirmed = window.confirm(
+          `This is a premium course (₹${course.price}). Would you like to:\n\n` +
+          `1. Pay ₹${course.price} for this course only (Click OK)\n` +
+          `2. Get a subscription for all premium courses (Click Cancel)`
+        );
+        
+        if (!confirmed) {
+          // User chose subscription option
+          navigate('/dashboard/student/upgrade');
+          return;
+        }
+        
+        // User chose to pay for this specific course
+        await handleCoursePayment();
+        return;
+      }
     }
 
     setIsEnrolling(true);
@@ -168,6 +183,123 @@ const CourseDetail = () => {
       } else {
         toast.error("Failed to enroll in the course. Please try again.");
       }
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleCoursePayment = async () => {
+    if (!course) return;
+
+    try {
+      setIsEnrolling(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Please login to continue");
+        return;
+      }
+
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        toast.error("Failed to load payment gateway");
+        return;
+      }
+
+      const { data: orderData, error: orderError } = await supabase.functions.invoke(
+        'razorpay-create-order',
+        {
+          body: { 
+            amount: course.price, 
+            currency: 'INR', 
+            planName: `Course: ${course.title}`,
+            courseId: course.id 
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (orderError || !orderData) {
+        toast.error("Failed to create payment order");
+        return;
+      }
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Course Purchase',
+        description: course.title,
+        order_id: orderData.orderId,
+        handler: async (response: any) => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('Not authenticated');
+
+            const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+              'razorpay-verify-payment',
+              {
+                body: {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  amount: orderData.amount,
+                  course_id: course.id,
+                },
+                headers: {
+                  Authorization: `Bearer ${session.access_token}`,
+                },
+              }
+            );
+
+            if (verifyError || !verifyData?.success) {
+              throw new Error('Payment verification failed');
+            }
+
+            // Enroll user after successful payment
+            const { error: enrollError } = await supabase.functions.invoke('create-enrollment', {
+              body: { course_id: course.id }
+            });
+
+            if (!enrollError) {
+              setIsEnrolled(true);
+              toast.success("Payment successful! You're now enrolled in the course.");
+            } else {
+              toast.success("Payment successful! Please refresh the page to access the course.");
+            }
+          } catch (error) {
+            toast.error("Payment verification failed. Please contact support.");
+          }
+        },
+        prefill: {
+          name: user?.user_metadata?.full_name || '',
+          email: user?.email || '',
+        },
+        theme: {
+          color: '#1DB954',
+        },
+      };
+
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
+    } catch (error) {
+      toast.error("Failed to process payment");
     } finally {
       setIsEnrolling(false);
     }

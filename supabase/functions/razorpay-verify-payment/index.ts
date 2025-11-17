@@ -50,7 +50,7 @@ serve(async (req) => {
     } = requestData;
 
     // Input validation - planName is optional for course purchases
-    if (planName) {
+    if (planName && !course_id) {
       const validPlans = ['Lite', 'Premium', 'Premium Pro'];
       if (!validPlans.includes(planName)) {
         throw new Error('Invalid plan');
