@@ -67,7 +67,7 @@ serve(async (req) => {
     // Verify user has access to this video call session
     const { data: session, error: sessionError } = await supabaseClient
       .from('video_call_schedules')
-      .select('id, teacher_id, student_id')
+      .select('id, teacher_id, student_id, course_id')
       .eq('id', session_id)
       .single();
 
@@ -80,6 +80,21 @@ serve(async (req) => {
 
     if (!isAuthorized) {
       throw new Error('Not authorized to join this video call');
+    }
+
+    // If student, verify payment for the course
+    if (session.student_id === user.id && session.course_id) {
+      const { data: payment, error: paymentError } = await supabaseClient
+        .from('payments')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('course_id', session.course_id)
+        .eq('status', 'completed')
+        .single();
+
+      if (paymentError || !payment) {
+        throw new Error('Payment required');
+      }
     }
 
     // Get ZegoCloud credentials from secrets

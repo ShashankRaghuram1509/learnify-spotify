@@ -1,7 +1,7 @@
-import Chat from "@/components/dashboard/Chat";
 import ContentManager from "@/components/dashboard/ContentManager";
 import StudentAnalytics from "@/components/dashboard/StudentAnalytics";
 import VideoCallManagement from "@/components/dashboard/VideoCallManagement";
+import TeacherChatList from "@/components/dashboard/TeacherChatList";
 
 export default function TeacherDashboard() {
   return (
@@ -16,7 +16,7 @@ export default function TeacherDashboard() {
         <ContentManager />
       </div>
       <div className="md:col-span-2 lg:col-span-4">
-        <Chat />
+        <TeacherChatList />
       </div>
     </div>
   );
