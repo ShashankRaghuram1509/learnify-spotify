@@ -259,28 +259,91 @@ export default function CourseViewer() {
         </CardHeader>
         <CardContent>
           {!hasPaid && course.is_premium && course.price > 0 ? (
-            <div className="text-center py-12">
-              <div className="mb-6">
-                <h3 className="text-xl font-semibold mb-2">Premium Course Content</h3>
-                <p className="text-muted-foreground mb-4">
-                  This course requires payment to access the content
+            <div className="py-8">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-semibold mb-2">Premium Course Content</h3>
+                <p className="text-muted-foreground">
+                  Choose how you'd like to access this course
                 </p>
-                <p className="text-2xl font-bold text-primary mb-6">₹{course.price}</p>
               </div>
-              <Button onClick={handlePayment} size="lg">
-                Purchase Course
-              </Button>
-              <p className="text-sm text-muted-foreground mt-4">
-                Or{" "}
-                <Button
-                  variant="link"
-                  className="p-0 h-auto"
-                  onClick={() => navigate('/dashboard/student/upgrade')}
-                >
-                  get a subscription
-                </Button>
-                {" "}for access to all premium courses
-              </p>
+
+              <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                {/* Individual Course Purchase */}
+                <Card className="border-2">
+                  <CardHeader>
+                    <CardTitle className="text-xl">Buy This Course</CardTitle>
+                    <div className="text-3xl font-bold text-primary mt-2">
+                      ₹{course.price}
+                    </div>
+                    <p className="text-sm text-muted-foreground">One-time payment</p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                        <span>Lifetime access to this course</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                        <span>All course materials and videos</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                        <span>Certificate upon completion</span>
+                      </li>
+                    </ul>
+                    <Button onClick={handlePayment} className="w-full" size="lg">
+                      Purchase Course
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Subscription Options */}
+                <Card className="border-2 border-primary bg-primary/5">
+                  <CardHeader>
+                    <div className="inline-block px-2 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded mb-2">
+                      BEST VALUE
+                    </div>
+                    <CardTitle className="text-xl">Get Subscription</CardTitle>
+                    <div className="text-3xl font-bold text-primary mt-2">
+                      From ₹999
+                    </div>
+                    <p className="text-sm text-muted-foreground">Access all premium courses</p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                        <span>Access to ALL premium courses</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                        <span>New courses added regularly</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                        <span>Priority support</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                        <span>Certificates for all courses</span>
+                      </li>
+                    </ul>
+                    <Button 
+                      onClick={() => navigate('/dashboard/student/upgrade')} 
+                      className="w-full" 
+                      size="lg"
+                      variant="default"
+                    >
+                      View Subscription Plans
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="text-center mt-6 text-sm text-muted-foreground">
+                <p>Not sure? Subscriptions give you access to all premium courses for less than buying individual courses.</p>
+              </div>
             </div>
           ) : (
             <>
