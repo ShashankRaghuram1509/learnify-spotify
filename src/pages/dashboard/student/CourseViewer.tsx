@@ -67,6 +67,8 @@ export default function CourseViewer() {
 
       // Check payment for premium courses
       if (courseData.is_premium && courseData.price > 0) {
+        console.log('Checking payment for premium course:', courseData.title);
+        
         const { data: paymentData } = await supabase
           .from("payments")
           .select("id")
@@ -75,6 +77,8 @@ export default function CourseViewer() {
           .eq("status", "completed")
           .maybeSingle();
 
+        console.log('Payment data:', paymentData);
+
         // Also check subscription
         const { data: profileData } = await supabase
           .from("profiles")
@@ -82,11 +86,17 @@ export default function CourseViewer() {
           .eq("id", user?.id)
           .single();
 
+        console.log('Profile data:', profileData);
+
         const hasSubscription = profileData?.subscription_tier && 
           ['Lite', 'Premium', 'Premium Pro'].includes(profileData.subscription_tier) &&
           (!profileData.subscription_expires_at || new Date(profileData.subscription_expires_at) > new Date());
 
-        setHasPaid(!!(paymentData || hasSubscription));
+        console.log('Has subscription:', hasSubscription);
+        const accessGranted = !!(paymentData || hasSubscription);
+        console.log('Access granted:', accessGranted);
+
+        setHasPaid(accessGranted);
       } else {
         setHasPaid(true); // Free course
       }
