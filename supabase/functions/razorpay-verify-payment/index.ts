@@ -145,6 +145,15 @@ serve(async (req) => {
   } catch (error) {
     // Return user-friendly error messages without exposing internals
     const err = error as Error;
+    
+    // --- Enhanced error logging for debugging ---
+    console.error('--- RAZORPAY VERIFY ERROR ---');
+    console.error('Actual Error Message:', err.message);
+    console.error('Full Error:', err);
+    console.error('Error Stack:', err.stack);
+    console.error('--- END ERROR ---');
+    // --- End enhanced logging ---
+    
     let userMessage = 'Payment verification failed. Please contact support.';
     let statusCode = 500;
     
@@ -160,7 +169,10 @@ serve(async (req) => {
     }
     
     return new Response(
-      JSON.stringify({ error: userMessage }),
+      JSON.stringify({ 
+        error: userMessage,
+        debug_error: err.message // Include actual error for debugging
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: statusCode 
