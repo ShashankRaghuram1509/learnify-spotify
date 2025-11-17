@@ -12,32 +12,46 @@ serve(async (req) => {
   }
 
   try {
+    console.log('AI chat request received');
+    
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('Missing authorization header');
       return new Response(
         JSON.stringify({ error: "Authentication required" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !user) {
+    // Extract user from JWT token
+    const token = authHeader.replace('Bearer ', '');
+    let userId: string | null = null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1] || ''));
+      userId = payload?.sub || null;
+    } catch (e) {
+      console.error('JWT parse error:', e);
+      return new Response(
+        JSON.stringify({ error: "Invalid authentication" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    if (!userId) {
+      console.error('No user ID in token');
       return new Response(
         JSON.stringify({ error: "Invalid authentication" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log('User authenticated:', userId);
+
     // Parse and validate input
     const body = await req.json();
     const { messages } = body;
+    console.log('Messages received:', messages?.length);
 
     // Validate messages
     if (!Array.isArray(messages)) {
@@ -80,8 +94,11 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY not configured');
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+
+    console.log('Calling Lovable AI API...');
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -102,7 +119,13 @@ serve(async (req) => {
       }),
     });
 
+    console.log('Lovable AI response status:', response.status);
+
     if (!response.ok) {
+      console.error('Lovable AI error:', response.status);
+      const errorText = await response.text();
+      console.error('Error details:', errorText);
+      
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
@@ -116,17 +139,25 @@ serve(async (req) => {
         );
       }
       return new Response(
-        JSON.stringify({ error: "AI service temporarily unavailable" }),
+        JSON.stringify({ error: "AI service temporarily unavailable", details: errorText }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log('Streaming response back to client');
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (error) {
+    const err = error as Error;
+    console.error('Error in ai-chat:', err.message);
+    console.error('Stack trace:', err.stack);
+    
     return new Response(
-      JSON.stringify({ error: "An error occurred processing your request" }),
+      JSON.stringify({ 
+        error: "An error occurred processing your request",
+        details: err.message 
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
