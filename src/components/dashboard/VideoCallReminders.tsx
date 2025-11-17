@@ -30,7 +30,8 @@ export default function VideoCallReminders() {
 
   const fetchUpcomingSessions = async () => {
     try {
-      const now = new Date().toISOString();
+      const now = new Date();
+      const from = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour back to include just-started sessions
       const { data, error } = await supabase
         .from("video_call_schedules")
         .select(`
@@ -44,10 +45,10 @@ export default function VideoCallReminders() {
           )
         `)
         .eq("student_id", user?.id)
-        .eq("status", "scheduled")
-        .gte("scheduled_at", now)
+        .in("status", ["scheduled", "in-progress"]) 
+        .gte("scheduled_at", from.toISOString())
         .order("scheduled_at", { ascending: true })
-        .limit(3);
+        .limit(5);
 
       if (error) throw error;
 

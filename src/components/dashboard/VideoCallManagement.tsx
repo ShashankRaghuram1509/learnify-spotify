@@ -172,7 +172,7 @@ export default function VideoCallManagement() {
   };
 
   const handleJoinCall = (sessionId: string, roomId: string) => {
-    navigate(`/video-call?sessionId=${sessionId}&roomId=${roomId}`);
+    navigate(`/video-call/${roomId}?sessionId=${sessionId}`);
   };
 
   return (
