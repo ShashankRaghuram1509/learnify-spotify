@@ -380,6 +380,7 @@ export type Database = {
           currency: string | null
           id: string
           payment_method: string | null
+          plan_name: string | null
           status: string | null
           transaction_id: string | null
           user_id: string
@@ -391,6 +392,7 @@ export type Database = {
           currency?: string | null
           id?: string
           payment_method?: string | null
+          plan_name?: string | null
           status?: string | null
           transaction_id?: string | null
           user_id: string
@@ -402,6 +404,7 @@ export type Database = {
           currency?: string | null
           id?: string
           payment_method?: string | null
+          plan_name?: string | null
           status?: string | null
           transaction_id?: string | null
           user_id?: string

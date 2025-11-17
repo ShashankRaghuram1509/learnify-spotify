@@ -79,34 +79,53 @@ serve(async (req) => {
       );
     }
 
-    // If course is premium, verify user has active subscription
+    // For premium courses, verify access through subscription OR course purchase
     if (course.is_premium && course.price && course.price > 0) {
-      console.log('Checking subscription status for premium course...');
+      console.log('Checking access for premium course...');
       
+      let hasAccess = false;
+
+      // Check 1: Active subscription
       const { data: profile, error: profileError } = await supabaseClient
         .from('profiles')
         .select('subscription_tier, subscription_expires_at')
         .eq('id', userId)
         .single();
 
-      if (profileError || !profile) {
-        console.error('Profile error:', profileError);
-        throw new Error('Failed to verify subscription status');
+      if (profile && !profileError) {
+        console.log('User subscription:', profile);
+        const validTiers = ['Lite', 'Premium', 'Premium Pro'];
+        const hasValidTier = profile.subscription_tier && validTiers.includes(profile.subscription_tier);
+        const isNotExpired = !profile.subscription_expires_at || new Date(profile.subscription_expires_at) > new Date();
+        
+        if (hasValidTier && isNotExpired) {
+          hasAccess = true;
+          console.log('Access granted via subscription');
+        }
       }
 
-      console.log('User subscription:', profile);
+      // Check 2: Course-specific purchase
+      if (!hasAccess) {
+        const { data: payment, error: paymentError } = await supabaseClient
+          .from('payments')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('course_id', course_id)
+          .eq('status', 'completed')
+          .maybeSingle();
 
-      // Check if user has an active premium subscription
-      const validTiers = ['Lite', 'Premium', 'Premium Pro'];
-      const hasValidTier = profile.subscription_tier && validTiers.includes(profile.subscription_tier);
-      const isNotExpired = !profile.subscription_expires_at || new Date(profile.subscription_expires_at) > new Date();
+        if (payment && !paymentError) {
+          hasAccess = true;
+          console.log('Access granted via course purchase');
+        }
+      }
 
-      if (!hasValidTier || !isNotExpired) {
-        console.error('Invalid or expired subscription:', { tier: profile.subscription_tier, expires: profile.subscription_expires_at });
+      if (!hasAccess) {
+        console.error('No valid access method found');
         throw new Error('Active subscription required for premium course');
       }
 
-      console.log('Subscription verified successfully');
+      console.log('Access verified successfully');
     }
 
     // Create service role client for enrollment creation (bypasses RLS)

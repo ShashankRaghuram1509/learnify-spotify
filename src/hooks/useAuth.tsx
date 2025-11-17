@@ -10,7 +10,7 @@ interface AuthContextType {
   subscriptionTier: string | null;
   subscriptionExpiresAt: string | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: "student" | "teacher") => Promise<void>;
+  signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUserData: () => Promise<void>;
@@ -98,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, role: "student" | "teacher") => {
+  const signUp = async (email: string, password: string, fullName: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -106,7 +106,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         options: {
           data: {
             full_name: fullName,
-            role: role,
           },
           emailRedirectTo: `${window.location.origin}/`,
         },

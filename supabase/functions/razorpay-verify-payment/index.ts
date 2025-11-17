@@ -49,13 +49,16 @@ serve(async (req) => {
       razorpay_payment_id, 
       razorpay_signature,
       amount,
-      planName 
+      planName,
+      course_id // Optional: for course-specific purchases
     } = requestData;
 
-    // Input validation
-    const validPlans = ['Lite', 'Premium', 'Premium Pro'];
-    if (!planName || !validPlans.includes(planName)) {
-      throw new Error('Invalid plan');
+    // Input validation - planName is optional for course purchases
+    if (planName) {
+      const validPlans = ['Lite', 'Premium', 'Premium Pro'];
+      if (!validPlans.includes(planName)) {
+        throw new Error('Invalid plan');
+      }
     }
 
     if (!razorpay_order_id || typeof razorpay_order_id !== 'string' || razorpay_order_id.length > 100) {
@@ -110,16 +113,30 @@ serve(async (req) => {
 
     // Store payment in database
     console.log('Storing payment record...');
+    const paymentData: any = {
+      user_id: userId,
+      amount: amount / 100, // Convert from paise to rupees
+      currency: 'INR',
+      status: 'completed',
+      payment_method: 'razorpay',
+      transaction_id: razorpay_payment_id,
+    };
+
+    // If this is a course purchase, add course_id
+    if (course_id) {
+      paymentData.course_id = course_id;
+      console.log('Recording course purchase for course:', course_id);
+    }
+
+    // If this is a subscription, add plan name
+    if (planName) {
+      paymentData.plan_name = planName;
+      console.log('Recording subscription purchase for plan:', planName);
+    }
+
     const { error: paymentError } = await supabaseClient
       .from('payments')
-      .insert({
-        user_id: userId,
-        amount: amount / 100, // Convert from paise to rupees
-        currency: 'INR',
-        status: 'completed',
-        payment_method: 'razorpay',
-        transaction_id: razorpay_payment_id,
-      });
+      .insert(paymentData);
 
     if (paymentError) {
       console.error('Payment storage error:', paymentError);
@@ -127,30 +144,34 @@ serve(async (req) => {
     }
     console.log('Payment record stored successfully');
 
-    // Upgrade user subscription tier
-    console.log('Upgrading subscription tier to:', planName);
-    const expiryDate = new Date();
-    expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year from now
+    // If this is a subscription payment (not a course purchase), update subscription
+    if (planName && !course_id) {
+      console.log('Upgrading subscription tier to:', planName);
+      const expiryDate = new Date();
+      expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year from now
 
-    const { error: profileError } = await supabaseClient
-      .from('profiles')
-      .update({ 
-        subscription_tier: planName,
-        subscription_expires_at: expiryDate.toISOString()
-      })
-      .eq('id', userId);
+      const { error: profileError } = await supabaseClient
+        .from('profiles')
+        .update({ 
+          subscription_tier: planName,
+          subscription_expires_at: expiryDate.toISOString()
+        })
+        .eq('id', userId);
 
-    if (profileError) {
-      console.error('Profile update error:', profileError);
-      throw new Error('Failed to upgrade subscription');
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        throw new Error('Failed to upgrade subscription');
+      }
+      console.log('Subscription upgraded successfully');
     }
-    console.log('Subscription upgraded successfully');
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Payment verified and recorded',
-        planName 
+        message: course_id 
+          ? 'Course purchase verified successfully' 
+          : 'Payment verified and recorded',
+        planName: planName || null
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
