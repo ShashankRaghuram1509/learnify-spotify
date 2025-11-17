@@ -114,7 +114,7 @@ serve(async (req) => {
       user_id: userId,
       amount: amount / 100, // Convert from paise to rupees
       currency: 'INR',
-      status: 'success',
+      status: 'completed',
       payment_method: 'razorpay',
       transaction_id: razorpay_payment_id,
     };
@@ -166,8 +166,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: course_id 
-          ? 'Course purchase verified successfully' 
-          : 'Payment verified and recorded',
+          ? 'Course purchase completed successfully' 
+          : 'Payment completed and recorded',
         planName: planName || null
       }),
       { 
