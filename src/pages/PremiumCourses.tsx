@@ -42,7 +42,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function PremiumCourses() {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -73,7 +73,7 @@ export default function PremiumCourses() {
     return <div>Loading...</div>;
   }
 
-  if (!user || !isPro) {
+  if (!user || (!isPro && userRole !== 'admin')) {
     return <Navigate to="/dashboard/student/upgrade" replace />;
   }
   return (
@@ -107,7 +107,7 @@ export default function PremiumCourses() {
               )}
             </CardContent>
             <CardFooter>
-              <Button className="w-full">Upgrade to Premium</Button>
+              <Button className="w-full">Explore Courses</Button>
             </CardFooter>
           </Card>
         ))}

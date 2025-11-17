@@ -56,7 +56,9 @@ const App = () => (
           <Route path="/video-call/:roomID" element={<VideoCall />} />
 
           {/* Admin Route */}
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]} />}>
+            <Route index element={<AdminDashboard />} />
+          </Route>
 
           {/* Protected Dashboard Routes */}
           <Route element={<DashboardLayout />}>

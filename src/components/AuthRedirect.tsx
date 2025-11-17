@@ -16,5 +16,9 @@ export default function AuthRedirect() {
     return <Navigate to="/dashboard/teacher" replace />;
   }
 
+  if (userRole === "admin") {
+    return <Navigate to="/admin" replace />;
+  }
+
   return <Navigate to="/" replace />;
 }
