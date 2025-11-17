@@ -17,19 +17,17 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // SECURITY: Create client with user's JWT for authentication
-    const supabaseClient = createClient(
+    // Extract token from Authorization header
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Create service role client to verify the JWT token
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // SECURITY: Verify token signature and get authenticated user
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    // Verify the JWT token
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
 
     if (authError || !user) {
       console.error('Auth verification failed:', authError);
@@ -47,7 +45,7 @@ serve(async (req) => {
     }
 
     // Check if course exists and get course details
-    const { data: course, error: courseError } = await supabaseClient
+    const { data: course, error: courseError } = await supabaseAdmin
       .from('courses')
       .select('id, is_premium, price')
       .eq('id', course_id)
@@ -61,7 +59,7 @@ serve(async (req) => {
     console.log('Course found:', course);
 
     // Check if already enrolled
-    const { data: existingEnrollment } = await supabaseClient
+    const { data: existingEnrollment } = await supabaseAdmin
       .from('enrollments')
       .select('id')
       .eq('student_id', userId)
@@ -83,7 +81,7 @@ serve(async (req) => {
       let hasAccess = false;
 
       // Check 1: Active subscription
-      const { data: profile, error: profileError } = await supabaseClient
+      const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
         .select('subscription_tier, subscription_expires_at')
         .eq('id', userId)
@@ -103,7 +101,7 @@ serve(async (req) => {
 
       // Check 2: Course-specific purchase
       if (!hasAccess) {
-        const { data: payment, error: paymentError } = await supabaseClient
+        const { data: payment, error: paymentError } = await supabaseAdmin
           .from('payments')
           .select('id')
           .eq('user_id', userId)
@@ -125,16 +123,10 @@ serve(async (req) => {
       console.log('Access verified successfully');
     }
 
-    // Create service role client for enrollment creation (bypasses RLS)
-    const serviceClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
     console.log('Creating enrollment...');
 
     // Create enrollment using service role to bypass RLS
-    const { data: enrollment, error: enrollmentError } = await serviceClient
+    const { data: enrollment, error: enrollmentError } = await supabaseAdmin
       .from('enrollments')
       .insert({
         student_id: userId,

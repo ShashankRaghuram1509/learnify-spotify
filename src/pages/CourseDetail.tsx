@@ -167,8 +167,18 @@ const CourseDetail = () => {
     setIsEnrolling(true);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Please log in to continue");
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-enrollment', {
-        body: { course_id: course.id }
+        body: { course_id: course.id },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw error;
@@ -177,6 +187,7 @@ const CourseDetail = () => {
       setIsEnrolled(true);
       toast.success("Enrolled successfully! Course content is now available.");
     } catch (error: any) {
+      console.error('Enrollment error:', error);
       if (error.message === 'Active subscription required for premium course') {
         toast.error("This is a premium course. Please upgrade your subscription to access it.");
         navigate('/dashboard/student/upgrade');
@@ -273,8 +284,18 @@ const CourseDetail = () => {
             }
 
             // Enroll user after successful payment
+            const { data: { session: enrollSession } } = await supabase.auth.getSession();
+            
+            if (!enrollSession) {
+              toast.error("Session expired. Please log in again.");
+              return;
+            }
+
             const { error: enrollError } = await supabase.functions.invoke('create-enrollment', {
-              body: { course_id: course.id }
+              body: { course_id: course.id },
+              headers: {
+                Authorization: `Bearer ${enrollSession.access_token}`
+              }
             });
 
             if (!enrollError) {
