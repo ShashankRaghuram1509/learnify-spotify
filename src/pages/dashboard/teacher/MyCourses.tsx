@@ -53,7 +53,7 @@ export default function MyCoursesPage() {
         (coursesData || []).map(async (course) => {
           const { count } = await supabase
             .from("enrollments")
-            .select("*", { count: "exact", head: true })
+            .select("id", { count: "exact", head: true })
             .eq("course_id", course.id);
 
           return {
