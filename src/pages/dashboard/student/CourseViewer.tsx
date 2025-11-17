@@ -137,6 +137,9 @@ export default function CourseViewer() {
             planName: `Course: ${course.title}`,
             courseId: course.id 
           },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         }
       );
 
@@ -154,6 +157,13 @@ export default function CourseViewer() {
         order_id: orderData.orderId,
         handler: async (response: any) => {
           try {
+            // Get fresh session token for payment verification
+            const { data: { session: verifySession } } = await supabase.auth.getSession();
+            if (!verifySession) {
+              toast.error("Session expired. Please login again.");
+              return;
+            }
+
             const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
               'razorpay-verify-payment',
               {
@@ -163,6 +173,9 @@ export default function CourseViewer() {
                   razorpay_signature: response.razorpay_signature,
                   amount: orderData.amount / 100,
                   course_id: course.id,
+                },
+                headers: {
+                  Authorization: `Bearer ${verifySession.access_token}`,
                 },
               }
             );
