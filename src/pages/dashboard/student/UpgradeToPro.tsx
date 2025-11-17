@@ -4,6 +4,7 @@ import { CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 declare global {
   interface Window {
@@ -49,6 +50,7 @@ const plans = [
 export default function UpgradeToProPage() {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const { refreshUserData } = useAuth();
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
@@ -142,6 +144,9 @@ export default function UpgradeToProPage() {
             if (verifyError || !verifyData?.success) {
               throw new Error('Payment verification failed');
             }
+
+            // Immediately refresh user data to unlock premium features
+            await refreshUserData();
 
             toast({
               title: "Success!",
