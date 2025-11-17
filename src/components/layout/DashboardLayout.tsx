@@ -45,10 +45,21 @@ const teacherNavItems = [
 ];
 
 export default function DashboardLayout() {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, signOut, subscriptionTier, subscriptionExpiresAt } = useAuth();
   const location = useLocation();
 
-  const navItems = userRole === "student" ? studentNavItems : teacherNavItems;
+  const hasValidSubscription = (() => {
+    if (!subscriptionTier) return false;
+    const valid = ["Lite", "Premium", "Premium Pro"].includes(subscriptionTier);
+    if (!valid) return false;
+    if (!subscriptionExpiresAt) return true;
+    return new Date(subscriptionExpiresAt) > new Date();
+  })();
+
+  const baseItems = userRole === "student" ? studentNavItems : teacherNavItems;
+  const navItems = userRole === "student"
+    ? baseItems.filter(item => item.to !== "/dashboard/student/upgrade" || !hasValidSubscription)
+    : baseItems;
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
