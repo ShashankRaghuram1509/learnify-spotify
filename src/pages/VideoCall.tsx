@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -9,10 +9,11 @@ export default function VideoCall() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { roomID } = useParams();
 
   useEffect(() => {
     const sessionId = searchParams.get('sessionId');
-    const roomId = searchParams.get('roomId');
+    const roomId = searchParams.get('roomId') || roomID || null;
 
     if (!sessionId || !roomId) {
       toast.error('Invalid video call link');
