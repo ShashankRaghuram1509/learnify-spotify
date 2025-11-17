@@ -66,7 +66,15 @@ export default function UpgradeToProPage() {
 
   const handlePayment = async (plan: typeof plans[0]) => {
     try {
-      setIsProcessing(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Error",
+          description: "Please login to continue",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
@@ -84,10 +92,20 @@ export default function UpgradeToProPage() {
         'razorpay-create-order',
         {
           body: { amount, currency: 'INR', planName: plan.name },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         }
       );
 
       if (orderError || !orderData) {
+        console.error('Order creation error:', orderError);
+        console.error('Order data:', orderData);
+        toast({
+          title: "Error",
+          description: orderData?.error || 'Failed to create order',
+          variant: "destructive",
+        });
         throw new Error('Failed to create order');
       }
 
