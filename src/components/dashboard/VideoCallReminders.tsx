@@ -22,10 +22,10 @@ export default function VideoCallReminders() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchUpcomingSessions();
-      setupRealtimeSubscription();
-    }
+    if (!user) return;
+    fetchUpcomingSessions();
+    const cleanup = setupRealtimeSubscription();
+    return () => cleanup && cleanup();
   }, [user]);
 
   const fetchUpcomingSessions = async () => {
@@ -103,7 +103,7 @@ export default function VideoCallReminders() {
           fetchUpcomingSessions();
           
           // Show notification when teacher starts the call
-          if (payload.eventType === 'UPDATE' && (payload.new as any).status === 'in-progress') {
+          if (payload.eventType === 'UPDATE' && (payload.new as any).meeting_url) {
             toast.info("Your teacher has started the video call!", {
               description: "Click 'Join Session' to enter",
               duration: 10000,
@@ -134,10 +134,12 @@ export default function VideoCallReminders() {
     });
   };
 
-  const handleJoinCall = (meetingUrl: string | null) => {
-    if (meetingUrl) {
-      window.open(meetingUrl, "_blank");
-    }
+  const handleJoinCall = (meetingUrl: string | null, sessionId: string) => {
+    if (!meetingUrl) return;
+    const url = meetingUrl.includes('/')
+      ? meetingUrl
+      : `/video-call/${meetingUrl}?sessionId=${sessionId}`;
+    window.open(url, "_blank");
   };
 
   if (loading) {
@@ -190,7 +192,7 @@ export default function VideoCallReminders() {
                 </div>
                 {session.meeting_url && (
                   <Button
-                    onClick={() => handleJoinCall(session.meeting_url)}
+                    onClick={() => handleJoinCall(session.meeting_url, session.id)}
                     size="sm"
                     className="w-full"
                   >

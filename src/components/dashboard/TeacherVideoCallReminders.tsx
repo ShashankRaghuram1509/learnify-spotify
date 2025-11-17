@@ -24,10 +24,10 @@ export default function TeacherVideoCallReminders() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      fetchUpcomingSessions();
-      setupRealtimeSubscription();
-    }
+    if (!user) return;
+    fetchUpcomingSessions();
+    const cleanup = setupRealtimeSubscription();
+    return () => cleanup && cleanup();
   }, [user]);
 
   const fetchUpcomingSessions = async () => {
@@ -129,29 +129,25 @@ export default function TeacherVideoCallReminders() {
 
   const handleStartCall = (session: VideoCall) => {
     if (session.meeting_url) {
-      // Update status to 'in-progress'
-      supabase
-        .from("video_call_schedules")
-        .update({ status: "in-progress" })
-        .eq("id", session.id)
-        .then(() => {
-          window.open(session.meeting_url!, "_blank");
-          toast.success("Starting video call...");
-        });
+      // Open existing meeting (supports both full URL and room code)
+      const url = session.meeting_url.includes('/')
+        ? session.meeting_url
+        : `/video-call/${session.meeting_url}?sessionId=${session.id}`;
+      window.open(url, "_blank");
+      toast.success("Starting video call...");
     } else {
-      // Generate meeting URL
+      // Generate a room id and store it; student will get realtime update
       const roomId = `room_${session.id}`;
-      const meetingUrl = `/video-call/${roomId}?sessionId=${session.id}`;
-      
+
       supabase
         .from("video_call_schedules")
         .update({ 
-          meeting_url: meetingUrl,
-          status: "in-progress" 
+          meeting_url: roomId
         })
         .eq("id", session.id)
         .then(() => {
-          navigate(meetingUrl);
+          const url = `/video-call/${roomId}?sessionId=${session.id}`;
+          navigate(url);
           toast.success("Starting video call...");
         });
     }
