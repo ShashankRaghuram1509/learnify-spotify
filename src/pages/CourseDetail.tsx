@@ -20,7 +20,7 @@ const CourseDetail = () => {
   const [userSubscription, setUserSubscription] = useState<{tier: string | null, expires: string | null} | null>(null);
 
   useEffect(() => {
-    const fetchCourse = async () => {
+    const fetchCourseAndEnrollment = async () => {
       try {
         setLoading(true);
         
@@ -33,34 +33,82 @@ const CourseDetail = () => {
           return;
         }
         
-        // Fetch course with full module data and enrollment count
-        const { data, error } = await supabase
+        // Single optimized query: fetch course with enrollment check
+        const query = supabase
           .from("courses")
           .select(`
             *,
             modules!inner(*),
             enrollments:enrollments(count)
           `)
-          .eq("id", id)
-          .single();
+          .eq("id", id);
 
-        if (error) {
-          throw error;
+        // If user is logged in, also check their enrollment and subscription
+        if (user) {
+          const [courseResult, enrollmentResult, profileResult] = await Promise.all([
+            query.single(),
+            supabase
+              .from('enrollments')
+              .select('id')
+              .eq('student_id', user.id)
+              .eq('course_id', id)
+              .maybeSingle(),
+            supabase
+              .from('profiles')
+              .select('subscription_tier, subscription_expires_at')
+              .eq('id', user.id)
+              .single()
+          ]);
+
+          const { data, error } = courseResult;
+          
+          if (error) throw error;
+
+          // Set enrollment status
+          if (!enrollmentResult.error && enrollmentResult.data) {
+            setIsEnrolled(true);
+          }
+
+          // Set subscription data
+          if (!profileResult.error && profileResult.data) {
+            setUserSubscription({
+              tier: profileResult.data.subscription_tier,
+              expires: profileResult.data.subscription_expires_at
+            });
+          }
+
+          // Calculate course metadata
+          const studentCount = data?.enrollments?.[0]?.count || 0;
+          const moduleCount = data?.modules?.length || 0;
+
+          setCourse({
+            ...data,
+            students: studentCount,
+            rating: 4.5,
+            instructor: "Expert Instructor",
+            duration: `${moduleCount} modules`,
+            level: "All Levels",
+            image: data?.thumbnail_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600"
+          });
+        } else {
+          // User not logged in, just fetch course
+          const { data, error } = await query.single();
+          
+          if (error) throw error;
+
+          const studentCount = data?.enrollments?.[0]?.count || 0;
+          const moduleCount = data?.modules?.length || 0;
+
+          setCourse({
+            ...data,
+            students: studentCount,
+            rating: 4.5,
+            instructor: "Expert Instructor",
+            duration: `${moduleCount} modules`,
+            level: "All Levels",
+            image: data?.thumbnail_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600"
+          });
         }
-
-        // Calculate student count from enrollments
-        const studentCount = data?.enrollments?.[0]?.count || 0;
-        const moduleCount = data?.modules?.length || 0;
-
-        setCourse({
-          ...data,
-          students: studentCount,
-          rating: 4.5, // Default rating
-          instructor: "Expert Instructor",
-          duration: `${moduleCount} modules`,
-          level: "All Levels",
-          image: data?.thumbnail_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600"
-        });
       } catch (error) {
         console.error("Course fetch error:", error);
         toast.error("Failed to load course details.");
@@ -70,48 +118,9 @@ const CourseDetail = () => {
     };
 
     if (id) {
-      fetchCourse();
+      fetchCourseAndEnrollment();
     }
-  }, [id]);
-
-  // Check enrollment status and subscription after course loads
-  useEffect(() => {
-    const checkEnrollmentAndSubscription = async () => {
-      if (!user || !course) return;
-
-      try {
-        // Check if already enrolled
-        const { data: enrollmentData, error: enrollmentError } = await supabase
-          .from('enrollments')
-          .select('id')
-          .eq('student_id', user.id)
-          .eq('course_id', course.id)
-          .maybeSingle();
-
-        if (!enrollmentError && enrollmentData) {
-          setIsEnrolled(true);
-        }
-
-        // Check user's subscription status
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('subscription_tier, subscription_expires_at')
-          .eq('id', user.id)
-          .single();
-
-        if (!profileError && profileData) {
-          setUserSubscription({
-            tier: profileData.subscription_tier,
-            expires: profileData.subscription_expires_at
-          });
-        }
-      } catch (error) {
-        console.error('Enrollment/subscription check error:', error);
-      }
-    };
-
-    checkEnrollmentAndSubscription();
-  }, [user, course]);
+  }, [id, user]);
 
   // Check if user has valid subscription for premium courses
   const hasValidSubscription = () => {

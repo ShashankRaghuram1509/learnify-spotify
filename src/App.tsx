@@ -23,6 +23,7 @@ import TeacherMyCourses from "./pages/dashboard/teacher/MyCourses";
 import TeacherAnalytics from "./pages/dashboard/teacher/Analytics";
 import TeacherSchedule from "./pages/dashboard/teacher/Schedule";
 import TeacherProfile from "./pages/dashboard/teacher/Profile";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -53,6 +54,9 @@ const App = () => (
           {/* Live Video Call Route */}
           <Route path="/live" element={<Live />} />
           <Route path="/video-call/:roomID" element={<VideoCall />} />
+
+          {/* Admin Route */}
+          <Route path="/admin" element={<AdminDashboard />} />
 
           {/* Protected Dashboard Routes */}
           <Route element={<DashboardLayout />}>
