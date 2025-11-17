@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import CourseViewer from "@/pages/dashboard/student/CourseViewer";
 import Index from "./pages/Index";
 import Courses from "./pages/Courses";
 import CourseDetail from "./pages/CourseDetail";
@@ -65,6 +66,7 @@ const App = () => (
             <Route path="/dashboard/student" element={<ProtectedRoute allowedRoles={["student"]} />}>
               <Route index element={<StudentDashboard />} />
               <Route path="my-courses" element={<MyCoursesPage />} />
+              <Route path="course/:id" element={<CourseViewer />} />
               <Route path="certificates" element={<CertificatesPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="settings" element={<SettingsPage />} />
