@@ -48,6 +48,12 @@ export default function CourseViewer() {
         .single();
 
       if (courseError) throw courseError;
+      console.log('Course data loaded:', {
+        title: courseData.title,
+        video_url: courseData.video_url,
+        is_premium: courseData.is_premium,
+        price: courseData.price
+      });
       setCourse(courseData);
 
       // Fetch enrollment
@@ -225,16 +231,24 @@ export default function CourseViewer() {
   };
 
   const getYouTubeEmbedUrl = (url: string | null) => {
-    if (!url) return null;
+    if (!url) {
+      console.log('No video URL provided');
+      return null;
+    }
+    
+    console.log('Original video URL:', url);
     
     // Extract video ID from various YouTube URL formats
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     
     if (match && match[2].length === 11) {
-      return `https://www.youtube.com/embed/${match[2]}`;
+      const embedUrl = `https://www.youtube.com/embed/${match[2]}`;
+      console.log('Converted to embed URL:', embedUrl);
+      return embedUrl;
     }
     
+    console.log('Using URL as-is:', url);
     return url;
   };
 
