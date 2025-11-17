@@ -79,12 +79,27 @@ serve(async (req) => {
       throw new Error('Configuration error');
     }
 
-    // Verify signature
+    // Verify signature using Deno's native Web Crypto API
     console.log('Verifying payment signature...');
-    const crypto = await import("https://deno.land/std@0.160.0/node/crypto.ts");
-    const hmac = crypto.createHmac('sha256', RAZORPAY_KEY_SECRET);
-    hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
-    const generatedSignature = hmac.digest('hex');
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(RAZORPAY_KEY_SECRET);
+    const messageData = encoder.encode(`${razorpay_order_id}|${razorpay_payment_id}`);
+    
+    // Import the secret key for HMAC
+    const key = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    // Generate HMAC signature
+    const signatureBuffer = await crypto.subtle.sign('HMAC', key, messageData);
+    
+    // Convert to hex string
+    const signatureArray = Array.from(new Uint8Array(signatureBuffer));
+    const generatedSignature = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
     if (generatedSignature !== razorpay_signature) {
       console.error('Signature mismatch:', { generatedSignature, razorpay_signature });
