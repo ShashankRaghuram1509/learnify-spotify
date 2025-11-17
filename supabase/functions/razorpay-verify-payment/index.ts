@@ -18,28 +18,24 @@ serve(async (req) => {
       throw new Error('No authorization header');
     }
 
-    // Extract user ID from JWT token
-    const token = authHeader.replace('Bearer ', '');
-    let userId: string | null = null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1] || ''));
-      userId = payload?.sub || null;
-      console.log('User authenticated:', userId);
-    } catch (e) {
-      console.error('JWT parse error:', e);
-      throw new Error('Unauthorized');
-    }
-
-    if (!userId) {
-      console.error('No user ID in token');
-      throw new Error('Unauthorized');
-    }
-
+    // SECURITY: Create client with user's token
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       { global: { headers: { Authorization: authHeader } } }
     );
+
+    // SECURITY: Verify token signature and get authenticated user
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+
+    if (authError || !user) {
+      console.error('Auth verification failed:', authError);
+      throw new Error('Unauthorized');
+    }
+
+    // Now we can TRUST this user ID (token signature has been verified)
+    const userId = user.id;
+    console.log('User authenticated and verified:', userId);
 
     const requestData = await req.json();
     console.log('Request data:', JSON.stringify(requestData, null, 2));

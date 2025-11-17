@@ -17,7 +17,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Create client with user's JWT for authentication
+    // SECURITY: Create client with user's JWT for authentication
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -28,20 +28,17 @@ serve(async (req) => {
       }
     );
 
-    // Extract user from verified JWT (avoids GoTrue session requirement)
-    const token = authHeader.replace('Bearer ', '');
-    let userId: string | null = null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1] || ''));
-      userId = payload?.sub || null;
-    } catch (e) {
-      console.error('JWT parse error:', e);
-    }
-    if (!userId) {
+    // SECURITY: Verify token signature and get authenticated user
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+
+    if (authError || !user) {
+      console.error('Auth verification failed:', authError);
       throw new Error('Unauthorized');
     }
 
-    console.log('User authenticated:', userId);
+    // Now we can TRUST this user ID (token signature has been verified)
+    const userId = user.id;
+    console.log('User authenticated and verified:', userId);
 
     const { course_id } = await req.json();
 
