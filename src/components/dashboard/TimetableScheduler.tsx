@@ -200,8 +200,8 @@ export default function TimetableScheduler() {
       return;
     }
 
-    // Generate unique room ID for this session
-    const roomId = `room-${slot.id}-${Date.now()}`;
+    // Use consistent room ID based on schedule ID
+    const roomId = `room-${slot.id}`;
     
     // Navigate to video call page with session info
     navigate(`/video-call/${roomId}?sessionId=${slot.id}`);
