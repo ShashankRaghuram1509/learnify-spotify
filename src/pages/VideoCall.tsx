@@ -69,10 +69,23 @@ export default function VideoCall() {
           const zp = ZegoUIKitPrebuilt.create(kitToken);
           zp.joinRoom({
             container: containerRef.current,
+            turnOnMicrophoneWhenJoining: true,
+            turnOnCameraWhenJoining: true,
+            showMyCameraToggleButton: true,
+            showMyMicrophoneToggleButton: true,
+            showAudioVideoSettingsButton: true,
+            showScreenSharingButton: true,
+            showTextChat: true,
+            showUserList: true,
+            maxUsers: 2,
+            layout: "Auto",
+            showLayoutButton: false,
             scenario: {
-              mode: ZegoUIKitPrebuilt.VideoConference,
+              mode: ZegoUIKitPrebuilt.OneONoneCall,
+              config: {
+                role: ZegoUIKitPrebuilt.Host,
+              },
             },
-            showPreJoinView: true,
           });
         }
 
