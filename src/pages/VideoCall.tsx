@@ -141,21 +141,21 @@ export default function VideoCall() {
     initializeVideoCall();
   }, [searchParams, navigate, roomID]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-spotify-dark">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-spotify mx-auto mb-4"></div>
-          <p className="text-spotify-text">Joining video call...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div
-      ref={containerRef}
-      className="w-screen h-screen bg-background"
-    />
+    <div className="w-screen h-screen bg-background">
+      {loading && (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-foreground">Joining video call...</p>
+          </div>
+        </div>
+      )}
+      <div
+        ref={containerRef}
+        className="w-full h-full"
+        style={{ display: loading ? 'none' : 'block' }}
+      />
+    </div>
   );
 }
