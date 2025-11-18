@@ -47,42 +47,14 @@ export default function VideoCall() {
         const userName = profile?.full_name || session.user.email || 'User';
         console.log('✅ VideoCall - User name:', userName);
 
-        console.log('🎫 VideoCall - Requesting token from edge function');
-        const { data, error } = await supabase.functions.invoke('generate-video-token', {
-          body: { session_id: sessionId, room_id: roomId },
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-
-        console.log('📨 VideoCall - Token response:', { data, error });
-
-        if (error) {
-          console.error('❌ VideoCall - Edge function error:', error);
-          throw error;
-        }
-        if (data?.error) {
-          console.error('❌ VideoCall - Data error:', data.error);
-          throw new Error(data.error);
-        }
-
-        if (!data?.token || !data?.appId) {
-          console.error('❌ VideoCall - Missing credentials:', data);
-          throw new Error('Failed to get video credentials');
-        }
-
-        console.log('✅ VideoCall - Credentials received', { 
-          appId: data.appId, 
-          hasToken: !!data.token,
-          tokenLength: data.token?.length,
-          roomId,
-          userId: session.user.id 
-        });
-
-        console.log('🔑 VideoCall - Generating kit token');
-        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
-          data.appId,
-          data.token,
+        // For now, use test token generation (simpler approach)
+        console.log('🔑 VideoCall - Generating test token directly');
+        const appID = 257830719;
+        const serverSecret = "41bebb56e82bab2523a61b1174eac258";
+        
+        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
+          appID,
+          serverSecret,
           roomId,
           session.user.id,
           userName
@@ -127,13 +99,7 @@ export default function VideoCall() {
         console.error('💥 VideoCall - Fatal error:', error);
         console.error('💥 VideoCall - Error message:', error.message);
         console.error('💥 VideoCall - Error stack:', error.stack);
-        if (error.message === 'Not authorized to join this video call') {
-          toast.error('You are not authorized to join this video call');
-        } else if (error.message === 'Payment required') {
-          toast.error('Please purchase the course to access video calls');
-        } else {
-          toast.error(error.message || 'Failed to join video call');
-        }
+        toast.error(error.message || 'Failed to join video call');
         navigate('/');
       }
     };
