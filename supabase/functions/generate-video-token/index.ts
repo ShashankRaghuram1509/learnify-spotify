@@ -1,35 +1,67 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
-import { createHmac } from "https://deno.land/std@0.168.0/node/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ZegoCloud token generation
-async function generateToken(appId: number, serverSecret: string, userId: string, roomId: string): Promise<string> {
-  const time = Math.floor(Date.now() / 1000) + 3600; // 1 hour expiry
+// ZegoCloud Token04 generation following official specification
+function generateToken04(
+  appId: number,
+  userId: string,
+  serverSecret: string,
+  effectiveTimeInSeconds: number,
+  payload: string
+): string {
+  if (!appId || !userId || !serverSecret) {
+    throw new Error('Invalid parameters for token generation');
+  }
+
+  const time = Math.floor(Date.now() / 1000) + effectiveTimeInSeconds;
   const nonce = Math.floor(Math.random() * 2147483647);
-  const body = { app_id: appId, user_id: userId, room_id: roomId, privilege: { 1: 1, 2: 1 }, stream_id_list: null };
-  const payload = JSON.stringify(body);
   
-  // Create signature using HMAC-SHA256
-  const hmac = createHmac('sha256', serverSecret);
-  hmac.update(`${appId}${roomId}${userId}${time}${nonce}`);
-  const signature = hmac.digest('hex');
-  
-  const tokenData = {
+  // Build the token content
+  const body = {
     app_id: appId,
     user_id: userId,
     nonce: nonce,
     ctime: time,
-    signature: signature,
-    version: 1,
-    payload: payload
+    expire: time,
+    payload: payload || ''
   };
+
+  // Create signature: HMAC-SHA256(serverSecret, "${appId}${userId}${time}${nonce}")
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`${appId}${userId}${time}${nonce}`);
+  const key = encoder.encode(serverSecret);
   
-  return btoa(JSON.stringify(tokenData));
+  // Use Web Crypto API for HMAC
+  return crypto.subtle.importKey(
+    'raw',
+    key,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  ).then(cryptoKey => {
+    return crypto.subtle.sign('HMAC', cryptoKey, data);
+  }).then(signature => {
+    // Convert signature to hex
+    const signatureArray = Array.from(new Uint8Array(signature));
+    const signatureHex = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    // Build final token object
+    const tokenObject = {
+      ...body,
+      signature: signatureHex,
+      ver: 1
+    };
+    
+    // Encode to base64
+    const jsonString = JSON.stringify(tokenObject);
+    const tokenBytes = encoder.encode(jsonString);
+    return btoa(String.fromCharCode(...tokenBytes));
+  });
 }
 
 serve(async (req) => {
@@ -129,8 +161,8 @@ serve(async (req) => {
       throw new Error('Video call service not configured');
     }
 
-    // Generate token
-    const token = await generateToken(appId, serverSecret, user.id, room_id);
+    // Generate Standard Token04 using the official specification
+    const token = await generateToken04(appId, user.id, serverSecret, 3600, '');
 
     return new Response(
       JSON.stringify({ 
