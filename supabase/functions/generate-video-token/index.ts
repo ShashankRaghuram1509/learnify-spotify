@@ -71,21 +71,27 @@ serve(async (req) => {
   }
 
   try {
+    console.log('generate-video-token - Request received');
+    
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.error('generate-video-token - No auth header');
       throw new Error('Unauthorized');
     }
 
     // Extract raw access token ("Bearer <token>" -> "<token>")
     const accessToken = authHeader.replace('Bearer', '').trim();
+    console.log('generate-video-token - Access token extracted');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '';
 
     if (!supabaseUrl || !supabaseKey) {
+      console.error('generate-video-token - Supabase not configured');
       throw new Error('Backend not configured');
     }
 
+    console.log('generate-video-token - Creating Supabase client');
     const supabaseClient = createClient(
       supabaseUrl,
       supabaseKey,
@@ -97,18 +103,25 @@ serve(async (req) => {
     );
 
     // IMPORTANT: pass the access token explicitly for reliability in edge envs
+    console.log('generate-video-token - Getting user');
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(accessToken);
     if (userError || !user) {
+      console.error('generate-video-token - User auth failed:', userError);
       throw new Error('Unauthorized');
     }
 
+    console.log('generate-video-token - User authenticated:', user.id);
+
     const { session_id, room_id } = await req.json();
+    console.log('generate-video-token - Request body:', { session_id, room_id });
 
     if (!session_id || !room_id) {
+      console.error('generate-video-token - Missing session_id or room_id');
       throw new Error('Session ID and room ID are required');
     }
 
     // Verify user has access to this video call session
+    console.log('generate-video-token - Checking session access');
     const { data: session, error: sessionError } = await supabaseClient
       .from('video_call_schedules')
       .select('id, teacher_id, student_id, course_id')
@@ -116,15 +129,29 @@ serve(async (req) => {
       .single();
 
     if (sessionError || !session) {
+      console.error('generate-video-token - Session not found:', sessionError);
       throw new Error('Video call session not found');
     }
+
+    console.log('generate-video-token - Session found:', { 
+      sessionId: session.id, 
+      teacherId: session.teacher_id, 
+      studentId: session.student_id 
+    });
 
     // Check if user is either the teacher or the student
     const isAuthorized = session.teacher_id === user.id || session.student_id === user.id;
 
     if (!isAuthorized) {
+      console.error('generate-video-token - User not authorized:', { 
+        userId: user.id, 
+        teacherId: session.teacher_id, 
+        studentId: session.student_id 
+      });
       throw new Error('Not authorized to join this video call');
     }
+
+    console.log('generate-video-token - User authorized');
 
     // If student, verify payment for the course OR check subscription
     if (session.student_id === user.id && session.course_id) {
@@ -154,29 +181,40 @@ serve(async (req) => {
     }
 
     // Get ZegoCloud credentials from secrets
+    console.log('generate-video-token - Getting Zego credentials');
     const appId = parseInt(Deno.env.get('ZEGOCLOUD_APP_ID') ?? '0');
     const serverSecret = Deno.env.get('ZEGOCLOUD_SERVER_SECRET') ?? '';
 
+    console.log('generate-video-token - AppId:', appId);
+    console.log('generate-video-token - ServerSecret length:', serverSecret.length);
+
     if (!appId || !serverSecret) {
+      console.error('generate-video-token - Missing Zego credentials');
       throw new Error('Video call service not configured');
     }
 
     // Generate Standard Token04 using the official specification
+    console.log('generate-video-token - Generating token04');
     const token = await generateToken04(appId, user.id, serverSecret, 3600, '');
+    console.log('generate-video-token - Token generated successfully');
+
+    const response = { 
+      success: true, 
+      token,
+      appId,
+      roomId: room_id,
+      userId: user.id 
+    };
+    console.log('generate-video-token - Sending success response');
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        token,
-        appId,
-        roomId: room_id,
-        userId: user.id 
-      }),
+      JSON.stringify(response),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {
     const err = error as Error;
-    console.error('Video token generation error:', err);
+    console.error('generate-video-token - Error:', err.message);
+    console.error('generate-video-token - Stack:', err.stack);
     return new Response(
       JSON.stringify({ error: err.message || 'Failed to generate video token' }),
       { 
