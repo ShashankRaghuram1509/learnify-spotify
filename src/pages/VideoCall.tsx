@@ -10,8 +10,14 @@ export default function VideoCall() {
   const [loading, setLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const { roomID } = useParams();
+  const initializedRef = useRef(false);
 
   useEffect(() => {
+    if (initializedRef.current) {
+      console.log('⏭️ VideoCall - Already initialized, skipping');
+      return;
+    }
+    initializedRef.current = true;
     const sessionId = searchParams.get('sessionId');
     const roomId = searchParams.get('roomId') || roomID || null;
 
