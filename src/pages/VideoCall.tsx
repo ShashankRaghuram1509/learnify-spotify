@@ -31,6 +31,15 @@ export default function VideoCall() {
           return;
         }
 
+        // Fetch user profile for name
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', session.user.id)
+          .single();
+
+        const userName = profile?.full_name || session.user.email || 'User';
+
         // Get video token from Edge Function
         const { data, error } = await supabase.functions.invoke('generate-video-token', {
           body: { session_id: sessionId, room_id: roomId },
@@ -46,15 +55,24 @@ export default function VideoCall() {
           throw new Error('Failed to get video credentials');
         }
 
-        // Initialize ZegoCloud with the token
+        // Generate Kit Token for Production
+        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
+          data.appId,
+          data.token,
+          roomId,
+          session.user.id,
+          userName
+        );
+
+        // Initialize ZegoCloud
         if (containerRef.current) {
-          const zp = ZegoUIKitPrebuilt.create(data.token);
+          const zp = ZegoUIKitPrebuilt.create(kitToken);
           zp.joinRoom({
             container: containerRef.current,
             scenario: {
-              mode: ZegoUIKitPrebuilt.GroupCall,
+              mode: ZegoUIKitPrebuilt.VideoConference,
             },
-            showPreJoinView: false,
+            showPreJoinView: true,
           });
         }
 
@@ -89,7 +107,7 @@ export default function VideoCall() {
   return (
     <div
       ref={containerRef}
-      className="w-screen h-screen"
+      className="w-screen h-screen bg-background"
     />
   );
 }

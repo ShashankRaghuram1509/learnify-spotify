@@ -161,37 +161,56 @@ export default function StudentTimetable() {
           </div>
         ) : (
           <div className="space-y-4">
-            {scheduledSlots.map((slot) => (
-              <div
-                key={slot.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="space-y-1">
-                  <p className="font-medium">{slot.course_title}</p>
-                  <p className="text-sm text-muted-foreground">
-                    with {slot.teacher_name}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {format(new Date(slot.scheduled_at), "PPP")}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {format(new Date(slot.scheduled_at), "p")}
-                    </span>
+            {scheduledSlots.map((slot) => {
+              const scheduledTime = new Date(slot.scheduled_at);
+              const now = new Date();
+              const minutesUntil = (scheduledTime.getTime() - now.getTime()) / (1000 * 60);
+              const isJoinable = minutesUntil <= 5 && minutesUntil >= -slot.duration_minutes;
+
+              return (
+                <div
+                  key={slot.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="space-y-1">
+                    <p className="font-medium">{slot.course_title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      with {slot.teacher_name}
+                    </p>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        {format(scheduledTime, "PPP")}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {format(scheduledTime, "p")}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="text-sm font-medium text-primary">
+                      {getTimeUntil(slot.scheduled_at)}
+                    </div>
+                    
+                    {isJoinable ? (
+                      <Button 
+                        size="sm" 
+                        className="bg-green-500 hover:bg-green-600 text-white"
+                        onClick={() => navigate(`/video-call/room-${slot.id}?sessionId=${slot.id}`)}
+                      >
+                        <Video className="w-4 h-4 mr-2" />
+                        Join Call
+                      </Button>
+                    ) : (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {slot.duration_minutes} minutes
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-primary">
-                    {getTimeUntil(slot.scheduled_at)}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {slot.duration_minutes} minutes
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
