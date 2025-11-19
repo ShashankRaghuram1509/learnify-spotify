@@ -51,6 +51,7 @@ export default function CourseViewer() {
   useEffect(() => {
     if (user && id) {
       fetchCourseContent();
+      fetchCourseMaterials();
     }
   }, [user, id]);
 
@@ -116,6 +117,35 @@ export default function CourseViewer() {
     }
   };
 
+  const fetchCourseMaterials = async () => {
+    try {
+      const { data: materialsData, error: materialsError } = await supabase
+        .from('course_materials')
+        .select('*')
+        .eq('course_id', id)
+        .maybeSingle();
+
+      if (materialsError && materialsError.code !== 'PGRST116') {
+        console.error('Error fetching materials:', materialsError);
+        return;
+      }
+
+      if (materialsData) {
+        setNotes({
+          overview: materialsData.overview || '',
+          keyPoints: Array.isArray(materialsData.key_points) ? materialsData.key_points as string[] : [],
+          codeExamples: Array.isArray(materialsData.code_examples) 
+            ? (materialsData.code_examples as Array<{title: string; description: string; code: string; language: string}>)
+            : [],
+          resources: Array.isArray(materialsData.resources) ? materialsData.resources as string[] : [],
+          practiceExercises: Array.isArray(materialsData.practice_exercises) ? materialsData.practice_exercises as string[] : [],
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching course materials:', error);
+    }
+  };
+
   const generateNotes = async () => {
     if (!course || loadingNotes) return;
 
@@ -123,6 +153,7 @@ export default function CourseViewer() {
     try {
       const { data, error } = await supabase.functions.invoke('generate-course-notes', {
         body: {
+          courseId: id,
           courseTitle: course.title,
           courseDescription: course.description
         }
@@ -455,35 +486,48 @@ export default function CourseViewer() {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle>Course Notes & Materials</CardTitle>
-                      <Button
-                        onClick={generateNotes}
-                        disabled={loadingNotes}
-                        className="flex items-center gap-2"
-                      >
-                        {loadingNotes ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Code2 className="h-4 w-4" />
-                            Generate AI Notes
-                          </>
-                        )}
-                      </Button>
+                      {notes && (
+                        <Button
+                          onClick={generateNotes}
+                          disabled={loadingNotes}
+                          variant="outline"
+                          size="sm"
+                        >
+                          {loadingNotes ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Regenerating...
+                            </>
+                          ) : (
+                            <>
+                              <Code2 className="h-4 w-4 mr-2" />
+                              Regenerate
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {!notes ? (
                       <div className="text-center py-12">
                         <Code2 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">AI-Powered Course Notes</h3>
-                        <p className="text-muted-foreground mb-6">
-                          Generate comprehensive notes, code examples, and practice exercises using AI
+                        <h3 className="text-lg font-semibold mb-2">AI-Powered Course Materials</h3>
+                        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                          Generate comprehensive tutorial-style notes with code examples and practice exercises
                         </p>
                         <Button onClick={generateNotes} disabled={loadingNotes}>
-                          {loadingNotes ? "Generating..." : "Generate Notes Now"}
+                          {loadingNotes ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Code2 className="h-4 w-4 mr-2" />
+                              Generate Notes Now
+                            </>
+                          )}
                         </Button>
                       </div>
                     ) : (

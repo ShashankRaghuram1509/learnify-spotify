@@ -192,6 +192,50 @@ export type Database = {
           },
         ]
       }
+      course_materials: {
+        Row: {
+          code_examples: Json | null
+          course_id: string
+          created_at: string
+          id: string
+          key_points: Json | null
+          overview: string | null
+          practice_exercises: Json | null
+          resources: Json | null
+          updated_at: string
+        }
+        Insert: {
+          code_examples?: Json | null
+          course_id: string
+          created_at?: string
+          id?: string
+          key_points?: Json | null
+          overview?: string | null
+          practice_exercises?: Json | null
+          resources?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          code_examples?: Json | null
+          course_id?: string
+          created_at?: string
+          id?: string
+          key_points?: Json | null
+          overview?: string | null
+          practice_exercises?: Json | null
+          resources?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_materials_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_tags: {
         Row: {
           course_id: string
