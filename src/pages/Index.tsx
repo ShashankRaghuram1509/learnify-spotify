@@ -248,8 +248,8 @@ const Index = () => {
         {/* Hero Section */}
         <HeroSection />
 
-        {/* Dynamic Section: Auth or Dashboard Preview */}
-        {user ? <DashboardPreview /> : <FeaturedCourses />}
+        {/* Featured Courses Section */}
+        <FeaturedCourses />
         
         {/* Stats Section */}
         <section className="py-16 bg-spotify-dark">
@@ -403,7 +403,7 @@ const Index = () => {
 
             <div className="text-center">
               <Link
-                to="/premium-courses"
+                to="/premium-features"
                 className="spotify-button inline-flex items-center"
               >
                 Explore Premium Features
@@ -432,7 +432,7 @@ const Index = () => {
                   Explore Courses
                 </Link>
                 <Link 
-                  to="/premium-courses" 
+                  to="/premium-features" 
                   className="bg-spotify/20 hover:bg-spotify/30 text-spotify border border-spotify/30 rounded-full py-3 px-8 font-semibold transition-colors duration-300 text-lg flex items-center justify-center"
                 >
                   <Sparkles size={16} className="mr-2" />

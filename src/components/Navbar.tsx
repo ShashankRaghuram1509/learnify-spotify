@@ -1,18 +1,19 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Search, LayoutDashboard } from "lucide-react";
+import { Menu, X, Search, LayoutDashboard, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "./ui/button";
 
 const Navbar = () => {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, subscriptionTier, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
+  
+  const isPremium = subscriptionTier && subscriptionTier !== 'free';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -76,10 +77,16 @@ const Navbar = () => {
             to="/" 
             className="flex items-center space-x-2 animate-fade-in"
           >
-            <div className="w-10 h-10 rounded-full bg-spotify flex items-center justify-center">
-              <span className="text-white font-bold text-xl">L</span>
+            <div className={`w-10 h-10 rounded-full ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 'bg-spotify'} flex items-center justify-center`}>
+              {isPremium ? (
+                <Crown className="text-white font-bold text-xl" />
+              ) : (
+                <span className="text-white font-bold text-xl">L</span>
+              )}
             </div>
-            <span className="text-xl font-bold">Learnify</span>
+            <span className={`text-xl font-bold ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 bg-clip-text text-transparent' : ''}`}>
+              Learnify
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -155,6 +162,23 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-spotify-dark border-t border-spotify-gray/30 animate-slide-from-left">
           <div className="container mx-auto px-4 py-3">
+            {/* Mobile Logo */}
+            <Link 
+              to="/" 
+              className="flex items-center space-x-2 mb-4 pb-4 border-b border-spotify-gray/30"
+              onClick={() => setIsOpen(false)}
+            >
+              <div className={`w-10 h-10 rounded-full ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 'bg-spotify'} flex items-center justify-center`}>
+                {isPremium ? (
+                  <Crown className="text-white font-bold text-xl" />
+                ) : (
+                  <span className="text-white font-bold text-xl">L</span>
+                )}
+              </div>
+              <span className={`text-xl font-bold ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 bg-clip-text text-transparent' : ''}`}>
+                Learnify
+              </span>
+            </Link>
             <div className="flex flex-col space-y-4 py-4">
               <Link 
                 to="/" 
