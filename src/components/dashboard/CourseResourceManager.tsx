@@ -66,12 +66,22 @@ export default function CourseResourceManager({
   };
 
   const handleFileUpload = async (file: File) => {
+    // File size validation (50MB for videos, 10MB for PDFs)
+    const maxSize = newResource.resource_type === "video" ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      const sizeMB = Math.round(maxSize / (1024 * 1024));
+      throw new Error(`File size exceeds ${sizeMB}MB limit. Please use a video link for larger files.`);
+    }
+
     const fileExt = file.name.split(".").pop();
     const filePath = `${user?.id}/${courseId}/${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from("course-materials")
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
 
     if (uploadError) throw uploadError;
 
@@ -115,9 +125,9 @@ export default function CourseResourceManager({
         file: null,
       });
       fetchResources();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding resource:", error);
-      toast.error("Failed to add resource");
+      toast.error(error.message || "Failed to add resource. Try using a video link for large files.");
     } finally {
       setUploading(false);
     }
@@ -249,6 +259,11 @@ export default function CourseResourceManager({
                       })
                     }
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {newResource.resource_type === "video" 
+                      ? "Max 50MB. For larger videos, use 'Video Link' instead." 
+                      : "Max 10MB"}
+                  </p>
                 </div>
               )}
 
