@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Play, CheckCircle2, Video, FileText } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle2, Video, FileText, Code2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -24,6 +24,19 @@ interface EnrollmentData {
   completed_at: string | null;
 }
 
+interface CourseNotes {
+  overview: string;
+  keyPoints: string[];
+  codeExamples: Array<{
+    title: string;
+    description: string;
+    code: string;
+    language: string;
+  }>;
+  resources: string[];
+  practiceExercises: string[];
+}
+
 export default function CourseViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -32,6 +45,8 @@ export default function CourseViewer() {
   const [enrollment, setEnrollment] = useState<EnrollmentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasPaid, setHasPaid] = useState(false);
+  const [notes, setNotes] = useState<CourseNotes | null>(null);
+  const [loadingNotes, setLoadingNotes] = useState(false);
 
   useEffect(() => {
     if (user && id) {
@@ -98,6 +113,35 @@ export default function CourseViewer() {
       toast.error("Failed to load course content");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateNotes = async () => {
+    if (!course || loadingNotes) return;
+
+    setLoadingNotes(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-course-notes', {
+        body: {
+          courseTitle: course.title,
+          courseDescription: course.description
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      setNotes(data.notes);
+      toast.success("Course notes generated successfully!");
+    } catch (error) {
+      console.error('Error generating notes:', error);
+      toast.error("Failed to generate course notes. Please try again.");
+    } finally {
+      setLoadingNotes(false);
     }
   };
 
@@ -409,66 +453,134 @@ export default function CourseViewer() {
               <TabsContent value="notes" className="mt-0">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Course Notes & Materials</CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Course Notes & Materials</CardTitle>
+                      <Button
+                        onClick={generateNotes}
+                        disabled={loadingNotes}
+                        className="flex items-center gap-2"
+                      >
+                        {loadingNotes ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Code2 className="h-4 w-4" />
+                            Generate AI Notes
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Course Overview */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3">Course Overview</h3>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {course.description || "Course notes and materials will be available here."}
-                      </p>
-                    </div>
-
-                    {/* Key Learning Points */}
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-semibold mb-3">Key Learning Points</h3>
-                      <ul className="space-y-2">
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-muted-foreground">Comprehensive understanding of core concepts</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-muted-foreground">Hands-on practical examples and exercises</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-muted-foreground">Real-world application techniques</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-muted-foreground">Best practices and industry standards</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    {/* Additional Resources */}
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-semibold mb-3">Additional Resources</h3>
-                      <div className="bg-muted/50 rounded-lg p-4">
-                        <p className="text-sm text-muted-foreground">
-                          📚 Downloadable resources, code samples, and reference materials will be available here.
+                    {!notes ? (
+                      <div className="text-center py-12">
+                        <Code2 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">AI-Powered Course Notes</h3>
+                        <p className="text-muted-foreground mb-6">
+                          Generate comprehensive notes, code examples, and practice exercises using AI
                         </p>
+                        <Button onClick={generateNotes} disabled={loadingNotes}>
+                          {loadingNotes ? "Generating..." : "Generate Notes Now"}
+                        </Button>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        {/* Course Overview */}
+                        <div>
+                          <h3 className="text-lg font-semibold mb-3">Course Overview</h3>
+                          <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                            {notes.overview}
+                          </p>
+                        </div>
 
-                    {/* Study Tips */}
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-semibold mb-3">Study Tips</h3>
-                      <div className="space-y-3">
-                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                          <p className="text-sm text-blue-900 dark:text-blue-100">
-                            💡 <strong>Tip:</strong> Take notes while watching the video and practice the concepts immediately.
-                          </p>
+                        {/* Key Learning Points */}
+                        <div className="border-t pt-6">
+                          <h3 className="text-lg font-semibold mb-3">Key Learning Points</h3>
+                          <ul className="space-y-2">
+                            {notes.keyPoints.map((point, index) => (
+                              <li key={index} className="flex items-start gap-2">
+                                <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                                <span className="text-muted-foreground">{point}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                        <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                          <p className="text-sm text-green-900 dark:text-green-100">
-                            ✅ <strong>Recommended:</strong> Complete all exercises before moving to the next lesson.
-                          </p>
+
+                        {/* Code Examples */}
+                        {notes.codeExamples && notes.codeExamples.length > 0 && (
+                          <div className="border-t pt-6">
+                            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                              <Code2 className="h-5 w-5" />
+                              Code Examples
+                            </h3>
+                            <div className="space-y-4">
+                              {notes.codeExamples.map((example, index) => (
+                                <div key={index} className="bg-muted/50 rounded-lg overflow-hidden">
+                                  <div className="px-4 py-3 border-b border-border">
+                                    <h4 className="font-semibold">{example.title}</h4>
+                                    <p className="text-sm text-muted-foreground mt-1">{example.description}</p>
+                                  </div>
+                                  <div className="relative">
+                                    <div className="absolute top-2 right-2 text-xs text-muted-foreground bg-background px-2 py-1 rounded">
+                                      {example.language}
+                                    </div>
+                                    <pre className="p-4 overflow-x-auto">
+                                      <code className="text-sm">{example.code}</code>
+                                    </pre>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Practice Exercises */}
+                        {notes.practiceExercises && notes.practiceExercises.length > 0 && (
+                          <div className="border-t pt-6">
+                            <h3 className="text-lg font-semibold mb-3">Practice Exercises</h3>
+                            <div className="space-y-3">
+                              {notes.practiceExercises.map((exercise, index) => (
+                                <div key={index} className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                                    <strong>Exercise {index + 1}:</strong> {exercise}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Additional Resources */}
+                        {notes.resources && notes.resources.length > 0 && (
+                          <div className="border-t pt-6">
+                            <h3 className="text-lg font-semibold mb-3">Additional Resources</h3>
+                            <ul className="space-y-2">
+                              {notes.resources.map((resource, index) => (
+                                <li key={index} className="flex items-start gap-2">
+                                  <span className="text-spotify mt-1">📚</span>
+                                  <span className="text-muted-foreground">{resource}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Regenerate Button */}
+                        <div className="border-t pt-6">
+                          <Button
+                            onClick={generateNotes}
+                            disabled={loadingNotes}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            {loadingNotes ? "Regenerating..." : "Regenerate Notes"}
+                          </Button>
                         </div>
-                      </div>
-                    </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
