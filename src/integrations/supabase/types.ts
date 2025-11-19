@@ -465,31 +465,49 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
+          college: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
+          interests: Json | null
+          phone: string | null
+          resume_text: string | null
+          resume_url: string | null
           subscription_expires_at: string | null
           subscription_tier: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
+          college?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
+          interests?: Json | null
+          phone?: string | null
+          resume_text?: string | null
+          resume_url?: string | null
           subscription_expires_at?: string | null
           subscription_tier?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
+          college?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
+          interests?: Json | null
+          phone?: string | null
+          resume_text?: string | null
+          resume_url?: string | null
           subscription_expires_at?: string | null
           subscription_tier?: string | null
           updated_at?: string

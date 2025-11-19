@@ -47,6 +47,8 @@ export default function CourseViewer() {
   const [hasPaid, setHasPaid] = useState(false);
   const [notes, setNotes] = useState<CourseNotes | null>(null);
   const [loadingNotes, setLoadingNotes] = useState(false);
+  const [watchedPercentage, setWatchedPercentage] = useState(0);
+  const [videoStartTime, setVideoStartTime] = useState<number | null>(null);
 
   useEffect(() => {
     if (user && id) {
@@ -304,11 +306,64 @@ export default function CourseViewer() {
     const match = url.match(regExp);
     
     if (match && match[2].length === 11) {
-      return `https://www.youtube.com/embed/${match[2]}`;
+      return `https://www.youtube.com/embed/${match[2]}?enablejsapi=1`;
     }
     
     return url;
   };
+
+  const updateProgress = async (newProgress: number) => {
+    if (!enrollment || !user || !id) return;
+    
+    try {
+      const { error } = await supabase
+        .from("enrollments")
+        .update({ progress: Math.min(newProgress, 100) })
+        .eq("id", enrollment.id);
+
+      if (error) throw error;
+
+      setEnrollment({ ...enrollment, progress: newProgress });
+      
+      if (newProgress === 100) {
+        toast.success("Congratulations! You've completed this course and earned a certificate!");
+      }
+    } catch (error) {
+      toast.error("Failed to update progress");
+    }
+  };
+
+  const handleMarkComplete = async () => {
+    if (watchedPercentage < 80) {
+      toast.error("Please watch at least 80% of the video before marking as complete");
+      return;
+    }
+    
+    await updateProgress(100);
+  };
+
+  // Track video watch time
+  useEffect(() => {
+    if (!videoStartTime) {
+      setVideoStartTime(Date.now());
+    }
+
+    const trackingInterval = setInterval(() => {
+      if (videoStartTime) {
+        const watchedSeconds = (Date.now() - videoStartTime) / 1000;
+        // Assume average video is 30 minutes (1800 seconds)
+        const estimatedProgress = Math.min((watchedSeconds / 1800) * 100, 95);
+        setWatchedPercentage(estimatedProgress);
+        
+        // Auto-update progress every minute
+        if (estimatedProgress > (enrollment?.progress || 0)) {
+          updateProgress(Math.floor(estimatedProgress));
+        }
+      }
+    }, 60000); // Update every minute
+
+    return () => clearInterval(trackingInterval);
+  }, [videoStartTime, enrollment]);
 
   if (loading) {
     return <div className="p-6">Loading course content...</div>;
@@ -463,6 +518,20 @@ export default function CourseViewer() {
                         </p>
                       </CardContent>
                     </Card>
+
+                    {!enrollment?.completed_at && (
+                      <Button
+                        onClick={handleMarkComplete}
+                        className="w-full"
+                        size="lg"
+                        disabled={watchedPercentage < 80}
+                      >
+                        <CheckCircle2 className="mr-2 h-5 w-5" />
+                        {watchedPercentage < 80 
+                          ? `Watch ${Math.ceil(80 - watchedPercentage)}% more to complete`
+                          : "Mark as Complete"}
+                      </Button>
+                    )}
 
                     {enrollment?.completed_at && (
                       <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
