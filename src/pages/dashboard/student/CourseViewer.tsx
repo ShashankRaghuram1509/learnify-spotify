@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Play, CheckCircle2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Play, CheckCircle2, Video, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -352,40 +353,126 @@ export default function CourseViewer() {
               </div>
             </div>
           ) : (
-            <>
-              {course.video_url ? (
-                <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6">
-                  <iframe
-                    src={getYouTubeEmbedUrl(course.video_url) || ''}
-                    title={course.title}
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-              ) : (
-                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center mb-6">
-                  <div className="text-center">
-                    <Play className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-muted-foreground">No video content available yet</p>
+            <Tabs defaultValue="video" className="w-full">
+              <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+                <TabsTrigger value="video" className="flex items-center gap-2">
+                  <Video className="h-4 w-4" />
+                  Video Lessons
+                </TabsTrigger>
+                <TabsTrigger value="notes" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Course Notes
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="video" className="mt-0">
+                {course.video_url ? (
+                  <div className="space-y-6">
+                    <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                      <iframe
+                        src={getYouTubeEmbedUrl(course.video_url) || ''}
+                        title={course.title}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>About this Lesson</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground">
+                          {course.description || "Watch the video to learn more about this topic."}
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    {enrollment?.completed_at && (
+                      <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                        <CheckCircle2 className="w-5 h-5" />
+                        <span>You completed this course on {new Date(enrollment.completed_at).toLocaleDateString()}</span>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <Play className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">No video content available yet</p>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
 
-              {course.description && (
-                <div className="mt-6">
-                  <h3 className="text-lg font-semibold mb-2">About this course</h3>
-                  <p className="text-muted-foreground">{course.description}</p>
-                </div>
-              )}
+              <TabsContent value="notes" className="mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Course Notes & Materials</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Course Overview */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3">Course Overview</h3>
+                      <p className="text-muted-foreground leading-relaxed">
+                        {course.description || "Course notes and materials will be available here."}
+                      </p>
+                    </div>
 
-              {enrollment?.completed_at && (
-                <div className="mt-6 flex items-center gap-2 text-green-600 dark:text-green-400">
-                  <CheckCircle2 className="w-5 h-5" />
-                  <span>You completed this course on {new Date(enrollment.completed_at).toLocaleDateString()}</span>
-                </div>
-              )}
-            </>
+                    {/* Key Learning Points */}
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-semibold mb-3">Key Learning Points</h3>
+                      <ul className="space-y-2">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-muted-foreground">Comprehensive understanding of core concepts</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-muted-foreground">Hands-on practical examples and exercises</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-muted-foreground">Real-world application techniques</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="text-muted-foreground">Best practices and industry standards</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    {/* Additional Resources */}
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-semibold mb-3">Additional Resources</h3>
+                      <div className="bg-muted/50 rounded-lg p-4">
+                        <p className="text-sm text-muted-foreground">
+                          📚 Downloadable resources, code samples, and reference materials will be available here.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Study Tips */}
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-semibold mb-3">Study Tips</h3>
+                      <div className="space-y-3">
+                        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                          <p className="text-sm text-blue-900 dark:text-blue-100">
+                            💡 <strong>Tip:</strong> Take notes while watching the video and practice the concepts immediately.
+                          </p>
+                        </div>
+                        <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                          <p className="text-sm text-green-900 dark:text-green-100">
+                            ✅ <strong>Recommended:</strong> Complete all exercises before moving to the next lesson.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           )}
         </CardContent>
       </Card>
