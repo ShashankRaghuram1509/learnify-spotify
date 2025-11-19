@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { courseTitle, courseDescription } = await req.json();
+    const { courseId, courseTitle, courseDescription } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
@@ -143,6 +144,33 @@ serve(async (req) => {
     }
 
     const notes = JSON.parse(toolCall.function.arguments);
+
+    // Store notes in database if courseId is provided
+    if (courseId) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+      // Upsert course materials
+      const { error: upsertError } = await supabase
+        .from('course_materials')
+        .upsert({
+          course_id: courseId,
+          overview: notes.overview,
+          key_points: notes.keyPoints,
+          code_examples: notes.codeExamples,
+          resources: notes.resources,
+          practice_exercises: notes.practiceExercises,
+        }, {
+          onConflict: 'course_id'
+        });
+
+      if (upsertError) {
+        console.error('Error storing course materials:', upsertError);
+      } else {
+        console.log('Course materials stored successfully for course:', courseId);
+      }
+    }
 
     return new Response(
       JSON.stringify({ notes }),
