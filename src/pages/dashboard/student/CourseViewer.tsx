@@ -633,7 +633,7 @@ export default function CourseViewer() {
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent>
                     {!notes ? (
                       <div className="text-center py-12">
                         <Code2 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -656,99 +656,141 @@ export default function CourseViewer() {
                         </Button>
                       </div>
                     ) : (
-                      <>
-                        {/* Course Overview */}
-                        <div>
-                          <h3 className="text-lg font-semibold mb-3">Course Overview</h3>
-                          <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
-                            {notes.overview}
-                          </p>
+                      <div className="grid md:grid-cols-[240px_1fr] gap-6">
+                        {/* Table of Contents Sidebar */}
+                        <div className="hidden md:block">
+                          <div className="sticky top-4 space-y-1">
+                            <h4 className="font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wider">
+                              Table of Contents
+                            </h4>
+                            <a href="#overview" className="block py-2 px-3 text-sm hover:bg-muted rounded-md transition-colors">
+                              Overview
+                            </a>
+                            <a href="#key-points" className="block py-2 px-3 text-sm hover:bg-muted rounded-md transition-colors">
+                              Key Points
+                            </a>
+                            {notes.codeExamples && notes.codeExamples.length > 0 && (
+                              <a href="#examples" className="block py-2 px-3 text-sm hover:bg-muted rounded-md transition-colors">
+                                Code Examples
+                              </a>
+                            )}
+                            {notes.practiceExercises && notes.practiceExercises.length > 0 && (
+                              <a href="#exercises" className="block py-2 px-3 text-sm hover:bg-muted rounded-md transition-colors">
+                                Practice Exercises
+                              </a>
+                            )}
+                            {notes.resources && notes.resources.length > 0 && (
+                              <a href="#resources" className="block py-2 px-3 text-sm hover:bg-muted rounded-md transition-colors">
+                                Resources
+                              </a>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Key Learning Points */}
-                        <div className="border-t pt-6">
-                          <h3 className="text-lg font-semibold mb-3">Key Learning Points</h3>
-                          <ul className="space-y-2">
-                            {notes.keyPoints.map((point, index) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                                <span className="text-muted-foreground">{point}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                        {/* Main Content */}
+                        <div className="space-y-8 max-w-4xl">
+                          {/* Course Overview */}
+                          <section id="overview" className="scroll-mt-4">
+                            <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2 border-primary">
+                              Course Overview
+                            </h2>
+                            <div className="prose prose-invert max-w-none">
+                              <p className="text-foreground leading-relaxed whitespace-pre-line">
+                                {notes.overview}
+                              </p>
+                            </div>
+                          </section>
 
-                        {/* Code Examples */}
-                        {notes.codeExamples && notes.codeExamples.length > 0 && (
-                          <div className="border-t pt-6">
-                            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                              <Code2 className="h-5 w-5" />
-                              Code Examples
-                            </h3>
-                            <div className="space-y-4">
-                              {notes.codeExamples.map((example, index) => (
-                                <div key={index} className="bg-muted/50 rounded-lg overflow-hidden">
-                                  <div className="px-4 py-3 border-b border-border">
-                                    <h4 className="font-semibold">{example.title}</h4>
-                                    <p className="text-sm text-muted-foreground mt-1">{example.description}</p>
-                                  </div>
-                                  <div className="relative">
-                                    <div className="absolute top-2 right-2 text-xs text-muted-foreground bg-background px-2 py-1 rounded">
-                                      {example.language}
+                          {/* Key Learning Points */}
+                          <section id="key-points" className="scroll-mt-4">
+                            <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2 border-primary">
+                              Key Learning Points
+                            </h2>
+                            <div className="bg-primary/5 border-l-4 border-primary p-6 rounded-r-lg">
+                              <ul className="space-y-3">
+                                {notes.keyPoints.map((point, index) => (
+                                  <li key={index} className="flex items-start gap-3">
+                                    <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                                    <span className="text-foreground leading-relaxed">{point}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </section>
+
+                          {/* Code Examples */}
+                          {notes.codeExamples && notes.codeExamples.length > 0 && (
+                            <section id="examples" className="scroll-mt-4">
+                              <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2 border-primary flex items-center gap-2">
+                                <Code2 className="h-6 w-6" />
+                                Code Examples
+                              </h2>
+                              <div className="space-y-6">
+                                {notes.codeExamples.map((example, index) => (
+                                  <div key={index} className="border border-border rounded-lg overflow-hidden">
+                                    <div className="bg-muted/50 px-5 py-4 border-b border-border">
+                                      <h3 className="font-semibold text-lg mb-1">{example.title}</h3>
+                                      <p className="text-sm text-muted-foreground">{example.description}</p>
                                     </div>
-                                    <pre className="p-4 overflow-x-auto">
-                                      <code className="text-sm">{example.code}</code>
-                                    </pre>
+                                    <div className="bg-card">
+                                      <div className="flex items-center justify-between px-5 py-2 bg-muted/30 border-b border-border">
+                                        <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+                                          {example.language || 'Code'}
+                                        </span>
+                                      </div>
+                                      <pre className="p-5 overflow-x-auto text-sm">
+                                        <code className="text-foreground font-mono">{example.code}</code>
+                                      </pre>
+                                    </div>
                                   </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                                ))}
+                              </div>
+                            </section>
+                          )}
 
-                        {/* Practice Exercises */}
-                        {notes.practiceExercises && notes.practiceExercises.length > 0 && (
-                          <div className="border-t pt-6">
-                            <h3 className="text-lg font-semibold mb-3">Practice Exercises</h3>
-                            <div className="space-y-3">
-                              {notes.practiceExercises.map((exercise, index) => (
-                                <div key={index} className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                                  <p className="text-sm text-blue-900 dark:text-blue-100">
-                                    <strong>Exercise {index + 1}:</strong> {exercise}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                          {/* Practice Exercises */}
+                          {notes.practiceExercises && notes.practiceExercises.length > 0 && (
+                            <section id="exercises" className="scroll-mt-4">
+                              <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2 border-primary">
+                                Practice Exercises
+                              </h2>
+                              <div className="space-y-4">
+                                {notes.practiceExercises.map((exercise, index) => (
+                                  <div key={index} className="bg-primary/10 border border-primary/30 rounded-lg p-5">
+                                    <div className="flex items-start gap-4">
+                                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold flex-shrink-0">
+                                        {index + 1}
+                                      </div>
+                                      <p className="text-foreground leading-relaxed flex-1">{exercise}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </section>
+                          )}
 
-                        {/* Additional Resources */}
-                        {notes.resources && notes.resources.length > 0 && (
-                          <div className="border-t pt-6">
-                            <h3 className="text-lg font-semibold mb-3">Additional Resources</h3>
-                            <ul className="space-y-2">
-                              {notes.resources.map((resource, index) => (
-                                <li key={index} className="flex items-start gap-2">
-                                  <span className="text-spotify mt-1">📚</span>
-                                  <span className="text-muted-foreground">{resource}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* Regenerate Button */}
-                        <div className="border-t pt-6">
-                          <Button
-                            onClick={generateNotes}
-                            disabled={loadingNotes}
-                            variant="outline"
-                            className="w-full"
-                          >
-                            {loadingNotes ? "Regenerating..." : "Regenerate Notes"}
-                          </Button>
+                          {/* Additional Resources */}
+                          {notes.resources && notes.resources.length > 0 && (
+                            <section id="resources" className="scroll-mt-4">
+                              <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2 border-primary">
+                                Additional Resources
+                              </h2>
+                              <div className="bg-card border border-border rounded-lg p-6">
+                                <ul className="space-y-3">
+                                  {notes.resources.map((resource, index) => (
+                                    <li key={index} className="flex items-start gap-3 group">
+                                      <FileText className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                                      <span className="text-foreground leading-relaxed group-hover:text-primary transition-colors">
+                                        {resource}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </section>
+                          )}
                         </div>
-                      </>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
