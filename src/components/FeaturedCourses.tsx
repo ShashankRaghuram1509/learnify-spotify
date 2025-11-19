@@ -90,35 +90,58 @@ const FeaturedCourses = () => {
         setLoading(true);
         setError(null);
         
-        // Fetch courses from database
+        // Fetch courses from database with categories
         const { data, error } = await supabase
           .from('courses')
           .select(`
             *,
-            enrollments(count)
+            enrollments(count),
+            course_categories(
+              categories(name)
+            )
           `)
           .order('created_at', { ascending: false });
         
         if (error) throw error;
         
         // Transform database courses to match expected format
-        const transformedCourses = data?.map(course => ({
-          id: course.id,
-          courseId: course.id,
-          title: course.title,
-          instructor: "Expert Instructor",
-          rating: 4.5,
-          students: course.enrollments?.[0]?.count || 0,
-          duration: "8 weeks",
-          level: "All Levels",
-          price: course.price || 0,
-          discountPrice: course.price ? course.price * 0.8 : 0,
-          image: course.thumbnail_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600",
-          featured: true,
-          premium: course.is_premium || false,
-          category: "programming",
-          externalLink: null
-        })) || [];
+        const transformedCourses = data?.map(course => {
+          // Get the first category name from the course_categories array
+          const categoryName = course.course_categories?.[0]?.categories?.name || null;
+          
+          // Map database category names to our filter category IDs
+          const categoryMap = {
+            'Programming': 'programming',
+            'Data Structures': 'data-structures',
+            'Algorithms': 'algorithms',
+            'Web Development': 'web-development',
+            'Databases': 'databases',
+            'System Design': 'system-design',
+            'Data Science': 'data-science',
+            'Cloud Computing': 'cloud-computing',
+            'Developer Tools': 'developer-tools'
+          };
+          
+          const category = categoryMap[categoryName] || 'programming';
+          
+          return {
+            id: course.id,
+            courseId: course.id,
+            title: course.title,
+            instructor: "Expert Instructor",
+            rating: 4.5,
+            students: course.enrollments?.[0]?.count || 0,
+            duration: "8 weeks",
+            level: "All Levels",
+            price: course.price || 0,
+            discountPrice: course.price ? course.price * 0.8 : 0,
+            image: course.thumbnail_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600",
+            featured: true,
+            premium: course.is_premium || false,
+            category: category,
+            externalLink: null
+          };
+        }) || [];
         
         setCourses(transformedCourses);
       } catch (error) {
