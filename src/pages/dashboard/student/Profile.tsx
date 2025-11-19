@@ -85,22 +85,45 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.includes('pdf') && !file.type.includes('doc')) {
+      toast.error("Please upload a PDF or DOC file");
+      return;
+    }
+
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("userId", user?.id || "");
+      // Upload file to storage
+      const fileName = `${user?.id}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("resumes")
+        .upload(fileName, file, {
+          contentType: file.type,
+          upsert: true,
+        });
 
-      const { data, error } = await supabase.functions.invoke("parse-resume", {
-        body: formData,
-      });
+      if (uploadError) throw uploadError;
 
-      if (error) throw error;
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("resumes")
+        .getPublicUrl(fileName);
 
-      toast.success("Resume uploaded and parsed successfully");
+      // Update profile with resume URL
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          resume_url: publicUrl,
+          resume_text: `Resume uploaded: ${file.name}`,
+        })
+        .eq("id", user?.id);
+
+      if (updateError) throw updateError;
+
+      toast.success("Resume uploaded successfully");
       fetchProfile();
-    } catch (error) {
-      toast.error("Failed to upload resume");
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.message || "Failed to upload resume");
     } finally {
       setUploading(false);
     }
