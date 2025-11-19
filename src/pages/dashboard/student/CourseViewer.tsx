@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Play, CheckCircle2, Video, FileText, Code2, Loader2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle2, Video, FileText, Code2, Loader2, ExternalLink, Download, FolderOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -37,6 +37,15 @@ interface CourseNotes {
   practiceExercises: string[];
 }
 
+interface CourseResource {
+  id: string;
+  title: string;
+  resource_type: string;
+  url: string | null;
+  file_path: string | null;
+  description: string | null;
+}
+
 export default function CourseViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -48,6 +57,7 @@ export default function CourseViewer() {
   const [notes, setNotes] = useState<CourseNotes | null>(null);
   const [loadingNotes, setLoadingNotes] = useState(false);
   const [watchedPercentage, setWatchedPercentage] = useState(0);
+  const [resources, setResources] = useState<CourseResource[]>([]);
   const [videoStartTime, setVideoStartTime] = useState<number | null>(null);
   const [player, setPlayer] = useState<any>(null);
   const [videoDuration, setVideoDuration] = useState<number>(0);
@@ -189,6 +199,21 @@ export default function CourseViewer() {
       toast.error("Failed to generate course notes. Please try again.");
     } finally {
       setLoadingNotes(false);
+    }
+  };
+
+  const fetchResources = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("course_resources")
+        .select("*")
+        .eq("course_id", id)
+        .order("position");
+
+      if (error) throw error;
+      setResources(data || []);
+    } catch (error) {
+      console.error("Error fetching resources:", error);
     }
   };
 
@@ -548,7 +573,7 @@ export default function CourseViewer() {
             </div>
           ) : (
             <Tabs defaultValue="video" className="w-full">
-              <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
+              <TabsList className="grid w-full max-w-2xl grid-cols-3 mb-6">
                 <TabsTrigger value="video" className="flex items-center gap-2">
                   <Video className="h-4 w-4" />
                   Video Lessons
@@ -556,6 +581,10 @@ export default function CourseViewer() {
                 <TabsTrigger value="notes" className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   Course Notes
+                </TabsTrigger>
+                <TabsTrigger value="resources" className="flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4" />
+                  Materials
                 </TabsTrigger>
               </TabsList>
 
@@ -808,6 +837,59 @@ export default function CourseViewer() {
                             </section>
                           )}
                         </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="resources" className="mt-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Course Materials & Resources</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {resources.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No additional resources available yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {resources.map((resource) => (
+                          <Card key={resource.id}>
+                            <CardContent className="py-4 px-4 flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-1">
+                                  {resource.resource_type === 'pdf' && <FileText className="h-5 w-5 text-primary" />}
+                                  {resource.resource_type === 'video' && <Video className="h-5 w-5 text-primary" />}
+                                  {(resource.resource_type === 'video_link' || resource.resource_type === 'article_link') && <ExternalLink className="h-5 w-5 text-primary" />}
+                                  <h3 className="font-semibold">{resource.title}</h3>
+                                </div>
+                                {resource.description && (
+                                  <p className="text-sm text-muted-foreground ml-8">{resource.description}</p>
+                                )}
+                              </div>
+                              {resource.url && (
+                                <Button asChild size="sm">
+                                  <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                                    {resource.resource_type === 'pdf' || resource.resource_type === 'video' ? (
+                                      <>
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ExternalLink className="mr-2 h-4 w-4" />
+                                        Open
+                                      </>
+                                    )}
+                                  </a>
+                                </Button>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
                       </div>
                     )}
                   </CardContent>

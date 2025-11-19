@@ -1,21 +1,21 @@
 import ContentManager from "@/components/dashboard/ContentManager";
-import StudentAnalytics from "@/components/dashboard/StudentAnalytics";
-import TimetableScheduler from "@/components/dashboard/TimetableScheduler";
 import TeacherChatList from "@/components/dashboard/TeacherChatList";
+import TeacherRevenue from "@/components/dashboard/TeacherRevenue";
 
 export default function TeacherDashboard() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <div className="md:col-span-2 lg:col-span-3">
-        <StudentAnalytics />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold mb-2">Teacher Dashboard</h1>
+        <p className="text-muted-foreground">
+          Welcome back! Here's an overview of your teaching activity.
+        </p>
       </div>
-      <div className="md:col-span-2 lg:col-span-4">
-        <TimetableScheduler />
-      </div>
-      <div className="md:col-span-2 lg:col-span-2">
+      
+      <TeacherRevenue />
+      
+      <div className="grid gap-4 md:grid-cols-2">
         <ContentManager />
-      </div>
-      <div className="md:col-span-2 lg:col-span-2">
         <TeacherChatList />
       </div>
     </div>

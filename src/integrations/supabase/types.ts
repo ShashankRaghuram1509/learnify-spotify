@@ -236,6 +236,53 @@ export type Database = {
           },
         ]
       }
+      course_resources: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          file_path: string | null
+          id: string
+          position: number
+          resource_type: string
+          title: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          position?: number
+          resource_type: string
+          title: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          position?: number
+          resource_type?: string
+          title?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_resources_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_tags: {
         Row: {
           course_id: string
@@ -473,6 +520,7 @@ export type Database = {
           full_name: string | null
           id: string
           interests: Json | null
+          linkedin_url: string | null
           phone: string | null
           resume_text: string | null
           resume_url: string | null
@@ -489,6 +537,7 @@ export type Database = {
           full_name?: string | null
           id: string
           interests?: Json | null
+          linkedin_url?: string | null
           phone?: string | null
           resume_text?: string | null
           resume_url?: string | null
@@ -505,6 +554,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           interests?: Json | null
+          linkedin_url?: string | null
           phone?: string | null
           resume_text?: string | null
           resume_url?: string | null

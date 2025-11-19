@@ -39,7 +39,7 @@ const studentNavItems = [
 const teacherNavItems = [
   { to: "/dashboard/teacher", icon: Home, label: "Dashboard" },
   { to: "/dashboard/teacher/courses", icon: BookOpen, label: "My Courses" },
-  { to: "/dashboard/teacher/analytics", icon: BarChart, label: "Student Analytics" },
+  { to: "/dashboard/teacher/analytics", icon: BarChart, label: "Analytics" },
   { to: "/dashboard/teacher/schedule", icon: Video, label: "Schedule Calls" },
   { to: "/dashboard/teacher/profile", icon: User, label: "Profile" },
 ];
