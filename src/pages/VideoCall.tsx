@@ -53,20 +53,24 @@ export default function VideoCall() {
         const userName = profile?.full_name || session.user.email || 'User';
         console.log('✅ VideoCall - User name:', userName);
 
-        // For now, use test token generation (simpler approach)
-        console.log('🔑 VideoCall - Generating test token directly');
-        const appID = 257830719;
-        const serverSecret = "41bebb56e82bab2523a61b1174eac258";
-        
-        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(
-          appID,
-          serverSecret,
-          roomId,
-          session.user.id,
-          userName
-        );
+        // Call generate-video-token edge function
+        console.log('🔑 VideoCall - Calling generate-video-token endpoint');
+        const { data: tokenData, error: tokenError } = await supabase.functions.invoke('generate-video-token', {
+          body: {
+            session_id: sessionId,
+            room_id: roomId
+          }
+        });
 
-        console.log('✅ VideoCall - Kit token generated');
+        if (tokenError || !tokenData) {
+          console.error('❌ VideoCall - Token generation failed:', tokenError);
+          toast.error('Failed to generate video call token');
+          navigate('/');
+          return;
+        }
+
+        console.log('✅ VideoCall - Token received from server');
+        const { token: kitToken, appId } = tokenData;
 
         if (containerRef.current) {
           console.log('📦 VideoCall - Container ref found, creating ZegoUIKit instance');
