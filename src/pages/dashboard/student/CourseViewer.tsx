@@ -212,8 +212,9 @@ export default function CourseViewer() {
 
       if (error) throw error;
       setResources(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching resources:", error);
+      toast.error(error.message || "Failed to load course materials");
     }
   };
 
