@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Search, LayoutDashboard, Crown } from "lucide-react";
+import { Menu, X, Search, LayoutDashboard, Crown, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "./ui/button";
@@ -61,6 +61,13 @@ const Navbar = () => {
     }
   };
 
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+
+  // Check if we should show the back button (not on home page)
+  const showBackButton = location.pathname !== '/';
+
   return (
     <header 
       className={cn(
@@ -72,22 +79,34 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-4 md:px-6">
         <nav className="flex items-center justify-between">
-          {/* Logo */}
-          <Link 
-            to="/" 
-            className="flex items-center space-x-2 animate-fade-in"
-          >
-            <div className={`w-10 h-10 rounded-full ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 'bg-spotify'} flex items-center justify-center`}>
-              {isPremium ? (
-                <Crown className="text-white font-bold text-xl" />
-              ) : (
-                <span className="text-white font-bold text-xl">L</span>
-              )}
-            </div>
-            <span className={`text-xl font-bold ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 bg-clip-text text-transparent' : ''}`}>
-              Learnify
-            </span>
-          </Link>
+          {/* Back Button & Logo */}
+          <div className="flex items-center space-x-3">
+            {showBackButton && (
+              <button
+                onClick={handleGoBack}
+                className="p-2 rounded-full hover:bg-spotify-gray/20 transition-colors duration-200"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="h-5 w-5 text-spotify-text hover:text-spotify" />
+              </button>
+            )}
+            
+            <Link 
+              to="/" 
+              className="flex items-center space-x-2 animate-fade-in"
+            >
+              <div className={`w-10 h-10 rounded-full ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 'bg-spotify'} flex items-center justify-center`}>
+                {isPremium ? (
+                  <Crown className="text-white font-bold text-xl" />
+                ) : (
+                  <span className="text-white font-bold text-xl">L</span>
+                )}
+              </div>
+              <span className={`text-xl font-bold ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 bg-clip-text text-transparent' : ''}`}>
+                Learnify
+              </span>
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
@@ -162,23 +181,38 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-spotify-dark border-t border-spotify-gray/30 animate-slide-from-left">
           <div className="container mx-auto px-4 py-3">
-            {/* Mobile Logo */}
-            <Link 
-              to="/" 
-              className="flex items-center space-x-2 mb-4 pb-4 border-b border-spotify-gray/30"
-              onClick={() => setIsOpen(false)}
-            >
-              <div className={`w-10 h-10 rounded-full ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 'bg-spotify'} flex items-center justify-center`}>
-                {isPremium ? (
-                  <Crown className="text-white font-bold text-xl" />
-                ) : (
-                  <span className="text-white font-bold text-xl">L</span>
-                )}
-              </div>
-              <span className={`text-xl font-bold ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 bg-clip-text text-transparent' : ''}`}>
-                Learnify
-              </span>
-            </Link>
+            {/* Mobile Back Button & Logo */}
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-spotify-gray/30">
+              <Link 
+                to="/" 
+                className="flex items-center space-x-2"
+                onClick={() => setIsOpen(false)}
+              >
+                <div className={`w-10 h-10 rounded-full ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' : 'bg-spotify'} flex items-center justify-center`}>
+                  {isPremium ? (
+                    <Crown className="text-white font-bold text-xl" />
+                  ) : (
+                    <span className="text-white font-bold text-xl">L</span>
+                  )}
+                </div>
+                <span className={`text-xl font-bold ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 bg-clip-text text-transparent' : ''}`}>
+                  Learnify
+                </span>
+              </Link>
+              
+              {showBackButton && (
+                <button
+                  onClick={() => {
+                    handleGoBack();
+                    setIsOpen(false);
+                  }}
+                  className="p-2 rounded-full hover:bg-spotify-gray/20 transition-colors duration-200"
+                  aria-label="Go back"
+                >
+                  <ArrowLeft className="h-5 w-5 text-spotify-text hover:text-spotify" />
+                </button>
+              )}
+            </div>
             <div className="flex flex-col space-y-4 py-4">
               <Link 
                 to="/" 
