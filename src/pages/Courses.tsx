@@ -9,11 +9,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 const categories = [
   { id: "all", name: "All Categories" },
-  { id: "development", name: "Development" },
-  { id: "design", name: "Design" },
-  { id: "marketing", name: "Marketing" },
+  { id: "free", name: "Free Courses" },
+  { id: "premium", name: "Premium Courses" },
+  { id: "programming", name: "Programming" },
+  { id: "data-structures", name: "Data Structures" },
+  { id: "algorithms", name: "Algorithms" },
+  { id: "web-development", name: "Web Development" },
+  { id: "databases", name: "Databases" },
+  { id: "system-design", name: "System Design" },
   { id: "data-science", name: "Data Science" },
-  { id: "ai", name: "AI & ML" }
+  { id: "cloud-computing", name: "Cloud Computing" },
+  { id: "developer-tools", name: "Developer Tools" }
 ];
 
 const levels = [
@@ -120,7 +126,16 @@ const Courses = () => {
           throw error;
         }
 
-        setFilteredCourses(data);
+        // Apply client-side filtering for special categories
+        let filtered = data || [];
+        
+        if (selectedCategory === "free") {
+          filtered = filtered.filter(course => !course.is_premium);
+        } else if (selectedCategory === "premium") {
+          filtered = filtered.filter(course => course.is_premium);
+        }
+        
+        setFilteredCourses(filtered);
       } catch (error) {
         toast.error("Failed to load courses.");
       } finally {
@@ -233,7 +248,11 @@ const Courses = () => {
                     onClick={() => setSelectedCategory(category.id)}
                     className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
                       selectedCategory === category.id
-                        ? "bg-spotify text-white"
+                        ? category.id === "free"
+                          ? "bg-green-500 text-white"
+                          : category.id === "premium"
+                          ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white"
+                          : "bg-spotify text-white"
                         : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
                     }`}
                   >
@@ -312,7 +331,11 @@ const Courses = () => {
                         onClick={() => setSelectedCategory(category.id)}
                         className={`px-3 py-1 rounded-full text-sm transition-all duration-300 ${
                           selectedCategory === category.id
-                            ? "bg-spotify text-white"
+                            ? category.id === "free"
+                              ? "bg-green-500 text-white"
+                              : category.id === "premium"
+                              ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white"
+                              : "bg-spotify text-white"
                             : "bg-spotify-gray/30 text-spotify-text/70"
                         }`}
                       >
