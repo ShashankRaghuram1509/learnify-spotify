@@ -1,7 +1,6 @@
 
 import React from "react";
 import HeroSection from "@/components/HeroSection";
-import FeaturedCourses from "@/components/FeaturedCourses";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ArrowRight, BookOpen, Users, Award, Clock, CheckCircle, Sparkles, LayoutDashboard } from "lucide-react";
@@ -247,9 +246,6 @@ const Index = () => {
       <main>
         {/* Hero Section */}
         <HeroSection />
-
-        {/* Featured Courses Section */}
-        <FeaturedCourses />
         
         {/* Stats Section */}
         <section className="py-16 bg-spotify-dark">
