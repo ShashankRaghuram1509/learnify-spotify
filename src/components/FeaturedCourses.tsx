@@ -5,18 +5,20 @@ import CourseCard from "./CourseCard";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-// In a real app, this would be fetched from your backend
+// Course categories for filtering
 const categories = [
   { id: "all", name: "All Categories" },
+  { id: "free", name: "Free Courses" },
+  { id: "premium", name: "Premium Courses" },
   { id: "programming", name: "Programming" },
   { id: "data-structures", name: "Data Structures" },
   { id: "algorithms", name: "Algorithms" },
   { id: "web-development", name: "Web Development" },
-  { id: "database", name: "Database" },
+  { id: "databases", name: "Databases" },
   { id: "system-design", name: "System Design" },
   { id: "data-science", name: "Data Science" },
-  { id: "cloud", name: "Cloud Computing" },
-  { id: "tools", name: "Developer Tools" }
+  { id: "cloud-computing", name: "Cloud Computing" },
+  { id: "developer-tools", name: "Developer Tools" }
 ];
 
 // Mock data as fallback in case the API fails
@@ -140,10 +142,18 @@ const FeaturedCourses = () => {
   }, [toast]);
   
   const filteredCourses = courses.filter(course => {
-    // Filter by category
+    // Special handling for free/premium in category filter
+    if (activeCategory === "free") {
+      return !course.premium;
+    }
+    if (activeCategory === "premium") {
+      return course.premium;
+    }
+    
+    // Filter by subject category
     const categoryMatch = activeCategory === "all" || course.category === activeCategory;
     
-    // Filter by type (free/premium)
+    // Filter by type (free/premium) - only when using type buttons
     const typeMatch = 
       activeType === "all" || 
       (activeType === "free" && !course.premium) ||
@@ -170,54 +180,31 @@ const FeaturedCourses = () => {
           </Link>
         </div>
         
-        <div className="mb-6">
-          <div className="flex overflow-x-auto scrollbar-none space-x-2 mb-4 pb-2">
+        <div className="mb-8">
+          <h3 className="text-sm font-semibold text-spotify-text/70 mb-3 uppercase tracking-wider">
+            Filter by Category
+          </h3>
+          <div className="flex overflow-x-auto scrollbar-none space-x-2 pb-2">
             {categories.map(category => (
               <button
                 key={category.id}
-                onClick={() => setActiveCategory(category.id)}
+                onClick={() => {
+                  setActiveCategory(category.id);
+                  setActiveType("all"); // Reset type filter when changing category
+                }}
                 className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
                   activeCategory === category.id
-                    ? "bg-spotify text-white"
+                    ? category.id === "free"
+                      ? "bg-green-500 text-white"
+                      : category.id === "premium"
+                      ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white"
+                      : "bg-spotify text-white"
                     : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
                 }`}
               >
                 {category.name}
               </button>
             ))}
-          </div>
-          
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setActiveType("all")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
-                activeType === "all"
-                  ? "bg-spotify text-white"
-                  : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
-              }`}
-            >
-              All Courses
-            </button>
-            <button
-              onClick={() => setActiveType("free")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
-                activeType === "free"
-                  ? "bg-green-500 text-white"
-                  : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
-              }`}
-            >
-              Free Courses
-            </button>
-            <button
-              onClick={() => setActiveType("premium")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
-                activeType === "premium"
-                  ? "bg-amber-500 text-white"
-                  : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
-              }`}
-            >
-              Premium Courses
-            </button>
           </div>
         </div>
         
