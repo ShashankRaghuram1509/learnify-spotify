@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Play, CheckCircle2, Video, FileText, Code2, Loader2 } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle2, Video, FileText, Code2, Loader2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -779,14 +779,30 @@ export default function CourseViewer() {
                               </h2>
                               <div className="bg-card border border-border rounded-lg p-6">
                                 <ul className="space-y-3">
-                                  {notes.resources.map((resource, index) => (
-                                    <li key={index} className="flex items-start gap-3 group">
-                                      <FileText className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                                      <span className="text-foreground leading-relaxed group-hover:text-primary transition-colors">
-                                        {resource}
-                                      </span>
-                                    </li>
-                                  ))}
+                                  {notes.resources.map((resource, index) => {
+                                    const urlMatch = resource.match(/(https?:\/\/[^\s]+)/);
+                                    const url = urlMatch ? urlMatch[0] : null;
+                                    const displayText = resource.replace(/(https?:\/\/[^\s]+)/, '').trim() || resource;
+                                    
+                                    return (
+                                      <li key={index} className="flex items-start gap-3 group">
+                                        <FileText className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                                        {url ? (
+                                          <a 
+                                            href={url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-foreground leading-relaxed hover:text-primary transition-colors flex items-center gap-2 hover:underline"
+                                          >
+                                            <span>{displayText}</span>
+                                            <ExternalLink className="w-4 h-4" />
+                                          </a>
+                                        ) : (
+                                          <span className="text-foreground leading-relaxed">{resource}</span>
+                                        )}
+                                      </li>
+                                    );
+                                  })}
                                 </ul>
                               </div>
                             </section>
