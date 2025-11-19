@@ -19,22 +19,26 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Extract user from JWT token
-    const token = authHeader.replace('Bearer ', '');
-    let userId: string | null = null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1] || ''));
-      userId = payload?.sub || null;
-    } catch (e) {
-      console.error('JWT parse error:', e);
-      throw new Error('Unauthorized');
+    const accessToken = authHeader.replace('Bearer ', '');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '';
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase not configured');
+      throw new Error('Backend not configured');
     }
-    
-    if (!userId) {
-      console.error('No user ID in token');
+
+    const supabaseClient = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } }
+    });
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(accessToken);
+    if (userError || !user) {
+      console.error('User auth failed:', userError);
       throw new Error('Unauthorized');
     }
 
+    const userId = user.id;
     console.log('User authenticated:', userId);
 
     const requestBody = await req.json();
