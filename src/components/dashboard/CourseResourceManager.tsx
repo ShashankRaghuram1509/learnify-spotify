@@ -66,11 +66,11 @@ export default function CourseResourceManager({
   };
 
   const handleFileUpload = async (file: File) => {
-    // File size validation (200MB for videos, 20MB for PDFs)
-    const maxSize = newResource.resource_type === "video" ? 200 * 1024 * 1024 : 20 * 1024 * 1024;
+    // File size validation (50MB for videos, 20MB for PDFs)
+    const maxSize = newResource.resource_type === "video" ? 50 * 1024 * 1024 : 20 * 1024 * 1024;
     if (file.size > maxSize) {
       const sizeMB = Math.round(maxSize / (1024 * 1024));
-      throw new Error(`File size exceeds ${sizeMB}MB limit. Please use a video link for larger files.`);
+      throw new Error(`File size exceeds backend limit of ${sizeMB}MB. For larger videos, please use a video link instead.`);
     }
 
     const fileExt = file.name.split(".").pop();
@@ -261,7 +261,7 @@ export default function CourseResourceManager({
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     {newResource.resource_type === "video" 
-                      ? "Max 200MB. For larger videos, use 'Video Link' instead." 
+                      ? "Max 50MB (backend limit). For larger videos, use 'Video Link' instead." 
                       : "Max 20MB"}
                   </p>
                 </div>
