@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Send, Bot, User, MessageSquare, X } from "lucide-react";
+import { Send, Bot, User, MessageSquare, X, Crown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -14,9 +16,26 @@ export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const { user, subscriptionTier } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (subscriptionTier && subscriptionTier !== 'free') {
+      setIsPremium(true);
+    } else {
+      setIsPremium(false);
+    }
+  }, [subscriptionTier]);
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
+
+    if (!isPremium) {
+      toast.error("AI Assistant is only available for premium subscribers");
+      navigate("/dashboard/student/upgrade");
+      return;
+    }
 
     const userMessage: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
@@ -139,10 +158,17 @@ export default function AIAssistant() {
       <div className="fixed bottom-4 right-4 z-50">
         <Button 
           size="icon" 
-          className="rounded-full h-14 w-14 shadow-lg"
-          onClick={() => setIsOpen(true)}
+          className={`rounded-full h-14 w-14 shadow-lg ${isPremium ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' : ''}`}
+          onClick={() => {
+            if (!isPremium) {
+              toast.error("AI Assistant is only available for premium subscribers");
+              navigate("/dashboard/student/upgrade");
+              return;
+            }
+            setIsOpen(true);
+          }}
         >
-          <MessageSquare className="h-7 w-7" />
+          {isPremium ? <Crown className="h-7 w-7" /> : <MessageSquare className="h-7 w-7" />}
         </Button>
       </div>
     );

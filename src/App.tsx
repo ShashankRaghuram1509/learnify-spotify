@@ -1,4 +1,3 @@
-
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -12,7 +11,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/auth/Auth";
-import PremiumCourses from "./pages/PremiumCourses";
+import PremiumFeatures from "./pages/PremiumFeatures";
 import StudentDashboard from "./pages/dashboard/StudentDashboard";
 import TeacherDashboard from "./pages/dashboard/TeacherDashboard";
 import MyCoursesPage from "./pages/dashboard/student/MyCourses";
@@ -46,7 +45,7 @@ const App = () => (
           <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/premium-courses" element={<PremiumCourses />} />
+          <Route path="/premium-features" element={<PremiumFeatures />} />
 
           {/* Authentication Routes */}
           <Route path="/auth" element={<Auth />} />
