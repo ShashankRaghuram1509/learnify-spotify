@@ -49,6 +49,8 @@ export default function CourseViewer() {
   const [loadingNotes, setLoadingNotes] = useState(false);
   const [watchedPercentage, setWatchedPercentage] = useState(0);
   const [videoStartTime, setVideoStartTime] = useState<number | null>(null);
+  const [player, setPlayer] = useState<any>(null);
+  const [videoDuration, setVideoDuration] = useState<number>(0);
 
   useEffect(() => {
     if (user && id) {
@@ -56,6 +58,18 @@ export default function CourseViewer() {
       fetchCourseMaterials();
     }
   }, [user, id]);
+
+  // Load YouTube IFrame API
+  useEffect(() => {
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+    (window as any).onYouTubeIframeAPIReady = () => {
+      console.log('YouTube API Ready');
+    };
+  }, []);
 
   const fetchCourseContent = async () => {
     try {
@@ -298,7 +312,7 @@ export default function CourseViewer() {
     });
   };
 
-  const getYouTubeEmbedUrl = (url: string | null) => {
+  const getYouTubeVideoId = (url: string | null) => {
     if (!url) return null;
     
     // Extract video ID from various YouTube URL formats
@@ -306,11 +320,59 @@ export default function CourseViewer() {
     const match = url.match(regExp);
     
     if (match && match[2].length === 11) {
-      return `https://www.youtube.com/embed/${match[2]}?enablejsapi=1`;
+      return match[2];
     }
     
+    return null;
+  };
+
+  const getYouTubeEmbedUrl = (url: string | null) => {
+    const videoId = getYouTubeVideoId(url);
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
+    }
     return url;
   };
+
+  // Initialize YouTube player
+  useEffect(() => {
+    if (!course?.video_url || !hasPaid) return;
+
+    const videoId = getYouTubeVideoId(course.video_url);
+    if (!videoId || !(window as any).YT) return;
+
+    const initPlayer = () => {
+      const newPlayer = new (window as any).YT.Player('youtube-player', {
+        videoId: videoId,
+        events: {
+          onReady: (event: any) => {
+            setVideoDuration(event.target.getDuration());
+            setVideoStartTime(Date.now());
+          },
+          onStateChange: (event: any) => {
+            if (event.data === (window as any).YT.PlayerState.PLAYING) {
+              if (!videoStartTime) {
+                setVideoStartTime(Date.now());
+              }
+            }
+          }
+        }
+      });
+      setPlayer(newPlayer);
+    };
+
+    if ((window as any).YT.loaded) {
+      initPlayer();
+    } else {
+      (window as any).onYouTubeIframeAPIReady = initPlayer;
+    }
+
+    return () => {
+      if (player) {
+        player.destroy();
+      }
+    };
+  }, [course?.video_url, hasPaid]);
 
   const updateProgress = async (newProgress: number) => {
     if (!enrollment || !user || !id) return;
@@ -342,28 +404,28 @@ export default function CourseViewer() {
     await updateProgress(100);
   };
 
-  // Track video watch time
+  // Track video progress with actual playback time
   useEffect(() => {
-    if (!videoStartTime) {
-      setVideoStartTime(Date.now());
-    }
+    if (!player || !videoDuration) return;
 
     const trackingInterval = setInterval(() => {
-      if (videoStartTime) {
-        const watchedSeconds = (Date.now() - videoStartTime) / 1000;
-        // Assume average video is 30 minutes (1800 seconds)
-        const estimatedProgress = Math.min((watchedSeconds / 1800) * 100, 95);
-        setWatchedPercentage(estimatedProgress);
+      try {
+        const currentTime = player.getCurrentTime();
+        const progressPercent = Math.min((currentTime / videoDuration) * 100, 100);
         
-        // Auto-update progress every minute
-        if (estimatedProgress > (enrollment?.progress || 0)) {
-          updateProgress(Math.floor(estimatedProgress));
+        setWatchedPercentage(progressPercent);
+        
+        // Auto-update progress in database every 30 seconds
+        if (progressPercent > (enrollment?.progress || 0)) {
+          updateProgress(Math.floor(progressPercent));
         }
+      } catch (error) {
+        console.error('Error tracking video progress:', error);
       }
-    }, 60000); // Update every minute
+    }, 30000); // Update every 30 seconds
 
     return () => clearInterval(trackingInterval);
-  }, [videoStartTime, enrollment]);
+  }, [player, videoDuration, enrollment]);
 
   if (loading) {
     return <div className="p-6">Loading course content...</div>;
@@ -499,13 +561,7 @@ export default function CourseViewer() {
                 {course.video_url ? (
                   <div className="space-y-6">
                     <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                      <iframe
-                        src={getYouTubeEmbedUrl(course.video_url) || ''}
-                        title={course.title}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
+                      <div id="youtube-player" className="w-full h-full"></div>
                     </div>
                     
                     <Card>
