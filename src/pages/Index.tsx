@@ -1,6 +1,7 @@
 
 import React from "react";
 import HeroSection from "@/components/HeroSection";
+import TabbedCourses from "@/components/TabbedCourses";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ArrowRight, BookOpen, Users, Award, Clock, CheckCircle, Sparkles, LayoutDashboard } from "lucide-react";
@@ -244,29 +245,34 @@ const Index = () => {
       <Navbar />
       
       <main>
-        {/* Hero Section */}
+        {/* Hero Section with Search */}
         <HeroSection />
         
-        {/* Stats Section */}
-        <section className="py-16 bg-spotify-dark">
+        {/* Compact Stats Banner */}
+        <section className="py-6 bg-spotify-gray/30 border-y border-white/10">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
               {stats.map((stat, index) => (
                 <div 
                   key={index} 
-                  className="bg-spotify-gray/30 backdrop-blur-md rounded-xl p-6 text-center border border-white/10 animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className="flex items-center gap-3 animate-fade-in"
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
-                  <div className="w-12 h-12 mx-auto bg-spotify/10 rounded-full flex items-center justify-center mb-4">
-                    <stat.icon className="h-6 w-6 text-spotify" />
+                  <div className="w-10 h-10 bg-spotify/10 rounded-full flex items-center justify-center">
+                    <stat.icon className="h-5 w-5 text-spotify" />
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-bold text-spotify-text mb-1">{stat.value}</h3>
-                  <p className="text-spotify-text/70">{stat.label}</p>
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-bold text-spotify-text">{stat.value}</h3>
+                    <p className="text-xs text-spotify-text/70">{stat.label}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
+        
+        {/* Tabbed Courses Section */}
+        <TabbedCourses />
         
         {/* Categories Section */}
         <section className="py-20 bg-spotify-dark relative overflow-hidden">
