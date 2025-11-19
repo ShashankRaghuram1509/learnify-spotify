@@ -410,14 +410,16 @@ export default function CourseViewer() {
 
     const trackingInterval = setInterval(() => {
       try {
-        const currentTime = player.getCurrentTime();
-        const progressPercent = Math.min((currentTime / videoDuration) * 100, 100);
-        
-        setWatchedPercentage(progressPercent);
-        
-        // Auto-update progress in database every 30 seconds
-        if (progressPercent > (enrollment?.progress || 0)) {
-          updateProgress(Math.floor(progressPercent));
+        if (player && typeof player.getCurrentTime === 'function') {
+          const currentTime = player.getCurrentTime();
+          const progressPercent = Math.min((currentTime / videoDuration) * 100, 100);
+          
+          setWatchedPercentage(progressPercent);
+          
+          // Auto-update progress in database every 30 seconds
+          if (progressPercent > (enrollment?.progress || 0)) {
+            updateProgress(Math.floor(progressPercent));
+          }
         }
       } catch (error) {
         console.error('Error tracking video progress:', error);
