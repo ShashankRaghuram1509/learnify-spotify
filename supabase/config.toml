@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.admin-create-instructor]
 verify_jwt = true
+
+[functions.upload-to-drive]
+verify_jwt = true
+
+[functions.get-drive-video]
+verify_jwt = true

@@ -66,11 +66,26 @@ export default function CourseResourceManager({
   };
 
   const handleFileUpload = async (file: File) => {
-    // File size validation (50MB for videos, 20MB for PDFs)
-    const maxSize = newResource.resource_type === "video" ? 50 * 1024 * 1024 : 20 * 1024 * 1024;
+    // For videos, upload to Google Drive
+    if (newResource.resource_type === "video") {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('fileName', file.name);
+
+      const { data, error } = await supabase.functions.invoke('upload-to-drive', {
+        body: formData,
+      });
+
+      if (error) throw error;
+      
+      // Return the Google Drive file ID as the path
+      return { filePath: `gdrive:${data.fileId}`, publicUrl: data.webViewLink };
+    }
+
+    // For other files (PDFs), use Supabase storage
+    const maxSize = 20 * 1024 * 1024;
     if (file.size > maxSize) {
-      const sizeMB = Math.round(maxSize / (1024 * 1024));
-      throw new Error(`File size exceeds backend limit of ${sizeMB}MB. For larger videos, please use a video link instead.`);
+      throw new Error('File size exceeds 20MB limit');
     }
 
     const fileExt = file.name.split(".").pop();
@@ -137,17 +152,18 @@ export default function CourseResourceManager({
     if (!confirm("Are you sure you want to delete this resource?")) return;
 
     try {
-      // Delete file from storage if it exists
-      if (filePath) {
-        await supabase.storage.from("course-materials").remove([filePath]);
-      }
-
       const { error } = await supabase
         .from("course_resources")
         .delete()
         .eq("id", resourceId);
 
       if (error) throw error;
+
+      // Delete file from storage if it exists and is not a Google Drive file
+      if (filePath && !filePath.startsWith('gdrive:')) {
+        await supabase.storage.from("course-materials").remove([filePath]);
+      }
+      // Note: Google Drive files are not deleted to preserve them in the shared drive
 
       toast.success("Resource deleted successfully!");
       fetchResources();
@@ -261,7 +277,7 @@ export default function CourseResourceManager({
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     {newResource.resource_type === "video" 
-                      ? "Max 50MB (backend limit). For larger videos, use 'Video Link' instead." 
+                      ? "Videos will be uploaded to Google Drive" 
                       : "Max 20MB"}
                   </p>
                 </div>
