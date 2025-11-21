@@ -46,6 +46,56 @@ interface CourseResource {
   description: string | null;
 }
 
+const ResourceVideoPlayer = ({ resource, getVideoUrl }: { resource: CourseResource; getVideoUrl: (r: CourseResource) => Promise<string> }) => {
+  const [videoUrl, setVideoUrl] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUrl = async () => {
+      setIsLoading(true);
+      const url = await getVideoUrl(resource);
+      setVideoUrl(url);
+      setIsLoading(false);
+    };
+    loadUrl();
+  }, [resource]);
+
+  if (isLoading) {
+    return (
+      <div className="aspect-video rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+        <p className="text-muted-foreground">Loading video...</p>
+      </div>
+    );
+  }
+
+  // Check if it's a Google Drive embed URL
+  if (videoUrl.includes('drive.google.com')) {
+    return (
+      <div className="aspect-video rounded-lg overflow-hidden bg-black">
+        <iframe
+          src={videoUrl}
+          className="w-full h-full"
+          allow="autoplay"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+
+  // Regular video player for other URLs
+  return (
+    <div className="aspect-video rounded-lg overflow-hidden bg-black">
+      <video
+        controls
+        className="w-full h-full"
+        src={videoUrl}
+      >
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  );
+};
+
 export default function CourseViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -66,6 +116,7 @@ export default function CourseViewer() {
     if (user && id) {
       fetchCourseContent();
       fetchCourseMaterials();
+      fetchResources();
     }
   }, [user, id]);
 
@@ -216,6 +267,32 @@ export default function CourseViewer() {
       console.error("Error fetching resources:", error);
       toast.error(error.message || "Failed to load course materials");
     }
+  };
+
+  const getVideoUrl = async (resource: CourseResource) => {
+    if (resource.url) {
+      return resource.url;
+    }
+    if (resource.file_path) {
+      // Check if it's a Google Drive file
+      if (resource.file_path.startsWith('gdrive:')) {
+        const fileId = resource.file_path.replace('gdrive:', '');
+        const { data, error } = await supabase.functions.invoke('get-drive-video', {
+          body: { fileId },
+        });
+        if (error) {
+          console.error('Error getting Google Drive URL:', error);
+          return "";
+        }
+        return data.embedUrl;
+      }
+      // Otherwise use Supabase storage
+      const { data } = supabase.storage
+        .from("course-materials")
+        .getPublicUrl(resource.file_path);
+      return data.publicUrl;
+    }
+    return "";
   };
 
   const handlePayment = async () => {
@@ -856,38 +933,47 @@ export default function CourseViewer() {
                         <p>No additional resources available yet</p>
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                       <div className="space-y-3">
                         {resources.map((resource) => (
                           <Card key={resource.id}>
-                            <CardContent className="py-4 px-4 flex items-center justify-between">
+                            <CardContent className="py-4 px-4">
                               <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-1">
+                                <div className="flex items-center gap-3 mb-3">
                                   {resource.resource_type === 'pdf' && <FileText className="h-5 w-5 text-primary" />}
                                   {resource.resource_type === 'video' && <Video className="h-5 w-5 text-primary" />}
                                   {(resource.resource_type === 'video_link' || resource.resource_type === 'article_link') && <ExternalLink className="h-5 w-5 text-primary" />}
                                   <h3 className="font-semibold">{resource.title}</h3>
                                 </div>
                                 {resource.description && (
-                                  <p className="text-sm text-muted-foreground ml-8">{resource.description}</p>
+                                  <p className="text-sm text-muted-foreground mb-3 ml-8">{resource.description}</p>
+                                )}
+                                
+                                {/* Video player for video resources */}
+                                {resource.resource_type === 'video' && (
+                                  <ResourceVideoPlayer resource={resource} getVideoUrl={getVideoUrl} />
+                                )}
+                                
+                                {/* Download/Open button for other resources */}
+                                {(resource.resource_type !== 'video' && resource.url) && (
+                                  <div className="ml-8">
+                                    <Button asChild size="sm">
+                                      <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                                        {resource.resource_type === 'pdf' ? (
+                                          <>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download PDF
+                                          </>
+                                        ) : (
+                                          <>
+                                            <ExternalLink className="mr-2 h-4 w-4" />
+                                            Open Link
+                                          </>
+                                        )}
+                                      </a>
+                                    </Button>
+                                  </div>
                                 )}
                               </div>
-                              {resource.url && (
-                                <Button asChild size="sm">
-                                  <a href={resource.url} target="_blank" rel="noopener noreferrer">
-                                    {resource.resource_type === 'pdf' || resource.resource_type === 'video' ? (
-                                      <>
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download
-                                      </>
-                                    ) : (
-                                      <>
-                                        <ExternalLink className="mr-2 h-4 w-4" />
-                                        Open
-                                      </>
-                                    )}
-                                  </a>
-                                </Button>
-                              )}
                             </CardContent>
                           </Card>
                         ))}
