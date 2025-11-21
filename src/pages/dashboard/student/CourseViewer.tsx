@@ -934,49 +934,60 @@ export default function CourseViewer() {
                       </div>
                     ) : (
                        <div className="space-y-3">
-                        {resources.map((resource) => (
-                          <Card key={resource.id}>
-                            <CardContent className="py-4 px-4">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-3">
-                                  {resource.resource_type === 'pdf' && <FileText className="h-5 w-5 text-primary" />}
-                                  {resource.resource_type === 'video' && <Video className="h-5 w-5 text-primary" />}
-                                  {(resource.resource_type === 'video_link' || resource.resource_type === 'article_link') && <ExternalLink className="h-5 w-5 text-primary" />}
-                                  <h3 className="font-semibold">{resource.title}</h3>
-                                </div>
-                                {resource.description && (
-                                  <p className="text-sm text-muted-foreground mb-3 ml-8">{resource.description}</p>
-                                )}
-                                
-                                {/* Video player for video resources */}
-                                {resource.resource_type === 'video' && (
-                                  <ResourceVideoPlayer resource={resource} getVideoUrl={getVideoUrl} />
-                                )}
-                                
-                                {/* Download/Open button for other resources */}
-                                {(resource.resource_type !== 'video' && resource.url) && (
-                                  <div className="ml-8">
-                                    <Button asChild size="sm">
-                                      <a href={resource.url} target="_blank" rel="noopener noreferrer">
-                                        {resource.resource_type === 'pdf' ? (
-                                          <>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download PDF
-                                          </>
-                                        ) : (
-                                          <>
-                                            <ExternalLink className="mr-2 h-4 w-4" />
-                                            Open Link
-                                          </>
-                                        )}
-                                      </a>
-                                    </Button>
+                        {resources.map((resource) => {
+                          // Fallback URL resolution for non-video resources
+                          let resourceUrl = resource.url || "";
+                          if (!resourceUrl && resource.file_path && resource.resource_type === "pdf") {
+                            const { data } = supabase.storage
+                              .from("course-materials")
+                              .getPublicUrl(resource.file_path);
+                            resourceUrl = data.publicUrl;
+                          }
+
+                          return (
+                            <Card key={resource.id}>
+                              <CardContent className="py-4 px-4">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-3">
+                                    {resource.resource_type === 'pdf' && <FileText className="h-5 w-5 text-primary" />}
+                                    {resource.resource_type === 'video' && <Video className="h-5 w-5 text-primary" />}
+                                    {(resource.resource_type === 'video_link' || resource.resource_type === 'article_link') && <ExternalLink className="h-5 w-5 text-primary" />}
+                                    <h3 className="font-semibold">{resource.title}</h3>
                                   </div>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
+                                  {resource.description && (
+                                    <p className="text-sm text-muted-foreground mb-3 ml-8">{resource.description}</p>
+                                  )}
+                                  
+                                  {/* Video player for video resources */}
+                                  {resource.resource_type === 'video' && (
+                                    <ResourceVideoPlayer resource={resource} getVideoUrl={getVideoUrl} />
+                                  )}
+                                  
+                                  {/* Download/Open button for other resources */}
+                                  {(resource.resource_type !== 'video' && resourceUrl) && (
+                                    <div className="ml-8">
+                                      <Button asChild size="sm">
+                                        <a href={resourceUrl} target="_blank" rel="noopener noreferrer">
+                                          {resource.resource_type === 'pdf' ? (
+                                            <>
+                                              <Download className="mr-2 h-4 w-4" />
+                                              Download PDF
+                                            </>
+                                          ) : (
+                                            <>
+                                              <ExternalLink className="mr-2 h-4 w-4" />
+                                              Open Link
+                                            </>
+                                          )}
+                                        </a>
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
                       </div>
                     )}
                   </CardContent>
