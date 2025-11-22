@@ -6,13 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ZegoCloud Token04 generation following official specification
-function generateToken04(
+// ZegoCloud Kit Token generation for UIKit Prebuilt
+function generateKitToken(
   appId: number,
   userId: string,
   serverSecret: string,
-  effectiveTimeInSeconds: number,
-  payload: string
+  effectiveTimeInSeconds: number
 ): string {
   if (!appId || !userId || !serverSecret) {
     throw new Error('Invalid parameters for token generation');
@@ -22,19 +21,18 @@ function generateToken04(
   const expireTime = currentTime + effectiveTimeInSeconds;
   const nonce = Math.floor(Math.random() * 2147483647);
   
-  // Build the token content
-  const body = {
+  // Build the Kit Token payload
+  const payload = {
     app_id: appId,
     user_id: userId,
     nonce: nonce,
     ctime: currentTime,
-    expire: expireTime,
-    payload: payload || ''
+    expire: expireTime
   };
 
-  // Create signature: HMAC-SHA256(serverSecret, "${appId}${userId}${expireTime}${nonce}")
+  // Create signature: HMAC-SHA256
   const encoder = new TextEncoder();
-  const data = encoder.encode(`${appId}${userId}${expireTime}${nonce}`);
+  const data = encoder.encode(JSON.stringify(payload));
   const key = encoder.encode(serverSecret);
   
   // Use Web Crypto API for HMAC
@@ -51,18 +49,16 @@ function generateToken04(
     const signatureArray = Array.from(new Uint8Array(signature));
     const signatureHex = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
     
-    // Build final token object
-    const tokenObject = {
-      ...body,
-      signature: signatureHex,
-      ver: 1
+    // Build final token with signature
+    const tokenData = {
+      ...payload,
+      signature: signatureHex
     };
     
-    // Encode to base64 and prepend version prefix "04" as required by Zego Token04 spec
-    const jsonString = JSON.stringify(tokenObject);
+    // Encode to base64 for Kit Token format
+    const jsonString = JSON.stringify(tokenData);
     const tokenBytes = encoder.encode(jsonString);
-    const base64Token = btoa(String.fromCharCode(...tokenBytes));
-    return `04${base64Token}`;
+    return btoa(String.fromCharCode(...tokenBytes));
   });
 }
 
@@ -195,10 +191,10 @@ serve(async (req) => {
       throw new Error('Video call service not configured');
     }
 
-    // Generate Standard Token04 with 24 hour validity
-    console.log('generate-video-token - Generating token04');
-    const token = await generateToken04(appId, user.id, serverSecret, 86400, '');
-    console.log('generate-video-token - Token generated successfully');
+    // Generate Kit Token with 24 hour validity
+    console.log('generate-video-token - Generating Kit Token');
+    const token = await generateKitToken(appId, user.id, serverSecret, 86400);
+    console.log('generate-video-token - Kit Token generated successfully');
 
     const response = { 
       success: true, 
