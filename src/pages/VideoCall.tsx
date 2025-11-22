@@ -18,6 +18,9 @@ export default function VideoCall() {
       return;
     }
     
+    // Mark as initialized immediately to prevent duplicate runs
+    initializedRef.current = true;
+    
     const sessionId = searchParams.get('sessionId');
     const roomId = searchParams.get('roomId') || roomID || null;
 
@@ -86,8 +89,6 @@ export default function VideoCall() {
         console.log('📦 VideoCall - Container ref found, generating Kit Token');
         console.log('🔑 VideoCall - Using appId:', appId);
         console.log('🔑 VideoCall - Using Token04 length:', token04?.length);
-        
-        initializedRef.current = true;
         
         // Generate Kit Token from Token04 (Step 2 of authentication)
         const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
