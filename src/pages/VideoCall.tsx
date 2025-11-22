@@ -33,10 +33,11 @@ export default function VideoCall() {
     const initializeVideoCall = async () => {
       try {
         console.log('🔐 VideoCall - Getting session');
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          console.error('❌ VideoCall - No session found');
-          toast.error('Please login to join video call');
+        // Force session refresh to ensure we have a valid token
+        const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+        if (sessionError || !session) {
+          console.error('❌ VideoCall - No session found or refresh failed:', sessionError);
+          toast.error('Session expired. Please login again to join video call');
           navigate('/auth');
           return;
         }
