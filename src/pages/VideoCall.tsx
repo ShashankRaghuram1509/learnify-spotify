@@ -17,7 +17,7 @@ export default function VideoCall() {
       console.log('⏭️ VideoCall - Already initialized, skipping');
       return;
     }
-    initializedRef.current = true;
+    
     const sessionId = searchParams.get('sessionId');
     const roomId = searchParams.get('roomId') || roomID || null;
 
@@ -72,39 +72,47 @@ export default function VideoCall() {
         console.log('✅ VideoCall - Token received from server');
         const { token: kitToken, appId } = tokenData;
 
-        if (containerRef.current) {
-          console.log('📦 VideoCall - Container ref found, creating ZegoUIKit instance');
-          console.log('🔑 VideoCall - Using appId:', appId);
-          console.log('🔑 VideoCall - Using token length:', kitToken?.length);
-          
-          const zp = ZegoUIKitPrebuilt.create(kitToken);
-          console.log('✅ VideoCall - ZegoUIKit instance created');
-          
-          console.log('🚀 VideoCall - Joining room with config');
-          zp.joinRoom({
-            container: containerRef.current,
-            turnOnMicrophoneWhenJoining: true,
-            turnOnCameraWhenJoining: true,
-            showMyCameraToggleButton: true,
-            showMyMicrophoneToggleButton: true,
-            showAudioVideoSettingsButton: true,
-            showScreenSharingButton: true,
-            showTextChat: true,
-            showUserList: true,
-            maxUsers: 2,
-            layout: "Auto",
-            showLayoutButton: false,
-            scenario: {
-              mode: ZegoUIKitPrebuilt.OneONoneCall,
-              config: {
-                role: ZegoUIKitPrebuilt.Host,
-              },
-            },
-          });
-          console.log('✅ VideoCall - joinRoom called successfully');
-        } else {
-          console.error('❌ VideoCall - Container ref is null');
+        // Wait for DOM to be ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        if (!containerRef.current) {
+          console.error('❌ VideoCall - Container ref is null after waiting');
+          toast.error('Video container not ready');
+          navigate('/');
+          return;
         }
+
+        console.log('📦 VideoCall - Container ref found, creating ZegoUIKit instance');
+        console.log('🔑 VideoCall - Using appId:', appId);
+        console.log('🔑 VideoCall - Using token length:', kitToken?.length);
+        
+        initializedRef.current = true;
+        
+        const zp = ZegoUIKitPrebuilt.create(kitToken);
+        console.log('✅ VideoCall - ZegoUIKit instance created');
+        
+        console.log('🚀 VideoCall - Joining room with config');
+        zp.joinRoom({
+          container: containerRef.current,
+          turnOnMicrophoneWhenJoining: true,
+          turnOnCameraWhenJoining: true,
+          showMyCameraToggleButton: true,
+          showMyMicrophoneToggleButton: true,
+          showAudioVideoSettingsButton: true,
+          showScreenSharingButton: true,
+          showTextChat: true,
+          showUserList: true,
+          maxUsers: 2,
+          layout: "Auto",
+          showLayoutButton: false,
+          scenario: {
+            mode: ZegoUIKitPrebuilt.OneONoneCall,
+            config: {
+              role: ZegoUIKitPrebuilt.Host,
+            },
+          },
+        });
+        console.log('✅ VideoCall - joinRoom called successfully');
 
         setLoading(false);
         console.log('✅ VideoCall - Initialization complete');
