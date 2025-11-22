@@ -7,27 +7,21 @@ import { toast } from 'sonner';
 export default function VideoCall() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { roomID } = useParams();
   const [loading, setLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { roomID } = useParams();
   const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (initializedRef.current) {
-      console.log('⏭️ VideoCall - Already initialized, skipping');
-      return;
-    }
-    
-    // Mark as initialized immediately to prevent duplicate runs
+    if (initializedRef.current) return;
     initializedRef.current = true;
     
     const sessionId = searchParams.get('sessionId');
     const roomId = searchParams.get('roomId') || roomID || null;
 
-    console.log('🎥 VideoCall - Starting initialization', { sessionId, roomId, roomID });
+    console.log('🎥 VideoCall - Initializing', { sessionId, roomId });
 
     if (!sessionId || !roomId) {
-      console.error('❌ VideoCall - Missing parameters', { sessionId, roomId });
       toast.error('Invalid video call link');
       navigate('/');
       return;
@@ -35,19 +29,13 @@ export default function VideoCall() {
 
     const initializeVideoCall = async () => {
       try {
-        console.log('🔐 VideoCall - Getting session');
-        // Force session refresh to ensure we have a valid token
         const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
         if (sessionError || !session) {
-          console.error('❌ VideoCall - No session found or refresh failed:', sessionError);
-          toast.error('Session expired. Please login again to join video call');
+          toast.error('Session expired. Please login again');
           navigate('/auth');
           return;
         }
 
-        console.log('✅ VideoCall - Session found, user:', session.user.id);
-
-        console.log('👤 VideoCall - Fetching profile');
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name')
@@ -55,84 +43,61 @@ export default function VideoCall() {
           .single();
 
         const userName = profile?.full_name || session.user.email || 'User';
-        console.log('✅ VideoCall - User name:', userName);
 
-        // Call generate-video-token edge function
-        console.log('🔑 VideoCall - Calling generate-video-token endpoint');
+        // Get token from backend
         const { data: tokenData, error: tokenError } = await supabase.functions.invoke('generate-video-token', {
-          body: {
-            session_id: sessionId,
-            room_id: roomId
-          }
+          body: { session_id: sessionId, room_id: roomId }
         });
 
         if (tokenError || !tokenData) {
-          console.error('❌ VideoCall - Token generation failed:', tokenError);
-          toast.error('Failed to generate video call token');
+          toast.error('Failed to generate video token');
           navigate('/');
           return;
         }
 
-        console.log('✅ VideoCall - Token received from server');
-        const { token: token04, appId, userId, roomId: serverRoomId } = tokenData;
+        const { token, appId, userId } = tokenData;
 
-        // Wait for DOM to be ready
         await new Promise(resolve => setTimeout(resolve, 100));
 
         if (!containerRef.current) {
-          console.error('❌ VideoCall - Container ref is null after waiting');
           toast.error('Video container not ready');
           navigate('/');
           return;
         }
 
-        console.log('📦 VideoCall - Container ref found, generating Kit Token');
-        console.log('🔑 VideoCall - Using appId:', appId);
-        console.log('🔑 VideoCall - Using Token04 length:', token04?.length);
+        // Use ZegoUIKitPrebuilt.create() directly with Token04 from backend
+        // This is the official way according to Zego docs for server-side tokens
+        const zp = ZegoUIKitPrebuilt.create(token);
         
-        // Generate Kit Token from Token04 (Step 2 of authentication)
-        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
-          Number(appId),
-          token04,
-          serverRoomId || roomId || '',
-          userId,
-          userName
-        );
-        console.log('✅ VideoCall - Kit Token generated');
-        
-        // Create ZegoUIKit instance with Kit Token
-        const zp = ZegoUIKitPrebuilt.create(kitToken);
-        console.log('✅ VideoCall - ZegoUIKit instance created');
-        
-        console.log('🚀 VideoCall - Joining room with config');
         zp.joinRoom({
           container: containerRef.current,
-          turnOnMicrophoneWhenJoining: true,
+          scenario: {
+            mode: ZegoUIKitPrebuilt.OneONoneCall, // Can be changed to GroupCall for group calls
+          },
           turnOnCameraWhenJoining: true,
+          turnOnMicrophoneWhenJoining: true,
           showMyCameraToggleButton: true,
           showMyMicrophoneToggleButton: true,
           showAudioVideoSettingsButton: true,
           showScreenSharingButton: true,
           showTextChat: true,
           showUserList: true,
-          maxUsers: 2,
+          maxUsers: 10, // Support for group calls
           layout: "Auto",
-          showLayoutButton: false,
-          scenario: {
-            mode: ZegoUIKitPrebuilt.OneONoneCall,
-            config: {
-              role: ZegoUIKitPrebuilt.Host,
-            },
+          showLayoutButton: true,
+          onJoinRoom: () => {
+            console.log('✅ Joined room successfully');
+            setLoading(false);
+            toast.success('Connected to video call');
+          },
+          onLeaveRoom: () => {
+            console.log('👋 Left room');
+            navigate('/dashboard/student');
           },
         });
-        console.log('✅ VideoCall - joinRoom called successfully');
 
-        setLoading(false);
-        console.log('✅ VideoCall - Initialization complete');
       } catch (error: any) {
-        console.error('💥 VideoCall - Fatal error:', error);
-        console.error('💥 VideoCall - Error message:', error.message);
-        console.error('💥 VideoCall - Error stack:', error.stack);
+        console.error('💥 VideoCall error:', error);
         toast.error(error.message || 'Failed to join video call');
         navigate('/');
       }
