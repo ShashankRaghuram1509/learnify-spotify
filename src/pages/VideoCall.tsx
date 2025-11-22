@@ -55,7 +55,7 @@ export default function VideoCall() {
           return;
         }
 
-        const { token, appId, userId } = tokenData;
+        const { token: token04, appId, userId, roomId: serverRoomId } = tokenData;
 
         await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -65,9 +65,16 @@ export default function VideoCall() {
           return;
         }
 
-        // Use ZegoUIKitPrebuilt.create() directly with Token04 from backend
-        // This is the official way according to Zego docs for server-side tokens
-        const zp = ZegoUIKitPrebuilt.create(token);
+        // Convert Token04 from backend to KitToken (required for ZegoUIKitPrebuilt)
+        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
+          Number(appId),
+          token04,
+          serverRoomId || roomId,
+          userId,
+          userName
+        );
+        
+        const zp = ZegoUIKitPrebuilt.create(kitToken);
         
         zp.joinRoom({
           container: containerRef.current,
