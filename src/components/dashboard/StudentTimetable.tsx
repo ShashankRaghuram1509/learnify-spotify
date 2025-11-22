@@ -49,8 +49,12 @@ export default function StudentTimetable() {
   }, [user]);
 
   const fetchScheduledSlots = async () => {
+    if (!user) return;
+    
     try {
       const now = new Date();
+      console.log('StudentTimetable - Fetching slots for user:', user.id);
+      
       const { data, error } = await supabase
         .from("video_call_schedules")
         .select(`
@@ -59,16 +63,22 @@ export default function StudentTimetable() {
           status,
           duration_minutes,
           teacher_id,
+          course_id,
           courses (
             title
           )
         `)
-        .eq("student_id", user?.id)
+        .eq("student_id", user.id)
         .eq("status", "scheduled")
         .gte("scheduled_at", now.toISOString())
         .order("scheduled_at", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('StudentTimetable - Error fetching slots:', error);
+        throw error;
+      }
+
+      console.log('StudentTimetable - Raw data:', data);
 
       // Fetch teacher profiles
       const teacherIds = data?.map((s: any) => s.teacher_id).filter(Boolean) || [];
@@ -79,6 +89,8 @@ export default function StudentTimetable() {
           .from("profiles")
           .select("id, full_name, email")
           .in("id", teacherIds);
+        
+        console.log('StudentTimetable - Teacher profiles:', profiles);
         
         teacherProfiles = profiles?.reduce((acc: any, profile: any) => {
           acc[profile.id] = profile;
@@ -96,12 +108,13 @@ export default function StudentTimetable() {
         duration_minutes: slot.duration_minutes,
       })) || [];
 
+      console.log('StudentTimetable - Formatted slots:', formattedSlots);
       setScheduledSlots(formattedSlots);
 
       // Check for imminent sessions
       checkUpcomingNotifications(formattedSlots);
     } catch (error) {
-      console.error("Error fetching scheduled slots:", error);
+      console.error("StudentTimetable - Error:", error);
       toast.error("Failed to load your schedule");
     } finally {
       setLoading(false);

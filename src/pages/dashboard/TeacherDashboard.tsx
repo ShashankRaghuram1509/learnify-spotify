@@ -1,6 +1,7 @@
 import ContentManager from "@/components/dashboard/ContentManager";
 import TeacherChatList from "@/components/dashboard/TeacherChatList";
 import TeacherRevenue from "@/components/dashboard/TeacherRevenue";
+import TeacherUpcomingCalls from "@/components/dashboard/TeacherUpcomingCalls";
 
 export default function TeacherDashboard() {
   return (
@@ -14,9 +15,10 @@ export default function TeacherDashboard() {
       
       <TeacherRevenue />
       
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <ContentManager />
         <TeacherChatList />
+        <TeacherUpcomingCalls />
       </div>
     </div>
   );
