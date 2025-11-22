@@ -271,6 +271,13 @@ export default function CourseViewer() {
 
   const getVideoUrl = async (resource: CourseResource) => {
     if (resource.url) {
+      // If it's a Google Drive view link, convert to preview link
+      if (resource.url.includes('drive.google.com/file/d/')) {
+        const fileIdMatch = resource.url.match(/\/file\/d\/([^\/\?]+)/);
+        if (fileIdMatch) {
+          return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+        }
+      }
       return resource.url;
     }
     if (resource.file_path) {
