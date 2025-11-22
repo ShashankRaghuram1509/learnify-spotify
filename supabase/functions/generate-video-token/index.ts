@@ -58,11 +58,11 @@ function generateToken04(
       ver: 1
     };
     
-    // Encode to base64 and prepend version prefix "04" as required by Zego Token04 spec
+    // Encode to base64 and prepend version prefix "03" for Kit Token (UIKit compatibility)
     const jsonString = JSON.stringify(tokenObject);
     const tokenBytes = encoder.encode(jsonString);
     const base64Token = btoa(String.fromCharCode(...tokenBytes));
-    return `04${base64Token}`;
+    return `03${base64Token}`;
   });
 }
 
