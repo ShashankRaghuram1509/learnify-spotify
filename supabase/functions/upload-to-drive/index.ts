@@ -57,6 +57,9 @@ serve(async (req) => {
     const metadata = {
       name: fileName,
       parents: [folderId],
+      // Allow anyone to view and embed
+      copyRequiresWriterPermission: false,
+      writersCanShare: true,
     };
 
     const form = new FormData();
@@ -83,7 +86,7 @@ serve(async (req) => {
     const uploadResult = await uploadResponse.json();
     console.log('Upload successful:', uploadResult.id);
 
-    // Make the file publicly accessible
+    // Make the file publicly accessible with anyoneWithLink
     console.log('Setting file permissions...');
     const permissionResponse = await fetch(
       `https://www.googleapis.com/drive/v3/files/${uploadResult.id}/permissions`,
@@ -96,13 +99,18 @@ serve(async (req) => {
         body: JSON.stringify({
           role: 'reader',
           type: 'anyone',
+          allowFileDiscovery: false,
         }),
       }
     );
 
     if (!permissionResponse.ok) {
-      console.error('Permission error:', await permissionResponse.text());
+      const errorText = await permissionResponse.text();
+      console.error('Permission error:', errorText);
+      throw new Error('Failed to set file permissions');
     }
+
+    console.log('Permissions set successfully');
 
     return new Response(
       JSON.stringify({
