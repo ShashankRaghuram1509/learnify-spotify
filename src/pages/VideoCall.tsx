@@ -71,7 +71,7 @@ export default function VideoCall() {
         }
 
         console.log('✅ VideoCall - Token received from server');
-        const { token: accessToken, appId } = tokenData;
+        const { token: token04, appId, userId, roomId: serverRoomId } = tokenData;
 
         // Wait for DOM to be ready
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -83,14 +83,24 @@ export default function VideoCall() {
           return;
         }
 
-        console.log('📦 VideoCall - Container ref found, creating ZegoUIKit instance');
+        console.log('📦 VideoCall - Container ref found, generating Kit Token');
         console.log('🔑 VideoCall - Using appId:', appId);
-        console.log('🔑 VideoCall - Using Token04 length:', accessToken?.length);
+        console.log('🔑 VideoCall - Using Token04 length:', token04?.length);
         
         initializedRef.current = true;
         
-        // Use Token04 directly from server
-        const zp = ZegoUIKitPrebuilt.create(accessToken);
+        // Generate Kit Token from Token04 (Step 2 of authentication)
+        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
+          Number(appId),
+          token04,
+          serverRoomId || roomId || '',
+          userId,
+          userName
+        );
+        console.log('✅ VideoCall - Kit Token generated');
+        
+        // Create ZegoUIKit instance with Kit Token
+        const zp = ZegoUIKitPrebuilt.create(kitToken);
         console.log('✅ VideoCall - ZegoUIKit instance created');
         
         console.log('🚀 VideoCall - Joining room with config');
