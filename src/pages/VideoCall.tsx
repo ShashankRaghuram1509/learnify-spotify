@@ -85,20 +85,11 @@ export default function VideoCall() {
         console.log('📦 VideoCall - Container ref found, creating ZegoUIKit instance');
         console.log('🔑 VideoCall - Using appId:', appId);
         console.log('🔑 VideoCall - Using token length:', accessToken?.length);
-
-        // Convert backend Token04 into Kit Token suitable for Prebuilt UI
-        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
-          appId,
-          accessToken,
-          roomId,
-          session.user.id,
-          userName
-        );
-        console.log('✅ VideoCall - Kit token generated');
         
         initializedRef.current = true;
         
-        const zp = ZegoUIKitPrebuilt.create(kitToken);
+        // Use Token04 directly from server
+        const zp = ZegoUIKitPrebuilt.create(accessToken);
         console.log('✅ VideoCall - ZegoUIKit instance created');
         
         console.log('🚀 VideoCall - Joining room with config');
