@@ -94,32 +94,33 @@ export default function VideoCall() {
           
           console.log('🚪 VideoCall - Calling joinRoom');
           zp.joinRoom({
-          container: containerRef.current,
-          scenario: {
-            mode: ZegoUIKitPrebuilt.OneONoneCall, // Can be changed to GroupCall for group calls
-          },
-          turnOnCameraWhenJoining: true,
-          turnOnMicrophoneWhenJoining: true,
-          showMyCameraToggleButton: true,
-          showMyMicrophoneToggleButton: true,
-          showAudioVideoSettingsButton: true,
-          showScreenSharingButton: true,
-          showTextChat: true,
-          showUserList: true,
-          maxUsers: 10, // Support for group calls
-          layout: "Auto",
-          showLayoutButton: true,
-          onJoinRoom: () => {
-            console.log('✅ Joined room successfully');
-            setLoading(false);
-            toast.success('Connected to video call');
-          },
-          onLeaveRoom: () => {
-            console.log('👋 Left room');
-            navigate('/dashboard/student');
-          },
-        });
-        console.log('✅ VideoCall - joinRoom call complete');
+           container: containerRef.current,
+           scenario: {
+             mode: ZegoUIKitPrebuilt.OneONoneCall, // Can be changed to GroupCall for group calls
+           },
+           turnOnCameraWhenJoining: true,
+           turnOnMicrophoneWhenJoining: true,
+           showMyCameraToggleButton: true,
+           showMyMicrophoneToggleButton: true,
+           showAudioVideoSettingsButton: true,
+           showScreenSharingButton: true,
+           showTextChat: true,
+           showUserList: true,
+           maxUsers: 10, // Support for group calls
+           layout: "Auto",
+           showLayoutButton: true,
+           onJoinRoom: () => {
+             console.log('✅ Joined room successfully');
+             setLoading(false);
+             toast.success('Connected to video call');
+           },
+           onLeaveRoom: () => {
+             console.log('👋 Left room');
+             navigate('/dashboard/student');
+           },
+         });
+         console.log('✅ VideoCall - joinRoom call complete, forcing loading=false');
+         setLoading(false);
 
         } catch (kitError: any) {
           console.error('💥 VideoCall - KitToken/ZegoUIKit error:', kitError);
