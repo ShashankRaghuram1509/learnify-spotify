@@ -45,38 +45,55 @@ export default function VideoCall() {
         const userName = profile?.full_name || session.user.email || 'User';
 
         // Get token from backend
+        console.log('📡 VideoCall - Requesting token from backend');
         const { data: tokenData, error: tokenError } = await supabase.functions.invoke('generate-video-token', {
           body: { session_id: sessionId, room_id: roomId }
         });
 
+        console.log('📡 VideoCall - Token response:', { tokenError, hasData: !!tokenData });
+
         if (tokenError || !tokenData) {
+          console.error('❌ VideoCall - Token error:', tokenError);
           toast.error('Failed to generate video token');
           navigate('/');
           return;
         }
 
         const { token: token04, appId, userId, roomId: serverRoomId } = tokenData;
+        console.log('✅ VideoCall - Token data received:', { 
+          appId, 
+          userId, 
+          serverRoomId, 
+          token04Length: token04?.length 
+        });
 
         await new Promise(resolve => setTimeout(resolve, 100));
 
         if (!containerRef.current) {
+          console.error('❌ VideoCall - Container ref is null');
           toast.error('Video container not ready');
           navigate('/');
           return;
         }
 
+        console.log('📦 VideoCall - Container ready, generating KitToken');
+        
         // Convert Token04 from backend to KitToken (required for ZegoUIKitPrebuilt)
-        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
-          Number(appId),
-          token04,
-          serverRoomId || roomId,
-          userId,
-          userName
-        );
-        
-        const zp = ZegoUIKitPrebuilt.create(kitToken);
-        
-        zp.joinRoom({
+        try {
+          const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
+            Number(appId),
+            token04,
+            serverRoomId || roomId,
+            userId,
+            userName
+          );
+          console.log('✅ VideoCall - KitToken generated, creating ZegoUIKit instance');
+          
+          const zp = ZegoUIKitPrebuilt.create(kitToken);
+          console.log('✅ VideoCall - ZegoUIKit instance created');
+          
+          console.log('🚪 VideoCall - Calling joinRoom');
+          zp.joinRoom({
           container: containerRef.current,
           scenario: {
             mode: ZegoUIKitPrebuilt.OneONoneCall, // Can be changed to GroupCall for group calls
@@ -102,9 +119,23 @@ export default function VideoCall() {
             navigate('/dashboard/student');
           },
         });
+        console.log('✅ VideoCall - joinRoom call complete');
+
+        } catch (kitError: any) {
+          console.error('💥 VideoCall - KitToken/ZegoUIKit error:', kitError);
+          console.error('💥 VideoCall - Error details:', {
+            message: kitError.message,
+            stack: kitError.stack,
+            appId,
+            token04Length: token04?.length
+          });
+          toast.error('Failed to initialize video call');
+          navigate('/');
+          return;
+        }
 
       } catch (error: any) {
-        console.error('💥 VideoCall error:', error);
+        console.error('💥 VideoCall - General error:', error);
         toast.error(error.message || 'Failed to join video call');
         navigate('/');
       }
