@@ -70,7 +70,7 @@ export default function VideoCall() {
         }
 
         console.log('✅ VideoCall - Token received from server');
-        const { token: kitToken, appId } = tokenData;
+        const { token: accessToken, appId } = tokenData;
 
         // Wait for DOM to be ready
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -84,7 +84,17 @@ export default function VideoCall() {
 
         console.log('📦 VideoCall - Container ref found, creating ZegoUIKit instance');
         console.log('🔑 VideoCall - Using appId:', appId);
-        console.log('🔑 VideoCall - Using token length:', kitToken?.length);
+        console.log('🔑 VideoCall - Using token length:', accessToken?.length);
+
+        // Convert backend Token04 into Kit Token suitable for Prebuilt UI
+        const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
+          appId,
+          accessToken,
+          roomId,
+          session.user.id,
+          userName
+        );
+        console.log('✅ VideoCall - Kit token generated');
         
         initializedRef.current = true;
         
