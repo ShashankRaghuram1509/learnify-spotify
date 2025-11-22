@@ -18,7 +18,8 @@ function generateToken04(
     throw new Error('Invalid parameters for token generation');
   }
 
-  const time = Math.floor(Date.now() / 1000) + effectiveTimeInSeconds;
+  const currentTime = Math.floor(Date.now() / 1000);
+  const expireTime = currentTime + effectiveTimeInSeconds;
   const nonce = Math.floor(Math.random() * 2147483647);
   
   // Build the token content
@@ -26,14 +27,14 @@ function generateToken04(
     app_id: appId,
     user_id: userId,
     nonce: nonce,
-    ctime: time,
-    expire: time,
+    ctime: currentTime,
+    expire: expireTime,
     payload: payload || ''
   };
 
-  // Create signature: HMAC-SHA256(serverSecret, "${appId}${userId}${time}${nonce}")
+  // Create signature: HMAC-SHA256(serverSecret, "${appId}${userId}${expireTime}${nonce}")
   const encoder = new TextEncoder();
-  const data = encoder.encode(`${appId}${userId}${time}${nonce}`);
+  const data = encoder.encode(`${appId}${userId}${expireTime}${nonce}`);
   const key = encoder.encode(serverSecret);
   
   // Use Web Crypto API for HMAC
@@ -193,9 +194,9 @@ serve(async (req) => {
       throw new Error('Video call service not configured');
     }
 
-    // Generate Standard Token04 using the official specification
+    // Generate Standard Token04 with 24 hour validity
     console.log('generate-video-token - Generating token04');
-    const token = await generateToken04(appId, user.id, serverSecret, 3600, '');
+    const token = await generateToken04(appId, user.id, serverSecret, 86400, '');
     console.log('generate-video-token - Token generated successfully');
 
     const response = { 
