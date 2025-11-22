@@ -74,6 +74,9 @@ export default function VideoCall() {
 
         if (containerRef.current) {
           console.log('📦 VideoCall - Container ref found, creating ZegoUIKit instance');
+          console.log('🔑 VideoCall - Using appId:', appId);
+          console.log('🔑 VideoCall - Using token length:', kitToken?.length);
+          
           const zp = ZegoUIKitPrebuilt.create(kitToken);
           console.log('✅ VideoCall - ZegoUIKit instance created');
           
