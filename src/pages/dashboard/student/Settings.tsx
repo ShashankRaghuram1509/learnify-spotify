@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,10 +23,22 @@ import {
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    // Initialize from localStorage
+    const savedMode = localStorage.getItem("darkMode");
+    return savedMode === "true";
+  });
   const [loading, setLoading] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Apply dark mode on mount
+  useEffect(() => {
+    const savedMode = localStorage.getItem("darkMode") === "true";
+    if (savedMode) {
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
 
   const handleDarkModeToggle = (checked: boolean) => {
     setDarkMode(checked);
