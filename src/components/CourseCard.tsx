@@ -1,8 +1,9 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
-import { Clock, Users, Star, ExternalLink } from "lucide-react";
+import { Clock, Users, Star, ExternalLink, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
+import { Badge } from "./ui/badge";
 
 interface CourseCardProps {
   id: string;
@@ -44,79 +45,80 @@ const CourseCard: React.FC<CourseCardProps> = ({
   const hasDiscount = discountPrice !== undefined && discountPrice > 0;
   const isFree = safePrice === 0 || (discountPrice !== undefined && safeDiscountPrice === 0);
   
-  const CardContent = () => (
-    <>
-      <div className="relative aspect-video overflow-hidden">
+  const CardContentComponent = () => (
+    <Card className={cn("group overflow-hidden border border-border hover:border-primary/50 transition-all duration-200 card-hover h-full flex flex-col", className)}>
+      <div className="relative overflow-hidden">
         <img 
           src={image} 
           alt={title}
-          className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
         />
         
-        {featured && (
-          <div className="absolute top-4 left-4 bg-spotify text-white text-xs font-semibold px-2 py-1 rounded">
-            Featured
-          </div>
-        )}
-        
-        {premium && (
-          <div className="absolute top-4 right-4 bg-amber-500 text-white text-xs font-semibold px-2 py-1 rounded">
-            Premium
-          </div>
-        )}
+        <div className="absolute top-3 left-3 flex gap-2">
+          {featured && (
+            <Badge className="bg-primary text-primary-foreground">Featured</Badge>
+          )}
+          {premium && (
+            <Badge variant="secondary" className="bg-card border border-border">Premium</Badge>
+          )}
+        </div>
         
         {level && (
-          <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2 py-1 rounded">
+          <Badge variant="outline" className="absolute bottom-3 left-3 bg-background/90 backdrop-blur-sm">
             {level}
-          </div>
+          </Badge>
         )}
       </div>
       
-      <div className="p-5">
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2">{title}</h3>
-        
-        <p className="text-spotify-text/70 text-sm mb-3">{instructor}</p>
-        
-        <div className="flex items-center mb-3">
-          <div className="flex items-center text-yellow-400">
-            <Star size={16} fill="currentColor" stroke="none" />
-            <span className="ml-1 text-sm font-medium">{safeRating.toFixed(1)}</span>
+      <CardHeader className="space-y-2 flex-grow pb-3">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <BookOpen className="w-4 h-4" />
+          <span>{instructor}</span>
+        </div>
+        <CardTitle className="text-lg group-hover:text-primary transition-colors line-clamp-2">
+          {title}
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="space-y-3 pt-0">
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Star className="w-4 h-4 fill-primary text-primary" />
+            <span className="font-medium text-foreground">{safeRating.toFixed(1)}</span>
           </div>
-          <span className="mx-2 text-spotify-text/40">•</span>
-          <div className="flex items-center text-spotify-text/70 text-sm">
-            <Users size={14} className="mr-1" />
-            {students ?? 0} students
+          <div className="flex items-center gap-1">
+            <Users className="w-4 h-4" />
+            <span>{students ?? 0}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Clock className="w-4 h-4" />
+            <span>{duration}</span>
           </div>
         </div>
-        
-        <div className="flex items-center text-sm text-spotify-text/70 mb-4">
-          <Clock size={14} className="mr-1" />
-          {duration}
-        </div>
-        
-        <div className="flex items-center justify-between mt-auto">
-          <div className="flex items-center">
+
+        <div className="flex items-center justify-between pt-3 border-t border-border">
+          <div>
             {isFree ? (
-              <span className="text-green-500 font-bold">Free</span>
+              <span className="text-lg font-bold text-primary">Free</span>
             ) : hasDiscount ? (
-              <>
-                <span className="text-spotify font-bold">₹{safeDiscountPrice.toFixed(2)}</span>
-                <span className="text-spotify-text/50 line-through text-sm ml-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold text-foreground">₹{safeDiscountPrice.toFixed(2)}</span>
+                <span className="text-sm text-muted-foreground line-through">
                   ₹{safePrice.toFixed(2)}
                 </span>
-              </>
+              </div>
             ) : (
-              <span className="text-spotify font-bold">₹{safePrice.toFixed(2)}</span>
+              <span className="text-lg font-bold text-foreground">₹{safePrice.toFixed(2)}</span>
             )}
           </div>
           
-          <div className={`${externalLink ? "bg-amber-500/10 hover:bg-amber-500/20 text-amber-500" : "bg-spotify/10 hover:bg-spotify/20 text-spotify"} px-3 py-1 rounded-full text-sm font-medium transition-colors duration-200 flex items-center`}>
-            {externalLink && <ExternalLink size={12} className="mr-1" />}
-            {externalLink ? "View Tutorial" : "View Course"}
+          <div className="flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
+            {externalLink && <ExternalLink className="w-4 h-4" />}
+            <span>{externalLink ? "Tutorial" : "View"}</span>
           </div>
         </div>
-      </div>
-    </>
+      </CardContent>
+    </Card>
   );
   
   return externalLink ? (
@@ -124,24 +126,13 @@ const CourseCard: React.FC<CourseCardProps> = ({
       href={externalLink}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(
-        "block rounded-xl overflow-hidden bg-spotify-gray/20 border border-spotify-gray/30 card-hover",
-        featured ? "transform shadow-xl" : "",
-        className
-      )}
+      className="block"
     >
-      <CardContent />
+      <CardContentComponent />
     </a>
   ) : (
-    <Link 
-      to={`/courses/${id}`} 
-      className={cn(
-        "block rounded-xl overflow-hidden bg-spotify-gray/20 border border-spotify-gray/30 card-hover",
-        featured ? "transform shadow-xl" : "",
-        className
-      )}
-    >
-      <CardContent />
+    <Link to={`/courses/${id}`} className="block">
+      <CardContentComponent />
     </Link>
   );
 };

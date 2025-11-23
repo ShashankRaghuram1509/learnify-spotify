@@ -156,16 +156,16 @@ const FeaturedCourses = () => {
   const featuredFilteredCourses = filteredCourses.filter(course => course.featured);
   
   return (
-    <section className="py-20 bg-spotify-dark">
+    <section className="py-20 bg-background">
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 space-y-4 md:space-y-0">
           <div>
-            <span className="text-spotify font-medium">Learn From The Best</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-2">Featured Courses</h2>
+            <span className="text-primary font-medium">Learn From The Best</span>
+            <h2 className="text-3xl md:text-4xl font-bold mt-2 text-foreground">Featured Courses</h2>
           </div>
           
-          <Link to="/courses" className="flex items-center text-spotify hover:text-spotify-light transition-colors duration-200">
-            <span className="font-medium">View all courses</span>
+          <Link to="/courses" className="flex items-center text-primary hover:text-primary/80 transition-colors duration-200 font-medium">
+            <span>View all courses</span>
             <ArrowRight size={18} className="ml-1" />
           </Link>
         </div>
@@ -176,10 +176,10 @@ const FeaturedCourses = () => {
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.id)}
-                className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
+                className={`px-4 py-2 rounded-md whitespace-nowrap transition-all duration-200 text-sm font-medium ${
                   activeCategory === category.id
-                    ? "bg-spotify text-white"
-                    : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
                 {category.name}
@@ -190,30 +190,30 @@ const FeaturedCourses = () => {
           <div className="flex space-x-2">
             <button
               onClick={() => setActiveType("all")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
+              className={`px-4 py-2 rounded-md whitespace-nowrap transition-all duration-200 text-sm font-medium ${
                 activeType === "all"
-                  ? "bg-spotify text-white"
-                  : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
               All Courses
             </button>
             <button
               onClick={() => setActiveType("free")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
+              className={`px-4 py-2 rounded-md whitespace-nowrap transition-all duration-200 text-sm font-medium ${
                 activeType === "free"
-                  ? "bg-green-500 text-white"
-                  : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
               Free Courses
             </button>
             <button
               onClick={() => setActiveType("premium")}
-              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
+              className={`px-4 py-2 rounded-md whitespace-nowrap transition-all duration-200 text-sm font-medium ${
                 activeType === "premium"
-                  ? "bg-amber-500 text-white"
-                  : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
               Premium Courses
@@ -224,16 +224,16 @@ const FeaturedCourses = () => {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {[1, 2, 3, 4, 5, 6].map((_, index) => (
-              <div key={index} className="bg-spotify-gray/20 rounded-xl animate-pulse h-[400px]"></div>
+              <div key={index} className="bg-muted rounded-lg animate-pulse h-[400px]"></div>
             ))}
           </div>
         ) : error ? (
           <div className="text-center py-12">
-            <h3 className="text-2xl font-semibold mb-2">Error Loading Courses</h3>
-            <p className="text-spotify-text/70 mb-6">
+            <h3 className="text-2xl font-semibold mb-2 text-foreground">Error Loading Courses</h3>
+            <p className="text-muted-foreground mb-6">
               {error}
             </p>
-            <p className="text-spotify-text/70 mb-6">
+            <p className="text-muted-foreground mb-6">
               Using fallback data for demonstration.
             </p>
           </div>
@@ -260,8 +260,8 @@ const FeaturedCourses = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <h3 className="text-2xl font-semibold mb-2">No Courses Found</h3>
-            <p className="text-spotify-text/70 mb-6">
+            <h3 className="text-2xl font-semibold mb-2 text-foreground">No Courses Found</h3>
+            <p className="text-muted-foreground mb-6">
               We couldn't find any courses matching your search criteria.
             </p>
             <button
@@ -269,7 +269,7 @@ const FeaturedCourses = () => {
                 setActiveCategory("all");
                 setActiveType("all");
               }}
-              className="bg-spotify text-white px-6 py-3 rounded-full font-medium hover:bg-spotify-hover transition-colors duration-300"
+              className="gfg-button"
             >
               Reset Filters
             </button>

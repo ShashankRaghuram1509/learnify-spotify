@@ -32,25 +32,25 @@ const StudentDashboardPreview = () => {
   }, [user]);
 
   return (
-    <Card className="bg-spotify-gray/30 border-white/10">
+    <Card className="border-border shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <LayoutDashboard className="text-spotify" />
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <LayoutDashboard className="text-primary" />
           Student Dashboard
         </CardTitle>
         <CardDescription>A preview of your learning activity.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
-            <span>Enrolled Courses</span>
-            <span className="font-bold text-spotify">{enrolledCount}</span>
+          <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+            <span className="text-foreground">Enrolled Courses</span>
+            <span className="font-bold text-primary">{enrolledCount}</span>
           </div>
-          <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
-            <span>Recent Notifications</span>
-            <span className="font-bold text-spotify">3</span>
+          <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+            <span className="text-foreground">Recent Notifications</span>
+            <span className="font-bold text-primary">3</span>
           </div>
-          <Button onClick={() => navigate("/dashboard/student")} className="w-full spotify-button mt-4">
+          <Button onClick={() => navigate("/dashboard/student")} className="w-full gfg-button mt-4">
             Go to Dashboard
             <ArrowRight size={18} className="ml-2" />
           </Button>
@@ -82,25 +82,25 @@ const TeacherDashboardPreview = () => {
   }, [user]);
 
   return (
-    <Card className="bg-spotify-gray/30 border-white/10">
+    <Card className="border-border shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <LayoutDashboard className="text-spotify" />
+        <CardTitle className="flex items-center gap-2 text-foreground">
+          <LayoutDashboard className="text-primary" />
           Teacher Dashboard
         </CardTitle>
         <CardDescription>A summary of your teaching activities.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
-            <span>Active Students</span>
-            <span className="font-bold text-spotify">{studentCount}</span>
+          <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+            <span className="text-foreground">Active Students</span>
+            <span className="font-bold text-primary">{studentCount}</span>
           </div>
-          <div className="flex justify-between items-center p-3 bg-spotify-gray/20 rounded-lg">
-            <span>Upcoming Sessions</span>
-            <span className="font-bold text-spotify">2</span>
+          <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+            <span className="text-foreground">Upcoming Sessions</span>
+            <span className="font-bold text-primary">2</span>
           </div>
-          <Button onClick={() => navigate("/dashboard/teacher")} className="w-full spotify-button mt-4">
+          <Button onClick={() => navigate("/dashboard/teacher")} className="w-full gfg-button mt-4">
             Go to Dashboard
             <ArrowRight size={18} className="ml-2" />
           </Button>
@@ -116,7 +116,7 @@ const DashboardPreview = () => {
   if (!user) return null;
 
   return (
-    <section className="py-20 bg-spotify-dark">
+    <section className="py-20 bg-muted/30">
       <div className="container mx-auto px-4 md:px-6">
         <div className="max-w-2xl mx-auto">
           {userRole === "teacher" ? <TeacherDashboardPreview /> : <StudentDashboardPreview />}
@@ -252,20 +252,20 @@ const Index = () => {
         {user ? <DashboardPreview /> : <FeaturedCourses />}
         
         {/* Stats Section */}
-        <section className="py-16 bg-spotify-dark">
+        <section className="py-16 bg-background">
           <div className="container mx-auto px-4 md:px-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
               {stats.map((stat, index) => (
                 <div 
                   key={index} 
-                  className="bg-spotify-gray/30 backdrop-blur-md rounded-xl p-6 text-center border border-white/10 animate-fade-in"
+                  className="bg-card border border-border rounded-lg p-6 text-center shadow-sm animate-fade-in"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className="w-12 h-12 mx-auto bg-spotify/10 rounded-full flex items-center justify-center mb-4">
-                    <stat.icon className="h-6 w-6 text-spotify" />
+                  <div className="w-12 h-12 mx-auto bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                    <stat.icon className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-bold text-spotify-text mb-1">{stat.value}</h3>
-                  <p className="text-spotify-text/70">{stat.label}</p>
+                  <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-1">{stat.value}</h3>
+                  <p className="text-muted-foreground">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -273,13 +273,12 @@ const Index = () => {
         </section>
         
         {/* Categories Section */}
-        <section className="py-20 bg-spotify-dark relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#1DB95420,_transparent_50%)]"></div>
-          <div className="container mx-auto px-4 md:px-6 relative z-10">
+        <section className="py-20 bg-muted/30">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="text-center max-w-3xl mx-auto mb-12">
-              <span className="text-spotify font-medium">Diverse Learning Paths</span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">Explore Our Course Categories</h2>
-              <p className="text-spotify-text/70 text-lg">
+              <span className="text-primary font-medium">Diverse Learning Paths</span>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4 text-foreground">Explore Course Categories</h2>
+              <p className="text-muted-foreground text-lg">
                 Discover a wide range of courses across different domains to help you achieve your learning goals.
               </p>
             </div>
@@ -289,22 +288,22 @@ const Index = () => {
                 <Link 
                   key={index} 
                   to={category.link}
-                  className="group rounded-xl overflow-hidden bg-spotify-gray/20 border border-white/10 relative h-56 card-hover"
+                  className="group rounded-lg overflow-hidden bg-card border border-border relative h-56 card-hover shadow-sm"
                 >
                   <div className="absolute inset-0">
                     <img 
                       src={category.icon} 
                       alt={category.name} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-spotify-dark via-spotify-dark/70 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent"></div>
                   </div>
                   
                   <div className="absolute bottom-0 left-0 p-6 w-full">
-                    <h3 className="text-xl font-semibold mb-1 group-hover:text-spotify transition-colors duration-300">
+                    <h3 className="text-xl font-semibold mb-1 text-foreground group-hover:text-primary transition-colors duration-300">
                       {category.name}
                     </h3>
-                    <p className="text-spotify-text/70 flex items-center">
+                    <p className="text-muted-foreground flex items-center">
                       <span>{category.courses} courses</span>
                       <ArrowRight size={16} className="ml-2 transition-transform duration-300 transform group-hover:translate-x-1" />
                     </p>
@@ -316,7 +315,7 @@ const Index = () => {
             <div className="text-center mt-12">
               <Link 
                 to="/courses" 
-                className="spotify-button inline-flex items-center"
+                className="gfg-button inline-flex items-center"
               >
                 Browse All Categories
                 <ArrowRight size={18} className="ml-2" />
@@ -329,12 +328,12 @@ const Index = () => {
         <FeaturedCourses />
         
         {/* Benefits Section */}
-        <section className="py-20 bg-spotify-dark">
+        <section className="py-20 bg-background">
           <div className="container mx-auto px-4 md:px-6">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <span className="text-spotify font-medium">Why Choose Learnify</span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">Benefits of Learning with Us</h2>
-              <p className="text-spotify-text/70 text-lg">
+              <span className="text-primary font-medium">Why Choose LearnHub</span>
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4 text-foreground">Benefits of Learning with Us</h2>
+              <p className="text-muted-foreground text-lg">
                 We provide a comprehensive learning experience designed to help you succeed in your career.
               </p>
             </div>
@@ -343,14 +342,14 @@ const Index = () => {
               {benefits.map((benefit, index) => (
                 <div 
                   key={index} 
-                  className="bg-spotify-gray/20 backdrop-blur-md rounded-xl p-6 border border-white/10 animate-fade-in"
+                  className="bg-card border border-border rounded-lg p-6 shadow-sm animate-fade-in"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className="w-12 h-12 bg-spotify/10 rounded-full flex items-center justify-center mb-5">
-                    <CheckCircle className="h-6 w-6 text-spotify" />
+                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-5">
+                    <CheckCircle className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">{benefit.title}</h3>
-                  <p className="text-spotify-text/70">{benefit.description}</p>
+                  <h3 className="text-xl font-semibold mb-3 text-foreground">{benefit.title}</h3>
+                  <p className="text-muted-foreground">{benefit.description}</p>
                 </div>
               ))}
             </div>
@@ -358,45 +357,44 @@ const Index = () => {
         </section>
         
         {/* Premium Features Section */}
-        <section className="py-20 bg-spotify-gray/10 relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_#1DB95440,_transparent_70%)]"></div>
-          <div className="container mx-auto px-4 md:px-6 relative z-10">
+        <section className="py-20 bg-gradient-to-b from-primary/5 to-background">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="text-center max-w-3xl mx-auto mb-12">
-              <span className="text-spotify font-medium inline-flex items-center gap-2">
-                <Sparkles size={18} className="text-spotify" />
+              <span className="text-primary font-medium inline-flex items-center gap-2">
+                <Sparkles size={18} className="text-primary" />
                 Premium Experience
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4">Unlock Advanced Learning Features</h2>
-              <p className="text-spotify-text/70 text-lg">
-                Take your learning journey to the next level with our premium features designed to accelerate your progress.
+              <h2 className="text-3xl md:text-4xl font-bold mt-2 mb-4 text-foreground">Unlock Advanced Features</h2>
+              <p className="text-muted-foreground text-lg">
+                Take your learning journey to the next level with our premium features.
               </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-              <div className="bg-spotify-gray/20 backdrop-blur-md rounded-xl p-6 border border-spotify/20 animate-fade-in">
-                <div className="w-12 h-12 bg-spotify/10 rounded-full flex items-center justify-center mb-5">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-spotify">
+              <div className="bg-card border border-border rounded-lg p-6 shadow-sm animate-fade-in">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                     <path d="M14.5 8a2.5 2.5 0 1 0 0 5 2.5 2.5 0 1 0 0-5z"></path>
                     <path d="M7.5 12H9"></path>
                     <path d="M16.5 10H18"></path>
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">AI Assistant Chatbot</h3>
-                <p className="text-spotify-text/70 mb-4">
-                  Get personalized help from our AI assistant that's available 24/7 to answer questions, provide feedback, and guide your learning path.
+                <h3 className="text-xl font-semibold mb-3 text-foreground">AI Assistant</h3>
+                <p className="text-muted-foreground mb-4">
+                  Get personalized help from our AI assistant available 24/7 to answer questions and guide your learning.
                 </p>
               </div>
               
-              <div className="bg-spotify-gray/20 backdrop-blur-md rounded-xl p-6 border border-spotify/20 animate-fade-in" style={{ animationDelay: "0.2s" }}>
-                <div className="w-12 h-12 bg-spotify/10 rounded-full flex items-center justify-center mb-5">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-spotify">
+              <div className="bg-card border border-border rounded-lg p-6 shadow-sm animate-fade-in" style={{ animationDelay: "0.2s" }}>
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-5">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-primary">
                     <path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"></path>
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">1-on-1 Video Call Sessions</h3>
-                <p className="text-spotify-text/70 mb-4">
-                  Schedule video calls with our expert instructors to receive direct guidance, clarify doubts, and get personalized feedback on your projects.
+                <h3 className="text-xl font-semibold mb-3 text-foreground">1-on-1 Video Sessions</h3>
+                <p className="text-muted-foreground mb-4">
+                  Schedule video calls with expert instructors for direct guidance and personalized feedback.
                 </p>
               </div>
             </div>
@@ -404,7 +402,7 @@ const Index = () => {
             <div className="text-center">
               <Link
                 to="/premium-courses"
-                className="spotify-button inline-flex items-center"
+                className="gfg-button inline-flex items-center"
               >
                 Explore Premium Features
                 <ArrowRight size={18} className="ml-2" />
