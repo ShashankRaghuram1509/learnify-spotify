@@ -40,20 +40,21 @@ export default function TeacherChatList() {
 
         const courseIds = courses.map(c => c.id);
 
-        // Fetch enrollments for those courses
-        const { data: enrollments, error: enrollmentsError } = await supabase
-          .from("enrollments")
-          .select("student_id")
-          .in("course_id", courseIds);
+        // Fetch paid enrollments for those courses
+        const { data: payments, error: paymentsError } = await supabase
+          .from("payments")
+          .select("user_id, course_id")
+          .in("course_id", courseIds)
+          .eq("status", "completed");
 
-        if (enrollmentsError) throw enrollmentsError;
+        if (paymentsError) throw paymentsError;
 
-        if (!enrollments || enrollments.length === 0) {
+        if (!payments || payments.length === 0) {
           setIsLoading(false);
           return;
         }
 
-        const studentIds = [...new Set(enrollments.map(e => e.student_id))];
+        const studentIds = [...new Set(payments.map(p => p.user_id))];
 
         // Fetch student profiles
         const { data: profiles, error: profilesError } = await supabase
@@ -96,7 +97,7 @@ export default function TeacherChatList() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            No students are enrolled in your courses yet
+            No students have purchased your courses yet
           </p>
         </CardContent>
       </Card>

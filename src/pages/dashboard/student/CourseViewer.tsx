@@ -3,8 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Play, CheckCircle2, Video, FileText, Code2, Loader2, ExternalLink, Download, FolderOpen } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -24,78 +23,6 @@ interface EnrollmentData {
   completed_at: string | null;
 }
 
-interface CourseNotes {
-  overview: string;
-  keyPoints: string[];
-  codeExamples: Array<{
-    title: string;
-    description: string;
-    code: string;
-    language: string;
-  }>;
-  resources: string[];
-  practiceExercises: string[];
-}
-
-interface CourseResource {
-  id: string;
-  title: string;
-  resource_type: string;
-  url: string | null;
-  file_path: string | null;
-  description: string | null;
-}
-
-const ResourceVideoPlayer = ({ resource, getVideoUrl }: { resource: CourseResource; getVideoUrl: (r: CourseResource) => Promise<string> }) => {
-  const [videoUrl, setVideoUrl] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadUrl = async () => {
-      setIsLoading(true);
-      const url = await getVideoUrl(resource);
-      setVideoUrl(url);
-      setIsLoading(false);
-    };
-    loadUrl();
-  }, [resource]);
-
-  if (isLoading) {
-    return (
-      <div className="aspect-video rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-        <p className="text-muted-foreground">Loading video...</p>
-      </div>
-    );
-  }
-
-  // Check if it's a Google Drive embed URL
-  if (videoUrl.includes('drive.google.com')) {
-    return (
-      <div className="aspect-video rounded-lg overflow-hidden bg-black">
-        <iframe
-          src={videoUrl}
-          className="w-full h-full"
-          allow="autoplay"
-          allowFullScreen
-        />
-      </div>
-    );
-  }
-
-  // Regular video player for other URLs
-  return (
-    <div className="aspect-video rounded-lg overflow-hidden bg-black">
-      <video
-        controls
-        className="w-full h-full"
-        src={videoUrl}
-      >
-        Your browser does not support the video tag.
-      </video>
-    </div>
-  );
-};
-
 export default function CourseViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -104,33 +31,12 @@ export default function CourseViewer() {
   const [enrollment, setEnrollment] = useState<EnrollmentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasPaid, setHasPaid] = useState(false);
-  const [notes, setNotes] = useState<CourseNotes | null>(null);
-  const [loadingNotes, setLoadingNotes] = useState(false);
-  const [watchedPercentage, setWatchedPercentage] = useState(0);
-  const [resources, setResources] = useState<CourseResource[]>([]);
-  const [videoStartTime, setVideoStartTime] = useState<number | null>(null);
-  const [player, setPlayer] = useState<any>(null);
-  const [videoDuration, setVideoDuration] = useState<number>(0);
 
   useEffect(() => {
     if (user && id) {
       fetchCourseContent();
-      fetchCourseMaterials();
-      fetchResources();
     }
   }, [user, id]);
-
-  // Load YouTube IFrame API
-  useEffect(() => {
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-
-    (window as any).onYouTubeIframeAPIReady = () => {
-      console.log('YouTube API Ready');
-    };
-  }, []);
 
   const fetchCourseContent = async () => {
     try {
@@ -166,7 +72,7 @@ export default function CourseViewer() {
           .select("id")
           .eq("user_id", user?.id)
           .eq("course_id", id)
-          .eq("status", "completed")
+          .eq("status", "success")
           .maybeSingle();
 
         // Also check subscription
@@ -192,114 +98,6 @@ export default function CourseViewer() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchCourseMaterials = async () => {
-    try {
-      const { data: materialsData, error: materialsError } = await supabase
-        .from('course_materials')
-        .select('*')
-        .eq('course_id', id)
-        .maybeSingle();
-
-      if (materialsError && materialsError.code !== 'PGRST116') {
-        console.error('Error fetching materials:', materialsError);
-        return;
-      }
-
-      if (materialsData) {
-        setNotes({
-          overview: materialsData.overview || '',
-          keyPoints: Array.isArray(materialsData.key_points) ? materialsData.key_points as string[] : [],
-          codeExamples: Array.isArray(materialsData.code_examples) 
-            ? (materialsData.code_examples as Array<{title: string; description: string; code: string; language: string}>)
-            : [],
-          resources: Array.isArray(materialsData.resources) ? materialsData.resources as string[] : [],
-          practiceExercises: Array.isArray(materialsData.practice_exercises) ? materialsData.practice_exercises as string[] : [],
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching course materials:', error);
-    }
-  };
-
-  const generateNotes = async () => {
-    if (!course || loadingNotes) return;
-
-    setLoadingNotes(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-course-notes', {
-        body: {
-          courseId: id,
-          courseTitle: course.title,
-          courseDescription: course.description
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.error) {
-        toast.error(data.error);
-        return;
-      }
-
-      setNotes(data.notes);
-      toast.success("Course notes generated successfully!");
-    } catch (error) {
-      console.error('Error generating notes:', error);
-      toast.error("Failed to generate course notes. Please try again.");
-    } finally {
-      setLoadingNotes(false);
-    }
-  };
-
-  const fetchResources = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("course_resources")
-        .select("*")
-        .eq("course_id", id)
-        .order("position");
-
-      if (error) throw error;
-      setResources(data || []);
-    } catch (error: any) {
-      console.error("Error fetching resources:", error);
-      toast.error(error.message || "Failed to load course materials");
-    }
-  };
-
-  const getVideoUrl = async (resource: CourseResource) => {
-    if (resource.url) {
-      // If it's a Google Drive view link, convert to preview link
-      if (resource.url.includes('drive.google.com/file/d/')) {
-        const fileIdMatch = resource.url.match(/\/file\/d\/([^\/\?]+)/);
-        if (fileIdMatch) {
-          return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
-        }
-      }
-      return resource.url;
-    }
-    if (resource.file_path) {
-      // Check if it's a Google Drive file
-      if (resource.file_path.startsWith('gdrive:')) {
-        const fileId = resource.file_path.replace('gdrive:', '');
-        const { data, error } = await supabase.functions.invoke('get-drive-video', {
-          body: { fileId },
-        });
-        if (error) {
-          console.error('Error getting Google Drive URL:', error);
-          return "";
-        }
-        return data.embedUrl;
-      }
-      // Otherwise use Supabase storage
-      const { data } = supabase.storage
-        .from("course-materials")
-        .getPublicUrl(resource.file_path);
-      return data.publicUrl;
-    }
-    return "";
   };
 
   const handlePayment = async () => {
@@ -422,7 +220,7 @@ export default function CourseViewer() {
     });
   };
 
-  const getYouTubeVideoId = (url: string | null) => {
+  const getYouTubeEmbedUrl = (url: string | null) => {
     if (!url) return null;
     
     // Extract video ID from various YouTube URL formats
@@ -430,114 +228,11 @@ export default function CourseViewer() {
     const match = url.match(regExp);
     
     if (match && match[2].length === 11) {
-      return match[2];
+      return `https://www.youtube.com/embed/${match[2]}`;
     }
     
-    return null;
-  };
-
-  const getYouTubeEmbedUrl = (url: string | null) => {
-    const videoId = getYouTubeVideoId(url);
-    if (videoId) {
-      return `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
-    }
     return url;
   };
-
-  // Initialize YouTube player
-  useEffect(() => {
-    if (!course?.video_url || !hasPaid) return;
-
-    const videoId = getYouTubeVideoId(course.video_url);
-    if (!videoId || !(window as any).YT) return;
-
-    const initPlayer = () => {
-      const newPlayer = new (window as any).YT.Player('youtube-player', {
-        videoId: videoId,
-        events: {
-          onReady: (event: any) => {
-            setVideoDuration(event.target.getDuration());
-            setVideoStartTime(Date.now());
-          },
-          onStateChange: (event: any) => {
-            if (event.data === (window as any).YT.PlayerState.PLAYING) {
-              if (!videoStartTime) {
-                setVideoStartTime(Date.now());
-              }
-            }
-          }
-        }
-      });
-      setPlayer(newPlayer);
-    };
-
-    if ((window as any).YT.loaded) {
-      initPlayer();
-    } else {
-      (window as any).onYouTubeIframeAPIReady = initPlayer;
-    }
-
-    return () => {
-      if (player) {
-        player.destroy();
-      }
-    };
-  }, [course?.video_url, hasPaid]);
-
-  const updateProgress = async (newProgress: number) => {
-    if (!enrollment || !user || !id) return;
-    
-    try {
-      const { error } = await supabase
-        .from("enrollments")
-        .update({ progress: Math.min(newProgress, 100) })
-        .eq("id", enrollment.id);
-
-      if (error) throw error;
-
-      setEnrollment({ ...enrollment, progress: newProgress });
-      
-      if (newProgress === 100) {
-        toast.success("Congratulations! You've completed this course and earned a certificate!");
-      }
-    } catch (error) {
-      toast.error("Failed to update progress");
-    }
-  };
-
-  const handleMarkComplete = async () => {
-    if (watchedPercentage < 80) {
-      toast.error("Please watch at least 80% of the video before marking as complete");
-      return;
-    }
-    
-    await updateProgress(100);
-  };
-
-  // Track video progress with actual playback time
-  useEffect(() => {
-    if (!player || !videoDuration) return;
-
-    const trackingInterval = setInterval(() => {
-      try {
-        if (player && typeof player.getCurrentTime === 'function') {
-          const currentTime = player.getCurrentTime();
-          const progressPercent = Math.min((currentTime / videoDuration) * 100, 100);
-          
-          setWatchedPercentage(progressPercent);
-          
-          // Auto-update progress in database every 30 seconds
-          if (progressPercent > (enrollment?.progress || 0)) {
-            updateProgress(Math.floor(progressPercent));
-          }
-        }
-      } catch (error) {
-        console.error('Error tracking video progress:', error);
-      }
-    }, 30000); // Update every 30 seconds
-
-    return () => clearInterval(trackingInterval);
-  }, [player, videoDuration, enrollment]);
 
   if (loading) {
     return <div className="p-6">Loading course content...</div>;
@@ -657,350 +352,40 @@ export default function CourseViewer() {
               </div>
             </div>
           ) : (
-            <Tabs defaultValue="video" className="w-full">
-              <TabsList className="grid w-full max-w-2xl grid-cols-3 mb-6">
-                <TabsTrigger value="video" className="flex items-center gap-2">
-                  <Video className="h-4 w-4" />
-                  Video Lessons
-                </TabsTrigger>
-                <TabsTrigger value="notes" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Course Notes
-                </TabsTrigger>
-                <TabsTrigger value="resources" className="flex items-center gap-2">
-                  <FolderOpen className="h-4 w-4" />
-                  Materials
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="video" className="mt-0">
-                {course.video_url ? (
-                  <div className="space-y-6">
-                    <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                      <div id="youtube-player" className="w-full h-full"></div>
-                    </div>
-                    
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>About this Lesson</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground">
-                          {course.description || "Watch the video to learn more about this topic."}
-                        </p>
-                      </CardContent>
-                    </Card>
-
-                    {!enrollment?.completed_at && (
-                      <Button
-                        onClick={handleMarkComplete}
-                        className="w-full"
-                        size="lg"
-                        disabled={watchedPercentage < 80}
-                      >
-                        <CheckCircle2 className="mr-2 h-5 w-5" />
-                        {watchedPercentage < 80 
-                          ? `Watch ${Math.ceil(80 - watchedPercentage)}% more to complete`
-                          : "Mark as Complete"}
-                      </Button>
-                    )}
-
-                    {enrollment?.completed_at && (
-                      <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-                        <CheckCircle2 className="w-5 h-5" />
-                        <span>You completed this course on {new Date(enrollment.completed_at).toLocaleDateString()}</span>
-                      </div>
-                    )}
+            <>
+              {course.video_url ? (
+                <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6">
+                  <iframe
+                    src={getYouTubeEmbedUrl(course.video_url) || ''}
+                    title={course.title}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
+                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center mb-6">
+                  <div className="text-center">
+                    <Play className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-muted-foreground">No video content available yet</p>
                   </div>
-                ) : (
-                  <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                    <div className="text-center">
-                      <Play className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground">No video content available yet</p>
-                    </div>
-                  </div>
-                )}
-              </TabsContent>
+                </div>
+              )}
 
-              <TabsContent value="notes" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle>Course Notes & Materials</CardTitle>
-                      {notes && (
-                        <Button
-                          onClick={generateNotes}
-                          disabled={loadingNotes}
-                          variant="outline"
-                          size="sm"
-                        >
-                          {loadingNotes ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Regenerating...
-                            </>
-                          ) : (
-                            <>
-                              <Code2 className="h-4 w-4 mr-2" />
-                              Regenerate
-                            </>
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {!notes ? (
-                      <div className="text-center py-12">
-                        <Code2 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">AI-Powered Course Materials</h3>
-                        <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                          Generate comprehensive tutorial-style notes with code examples and practice exercises
-                        </p>
-                        <Button onClick={generateNotes} disabled={loadingNotes}>
-                          {loadingNotes ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Code2 className="h-4 w-4 mr-2" />
-                              Generate Notes Now
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="grid md:grid-cols-[240px_1fr] gap-6">
-                        {/* Table of Contents Sidebar */}
-                        <div className="hidden md:block">
-                          <div className="sticky top-4 space-y-1">
-                            <h4 className="font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wider">
-                              Table of Contents
-                            </h4>
-                            <a href="#overview" className="block py-2 px-3 text-sm hover:bg-muted rounded-md transition-colors">
-                              Overview
-                            </a>
-                            <a href="#key-points" className="block py-2 px-3 text-sm hover:bg-muted rounded-md transition-colors">
-                              Key Points
-                            </a>
-                            {notes.codeExamples && notes.codeExamples.length > 0 && (
-                              <a href="#examples" className="block py-2 px-3 text-sm hover:bg-muted rounded-md transition-colors">
-                                Code Examples
-                              </a>
-                            )}
-                            {notes.practiceExercises && notes.practiceExercises.length > 0 && (
-                              <a href="#exercises" className="block py-2 px-3 text-sm hover:bg-muted rounded-md transition-colors">
-                                Practice Exercises
-                              </a>
-                            )}
-                            {notes.resources && notes.resources.length > 0 && (
-                              <a href="#resources" className="block py-2 px-3 text-sm hover:bg-muted rounded-md transition-colors">
-                                Resources
-                              </a>
-                            )}
-                          </div>
-                        </div>
+              {course.description && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-2">About this course</h3>
+                  <p className="text-muted-foreground">{course.description}</p>
+                </div>
+              )}
 
-                        {/* Main Content */}
-                        <div className="space-y-8 max-w-4xl">
-                          {/* Course Overview */}
-                          <section id="overview" className="scroll-mt-4">
-                            <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2 border-primary">
-                              Course Overview
-                            </h2>
-                            <div className="prose prose-invert max-w-none">
-                              <p className="text-foreground leading-relaxed whitespace-pre-line">
-                                {notes.overview}
-                              </p>
-                            </div>
-                          </section>
-
-                          {/* Key Learning Points */}
-                          <section id="key-points" className="scroll-mt-4">
-                            <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2 border-primary">
-                              Key Learning Points
-                            </h2>
-                            <div className="bg-primary/5 border-l-4 border-primary p-6 rounded-r-lg">
-                              <ul className="space-y-3">
-                                {notes.keyPoints.map((point, index) => (
-                                  <li key={index} className="flex items-start gap-3">
-                                    <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                                    <span className="text-foreground leading-relaxed">{point}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          </section>
-
-                          {/* Code Examples */}
-                          {notes.codeExamples && notes.codeExamples.length > 0 && (
-                            <section id="examples" className="scroll-mt-4">
-                              <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2 border-primary flex items-center gap-2">
-                                <Code2 className="h-6 w-6" />
-                                Code Examples
-                              </h2>
-                              <div className="space-y-6">
-                                {notes.codeExamples.map((example, index) => (
-                                  <div key={index} className="border border-border rounded-lg overflow-hidden">
-                                    <div className="bg-muted/50 px-5 py-4 border-b border-border">
-                                      <h3 className="font-semibold text-lg mb-1">{example.title}</h3>
-                                      <p className="text-sm text-muted-foreground">{example.description}</p>
-                                    </div>
-                                    <div className="bg-card">
-                                      <div className="flex items-center justify-between px-5 py-2 bg-muted/30 border-b border-border">
-                                        <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
-                                          {example.language || 'Code'}
-                                        </span>
-                                      </div>
-                                      <pre className="p-5 overflow-x-auto text-sm">
-                                        <code className="text-foreground font-mono">{example.code}</code>
-                                      </pre>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </section>
-                          )}
-
-                          {/* Practice Exercises */}
-                          {notes.practiceExercises && notes.practiceExercises.length > 0 && (
-                            <section id="exercises" className="scroll-mt-4">
-                              <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2 border-primary">
-                                Practice Exercises
-                              </h2>
-                              <div className="space-y-4">
-                                {notes.practiceExercises.map((exercise, index) => (
-                                  <div key={index} className="bg-primary/10 border border-primary/30 rounded-lg p-5">
-                                    <div className="flex items-start gap-4">
-                                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold flex-shrink-0">
-                                        {index + 1}
-                                      </div>
-                                      <p className="text-foreground leading-relaxed flex-1">{exercise}</p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </section>
-                          )}
-
-                          {/* Additional Resources */}
-                          {notes.resources && notes.resources.length > 0 && (
-                            <section id="resources" className="scroll-mt-4">
-                              <h2 className="text-2xl font-bold mb-4 pb-2 border-b-2 border-primary">
-                                Additional Resources
-                              </h2>
-                              <div className="bg-card border border-border rounded-lg p-6">
-                                <ul className="space-y-3">
-                                  {notes.resources.map((resource, index) => {
-                                    const urlMatch = resource.match(/(https?:\/\/[^\s]+)/);
-                                    const url = urlMatch ? urlMatch[0] : null;
-                                    const displayText = resource.replace(/(https?:\/\/[^\s]+)/, '').trim() || resource;
-                                    
-                                    return (
-                                      <li key={index} className="flex items-start gap-3 group">
-                                        <FileText className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                                        {url ? (
-                                          <a 
-                                            href={url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="text-foreground leading-relaxed hover:text-primary transition-colors flex items-center gap-2 hover:underline"
-                                          >
-                                            <span>{displayText}</span>
-                                            <ExternalLink className="w-4 h-4" />
-                                          </a>
-                                        ) : (
-                                          <span className="text-foreground leading-relaxed">{resource}</span>
-                                        )}
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              </div>
-                            </section>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="resources" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Course Materials & Resources</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {resources.length === 0 ? (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>No additional resources available yet</p>
-                      </div>
-                    ) : (
-                       <div className="space-y-3">
-                        {resources.map((resource) => {
-                          // Fallback URL resolution for non-video resources
-                          let resourceUrl = resource.url || "";
-                          if (!resourceUrl && resource.file_path && resource.resource_type === "pdf") {
-                            const { data } = supabase.storage
-                              .from("course-materials")
-                              .getPublicUrl(resource.file_path);
-                            resourceUrl = data.publicUrl;
-                          }
-
-                          return (
-                            <Card key={resource.id}>
-                              <CardContent className="py-4 px-4">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-3 mb-3">
-                                    {resource.resource_type === 'pdf' && <FileText className="h-5 w-5 text-primary" />}
-                                    {resource.resource_type === 'video' && <Video className="h-5 w-5 text-primary" />}
-                                    {(resource.resource_type === 'video_link' || resource.resource_type === 'article_link') && <ExternalLink className="h-5 w-5 text-primary" />}
-                                    <h3 className="font-semibold">{resource.title}</h3>
-                                  </div>
-                                  {resource.description && (
-                                    <p className="text-sm text-muted-foreground mb-3 ml-8">{resource.description}</p>
-                                  )}
-                                  
-                                  {/* Video player for video resources */}
-                                  {resource.resource_type === 'video' && (
-                                    <ResourceVideoPlayer resource={resource} getVideoUrl={getVideoUrl} />
-                                  )}
-                                  
-                                  {/* Download/Open button for other resources */}
-                                  {(resource.resource_type !== 'video' && resourceUrl) && (
-                                    <div className="ml-8">
-                                      <Button asChild size="sm">
-                                        <a href={resourceUrl} target="_blank" rel="noopener noreferrer">
-                                          {resource.resource_type === 'pdf' ? (
-                                            <>
-                                              <Download className="mr-2 h-4 w-4" />
-                                              Download PDF
-                                            </>
-                                          ) : (
-                                            <>
-                                              <ExternalLink className="mr-2 h-4 w-4" />
-                                              Open Link
-                                            </>
-                                          )}
-                                        </a>
-                                      </Button>
-                                    </div>
-                                  )}
-                                </div>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+              {enrollment?.completed_at && (
+                <div className="mt-6 flex items-center gap-2 text-green-600 dark:text-green-400">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span>You completed this course on {new Date(enrollment.completed_at).toLocaleDateString()}</span>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

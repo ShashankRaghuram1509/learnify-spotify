@@ -39,27 +39,16 @@ const studentNavItems = [
 const teacherNavItems = [
   { to: "/dashboard/teacher", icon: Home, label: "Dashboard" },
   { to: "/dashboard/teacher/courses", icon: BookOpen, label: "My Courses" },
-  { to: "/dashboard/teacher/analytics", icon: BarChart, label: "Analytics" },
+  { to: "/dashboard/teacher/analytics", icon: BarChart, label: "Student Analytics" },
   { to: "/dashboard/teacher/schedule", icon: Video, label: "Schedule Calls" },
   { to: "/dashboard/teacher/profile", icon: User, label: "Profile" },
 ];
 
 export default function DashboardLayout() {
-  const { user, userRole, signOut, subscriptionTier, subscriptionExpiresAt } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const location = useLocation();
 
-  const hasValidSubscription = (() => {
-    if (!subscriptionTier) return false;
-    const valid = ["Lite", "Premium", "Premium Pro"].includes(subscriptionTier);
-    if (!valid) return false;
-    if (!subscriptionExpiresAt) return true;
-    return new Date(subscriptionExpiresAt) > new Date();
-  })();
-
-  const baseItems = userRole === "student" ? studentNavItems : teacherNavItems;
-  const navItems = userRole === "student"
-    ? baseItems.filter(item => item.to !== "/dashboard/student/upgrade" || !hasValidSubscription)
-    : baseItems;
+  const navItems = userRole === "student" ? studentNavItems : teacherNavItems;
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">

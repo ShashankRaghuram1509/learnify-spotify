@@ -5,20 +5,18 @@ import CourseCard from "./CourseCard";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-// Course categories for filtering
+// In a real app, this would be fetched from your backend
 const categories = [
   { id: "all", name: "All Categories" },
-  { id: "free", name: "Free Courses" },
-  { id: "premium", name: "Premium Courses" },
   { id: "programming", name: "Programming" },
   { id: "data-structures", name: "Data Structures" },
   { id: "algorithms", name: "Algorithms" },
   { id: "web-development", name: "Web Development" },
-  { id: "databases", name: "Databases" },
+  { id: "database", name: "Database" },
   { id: "system-design", name: "System Design" },
   { id: "data-science", name: "Data Science" },
-  { id: "cloud-computing", name: "Cloud Computing" },
-  { id: "developer-tools", name: "Developer Tools" }
+  { id: "cloud", name: "Cloud Computing" },
+  { id: "tools", name: "Developer Tools" }
 ];
 
 // Mock data as fallback in case the API fails
@@ -90,58 +88,35 @@ const FeaturedCourses = () => {
         setLoading(true);
         setError(null);
         
-        // Fetch courses from database with categories
+        // Fetch courses from database
         const { data, error } = await supabase
           .from('courses')
           .select(`
             *,
-            enrollments(count),
-            course_categories(
-              categories(name)
-            )
+            enrollments(count)
           `)
           .order('created_at', { ascending: false });
         
         if (error) throw error;
         
         // Transform database courses to match expected format
-        const transformedCourses = data?.map(course => {
-          // Get the first category name from the course_categories array
-          const categoryName = course.course_categories?.[0]?.categories?.name || null;
-          
-          // Map database category names to our filter category IDs
-          const categoryMap = {
-            'Programming': 'programming',
-            'Data Structures': 'data-structures',
-            'Algorithms': 'algorithms',
-            'Web Development': 'web-development',
-            'Databases': 'databases',
-            'System Design': 'system-design',
-            'Data Science': 'data-science',
-            'Cloud Computing': 'cloud-computing',
-            'Developer Tools': 'developer-tools'
-          };
-          
-          const category = categoryMap[categoryName] || 'programming';
-          
-          return {
-            id: course.id,
-            courseId: course.id,
-            title: course.title,
-            instructor: "Expert Instructor",
-            rating: 4.5,
-            students: course.enrollments?.[0]?.count || 0,
-            duration: "8 weeks",
-            level: "All Levels",
-            price: course.price || 0,
-            discountPrice: course.price ? course.price * 0.8 : 0,
-            image: course.thumbnail_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600",
-            featured: true,
-            premium: course.is_premium || false,
-            category: category,
-            externalLink: null
-          };
-        }) || [];
+        const transformedCourses = data?.map(course => ({
+          id: course.id,
+          courseId: course.id,
+          title: course.title,
+          instructor: "Expert Instructor",
+          rating: 4.5,
+          students: course.enrollments?.[0]?.count || 0,
+          duration: "8 weeks",
+          level: "All Levels",
+          price: course.price || 0,
+          discountPrice: course.price ? course.price * 0.8 : 0,
+          image: course.thumbnail_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600",
+          featured: true,
+          premium: course.is_premium || false,
+          category: "programming",
+          externalLink: null
+        })) || [];
         
         setCourses(transformedCourses);
       } catch (error) {
@@ -165,18 +140,10 @@ const FeaturedCourses = () => {
   }, [toast]);
   
   const filteredCourses = courses.filter(course => {
-    // Special handling for free/premium in category filter
-    if (activeCategory === "free") {
-      return !course.premium;
-    }
-    if (activeCategory === "premium") {
-      return course.premium;
-    }
-    
-    // Filter by subject category
+    // Filter by category
     const categoryMatch = activeCategory === "all" || course.category === activeCategory;
     
-    // Filter by type (free/premium) - only when using type buttons
+    // Filter by type (free/premium)
     const typeMatch = 
       activeType === "all" || 
       (activeType === "free" && !course.premium) ||
@@ -203,31 +170,54 @@ const FeaturedCourses = () => {
           </Link>
         </div>
         
-        <div className="mb-8">
-          <h3 className="text-sm font-semibold text-spotify-text/70 mb-3 uppercase tracking-wider">
-            Filter by Category
-          </h3>
-          <div className="flex overflow-x-auto scrollbar-none space-x-2 pb-2">
+        <div className="mb-6">
+          <div className="flex overflow-x-auto scrollbar-none space-x-2 mb-4 pb-2">
             {categories.map(category => (
               <button
                 key={category.id}
-                onClick={() => {
-                  setActiveCategory(category.id);
-                  setActiveType("all"); // Reset type filter when changing category
-                }}
+                onClick={() => setActiveCategory(category.id)}
                 className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
                   activeCategory === category.id
-                    ? category.id === "free"
-                      ? "bg-green-500 text-white"
-                      : category.id === "premium"
-                      ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white"
-                      : "bg-spotify text-white"
+                    ? "bg-spotify text-white"
                     : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
                 }`}
               >
                 {category.name}
               </button>
             ))}
+          </div>
+          
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setActiveType("all")}
+              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
+                activeType === "all"
+                  ? "bg-spotify text-white"
+                  : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
+              }`}
+            >
+              All Courses
+            </button>
+            <button
+              onClick={() => setActiveType("free")}
+              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
+                activeType === "free"
+                  ? "bg-green-500 text-white"
+                  : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
+              }`}
+            >
+              Free Courses
+            </button>
+            <button
+              onClick={() => setActiveType("premium")}
+              className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
+                activeType === "premium"
+                  ? "bg-amber-500 text-white"
+                  : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
+              }`}
+            >
+              Premium Courses
+            </button>
           </div>
         </div>
         

@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSubscriptionExpiresAt(profileData?.subscription_expires_at ?? null);
     } catch (error) {
       console.error('Error fetching user data:', error);
-      toast.error('Failed to load user profile data');
+      // Silent fail - data will remain null
     }
   };
 
@@ -123,14 +123,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
       });
 
-      if (error) {
-        console.error('Sign up error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       toast.success("Account created successfully! You can now login.");
     } catch (error: any) {
-      console.error('Sign up failed:', error);
       toast.error(error.message || "Failed to sign up");
       throw error;
     }
@@ -143,14 +139,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password,
       });
 
-      if (error) {
-        console.error('Sign in error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       toast.success("Welcome back!");
     } catch (error: any) {
-      console.error('Sign in failed:', error);
       toast.error(error.message || "Failed to sign in");
       throw error;
     }
@@ -159,10 +151,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Sign out error:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       setUser(null);
       setSession(null);
@@ -172,7 +161,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       toast.success("Signed out successfully");
     } catch (error: any) {
-      console.error('Sign out failed:', error);
       toast.error(error.message || "Failed to sign out");
       throw error;
     }

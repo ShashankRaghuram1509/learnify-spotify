@@ -25,34 +25,28 @@ export default function PremiumChatList() {
       if (!user) return;
 
       try {
-        // Gather course ids from payments and enrollments
+        // Fetch courses the user has paid for
         const { data: payments, error: paymentsError } = await supabase
           .from("payments")
           .select("course_id")
           .eq("user_id", user.id)
           .eq("status", "completed");
+
         if (paymentsError) throw paymentsError;
 
-        const { data: enrollments, error: enrollmentsError } = await supabase
-          .from("enrollments")
-          .select("course_id")
-          .eq("student_id", user.id);
-        if (enrollmentsError) throw enrollmentsError;
-
-        const paidCourseIds = (payments || []).map(p => p.course_id).filter(Boolean);
-        const enrolledCourseIds = (enrollments || []).map(e => e.course_id).filter(Boolean);
-        const courseIds = Array.from(new Set([...(paidCourseIds as string[]), ...(enrolledCourseIds as string[])]));
-
-        if (courseIds.length === 0) {
+        if (!payments || payments.length === 0) {
           setIsLoading(false);
           return;
         }
+
+        const courseIds = payments.map(p => p.course_id).filter(Boolean);
 
         // Fetch teachers for those courses
         const { data: courses, error: coursesError } = await supabase
           .from("courses")
           .select("teacher_id")
           .in("id", courseIds);
+
         if (coursesError) throw coursesError;
 
         if (!courses || courses.length === 0) {
@@ -67,6 +61,7 @@ export default function PremiumChatList() {
           .from("profiles")
           .select("id, full_name, email")
           .in("id", teacherIds);
+
         if (profilesError) throw profilesError;
 
         setContacts(profiles || []);
@@ -102,7 +97,7 @@ export default function PremiumChatList() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Enroll in a course to chat with instructors
+            Purchase a course to chat with instructors
           </p>
         </CardContent>
       </Card>

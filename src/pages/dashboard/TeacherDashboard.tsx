@@ -1,24 +1,26 @@
 import ContentManager from "@/components/dashboard/ContentManager";
+import StudentAnalytics from "@/components/dashboard/StudentAnalytics";
+import VideoCallManagement from "@/components/dashboard/VideoCallManagement";
+import TeacherVideoCallReminders from "@/components/dashboard/TeacherVideoCallReminders";
 import TeacherChatList from "@/components/dashboard/TeacherChatList";
-import TeacherRevenue from "@/components/dashboard/TeacherRevenue";
-import TeacherUpcomingCalls from "@/components/dashboard/TeacherUpcomingCalls";
 
 export default function TeacherDashboard() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Teacher Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back! Here's an overview of your teaching activity.
-        </p>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="md:col-span-2 lg:col-span-3">
+        <StudentAnalytics />
       </div>
-      
-      <TeacherRevenue />
-      
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="lg:col-span-1">
+        <VideoCallManagement />
+      </div>
+      <div className="md:col-span-2 lg:col-span-2">
+        <TeacherVideoCallReminders />
+      </div>
+      <div className="md:col-span-2 lg:col-span-2">
         <ContentManager />
+      </div>
+      <div className="md:col-span-2 lg:col-span-4">
         <TeacherChatList />
-        <TeacherUpcomingCalls />
       </div>
     </div>
   );

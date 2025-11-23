@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash, Users, DollarSign, FolderOpen } from "lucide-react";
+import { Plus, Edit, Trash, Users, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import CourseResourceManager from "@/components/dashboard/CourseResourceManager";
 
 interface Course {
   id: string;
@@ -27,8 +26,6 @@ export default function MyCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
-  const [isResourceManagerOpen, setIsResourceManagerOpen] = useState(false);
   const [newCourse, setNewCourse] = useState({
     title: "",
     description: "",
@@ -217,16 +214,9 @@ export default function MyCoursesPage() {
                   {course.description || "No description"}
                 </p>
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedCourseId(course.id);
-                      setIsResourceManagerOpen(true);
-                    }}
-                  >
-                    <FolderOpen className="mr-2 h-4 w-4" />
-                    Materials
+                  <Button variant="outline" size="sm" className="flex-1">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
                   </Button>
                   <Button
                     variant="destructive"
@@ -240,14 +230,6 @@ export default function MyCoursesPage() {
             </Card>
           ))}
         </div>
-      )}
-
-      {selectedCourseId && (
-        <CourseResourceManager
-          courseId={selectedCourseId}
-          open={isResourceManagerOpen}
-          onOpenChange={setIsResourceManagerOpen}
-        />
       )}
     </div>
   );
