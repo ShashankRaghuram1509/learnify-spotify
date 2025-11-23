@@ -164,6 +164,13 @@ export default function VideoCallManagement() {
         
       if (insertError) throw insertError;
 
+      // Get current session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Session expired. Please login again.");
+        return;
+      }
+
       // Create Google Meet link
       const { data: meetData, error: meetError } = await supabase.functions.invoke('create-meet-link', {
         body: {
@@ -171,7 +178,10 @@ export default function VideoCallManagement() {
           summary: `Video Call with Student`,
           start_time: sessionTime,
           duration_minutes: 60
-        }
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (meetError) {
