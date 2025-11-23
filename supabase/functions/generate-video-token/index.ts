@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ZegoCloud Token04 generation following official spec
+// ZegoCloud Token04 generation
 async function generateToken04(
   appId: number,
   userId: string,
@@ -18,52 +18,103 @@ async function generateToken04(
     throw new Error('Invalid parameters for token generation');
   }
 
-  const currentTime = Math.floor(Date.now() / 1000);
-  const expireTime = currentTime + effectiveTimeInSeconds;
+  const createTime = Math.floor(Date.now() / 1000);
+  const expireTime = createTime + effectiveTimeInSeconds;
+  // Random nonce (32-bit integer)
   const nonce = Math.floor(Math.random() * 2147483647);
-  
-  // Build the token body
-  const body = {
+
+  const tokenInfo = {
     app_id: appId,
     user_id: userId,
     nonce: nonce,
-    ctime: currentTime,
+    ctime: createTime,
     expire: expireTime,
     payload: payload || ''
   };
 
-  // Create signature: HMAC-SHA256(serverSecret, "${appId}${userId}${expireTime}${nonce}")
-  const encoder = new TextEncoder();
-  const data = encoder.encode(`${appId}${userId}${expireTime}${nonce}`);
-  const key = encoder.encode(serverSecret);
+  // Convert token info to JSON string
+  const plainText = JSON.stringify(tokenInfo);
+
+  // Prepare AES Key (32 bytes from serverSecret)
+  // If serverSecret is 32 chars, these are the bytes.
+  // If it's hex, we might need to parse it, but standard Zego samples treat it as a string.
+  // We'll assume it is a 32-byte string.
+  let keyBytes: Uint8Array;
+  if (serverSecret.length === 32) {
+      keyBytes = new TextEncoder().encode(serverSecret);
+  } else {
+      // Adjust key length to 32 bytes if necessary (pad or truncate)
+      // This is a fallback, normally secret is 32 chars.
+       const temp = new Uint8Array(32);
+       const secretBytes = new TextEncoder().encode(serverSecret);
+       temp.set(secretBytes.subarray(0, 32));
+       keyBytes = temp;
+  }
   
-  // Use Web Crypto API for HMAC
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    key,
-    { name: 'HMAC', hash: 'SHA-256' },
+  // Generate IV (16 bytes)
+  const iv = crypto.getRandomValues(new Uint8Array(16));
+
+  // Encrypt using AES-CBC
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyBytes,
+    { name: "AES-CBC" },
     false,
-    ['sign']
+    ["encrypt"]
   );
 
-  const signature = await crypto.subtle.sign('HMAC', cryptoKey, data);
+  const encodedPlainText = new TextEncoder().encode(plainText);
+  const encryptedBuffer = await crypto.subtle.encrypt(
+    { name: "AES-CBC", iv: iv },
+    key,
+    encodedPlainText
+  );
   
-  // Convert signature to hex
-  const signatureArray = Array.from(new Uint8Array(signature));
-  const signatureHex = signatureArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const encryptedBytes = new Uint8Array(encryptedBuffer);
+
+  // Pack data
+  // Format: [Expire(8)] [IV Length(2)] [IV(var)] [Content Length(2)] [Content(var)]
+  // All integers are Big Endian.
+
+  const packSize = 8 + 2 + iv.length + 2 + encryptedBytes.length;
+  const packed = new Uint8Array(packSize);
+  const dataView = new DataView(packed.buffer);
+
+  let offset = 0;
+
+  // 1. Expire (8 bytes, int64). JS uses double for numbers.
+  // We only use the lower 32 bits for the timestamp as it fits.
+  // Set high 32 bits to 0.
+  dataView.setBigInt64(offset, BigInt(expireTime), false); // false for Big Endian? No, DataView defaults to Big Endian?
+  // Wait, DataView.setBigInt64(byteOffset, value, littleEndian)
+  // We want Big Endian, so littleEndian = false (default is false actually? No, must specify or check docs. MDN says littleEndian is optional, default false which is Big Endian).
+  // Correct: default is Big Endian.
+  offset += 8;
+
+  // 2. IV Length (2 bytes, int16)
+  dataView.setInt16(offset, iv.length, false); // Big Endian
+  offset += 2;
+
+  // 3. IV (bytes)
+  packed.set(iv, offset);
+  offset += iv.length;
+
+  // 4. Content Length (2 bytes, int16)
+  dataView.setInt16(offset, encryptedBytes.length, false); // Big Endian
+  offset += 2;
+
+  // 5. Content (bytes)
+  packed.set(encryptedBytes, offset);
   
-  // Build final token object with version 1
-  const tokenObject = {
-    ...body,
-    signature: signatureHex,
-    ver: 1
-  };
-  
-  // Encode to base64 and prepend version prefix "04"
-  const jsonString = JSON.stringify(tokenObject);
-  const tokenBytes = encoder.encode(jsonString);
-  const base64Token = btoa(String.fromCharCode(...tokenBytes));
-  
+  // Encode to Base64
+  // btoa accepts binary string.
+  // Convert Uint8Array to binary string.
+  let binaryString = "";
+  for (let i = 0; i < packed.length; i++) {
+    binaryString += String.fromCharCode(packed[i]);
+  }
+  const base64Token = btoa(binaryString);
+
   return `04${base64Token}`;
 }
 
@@ -84,7 +135,6 @@ serve(async (req) => {
 
     // Extract raw access token ("Bearer <token>" -> "<token>")
     const accessToken = authHeader.replace('Bearer', '').trim();
-    console.log('generate-video-token - Access token extracted');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '';
@@ -94,7 +144,6 @@ serve(async (req) => {
       throw new Error('Backend not configured');
     }
 
-    console.log('generate-video-token - Creating Supabase client');
     const supabaseClient = createClient(
       supabaseUrl,
       supabaseKey,
@@ -105,26 +154,19 @@ serve(async (req) => {
       }
     );
 
-    // IMPORTANT: pass the access token explicitly for reliability in edge envs
-    console.log('generate-video-token - Getting user');
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(accessToken);
     if (userError || !user) {
       console.error('generate-video-token - User auth failed:', userError);
       throw new Error('Unauthorized');
     }
 
-    console.log('generate-video-token - User authenticated:', user.id);
-
     const { session_id, room_id } = await req.json();
-    console.log('generate-video-token - Request body:', { session_id, room_id });
-
     if (!session_id || !room_id) {
       console.error('generate-video-token - Missing session_id or room_id');
       throw new Error('Session ID and room ID are required');
     }
 
     // Verify user has access to this video call session
-    console.log('generate-video-token - Checking session access');
     const { data: session, error: sessionError } = await supabaseClient
       .from('video_call_schedules')
       .select('id, teacher_id, student_id, course_id')
@@ -136,25 +178,11 @@ serve(async (req) => {
       throw new Error('Video call session not found');
     }
 
-    console.log('generate-video-token - Session found:', { 
-      sessionId: session.id, 
-      teacherId: session.teacher_id, 
-      studentId: session.student_id 
-    });
-
     // Check if user is either the teacher or the student
     const isAuthorized = session.teacher_id === user.id || session.student_id === user.id;
-
     if (!isAuthorized) {
-      console.error('generate-video-token - User not authorized:', { 
-        userId: user.id, 
-        teacherId: session.teacher_id, 
-        studentId: session.student_id 
-      });
       throw new Error('Not authorized to join this video call');
     }
-
-    console.log('generate-video-token - User authorized');
 
     // If student, verify payment for the course OR check subscription
     if (session.student_id === user.id && session.course_id) {
@@ -184,12 +212,8 @@ serve(async (req) => {
     }
 
     // Get ZegoCloud credentials from secrets
-    console.log('generate-video-token - Getting Zego credentials');
     const appId = parseInt(Deno.env.get('ZEGOCLOUD_APP_ID') ?? '0');
     const serverSecret = Deno.env.get('ZEGOCLOUD_SERVER_SECRET') ?? '';
-
-    console.log('generate-video-token - AppId:', appId);
-    console.log('generate-video-token - ServerSecret length:', serverSecret.length);
 
     if (!appId || !serverSecret) {
       console.error('generate-video-token - Missing Zego credentials');
@@ -197,9 +221,7 @@ serve(async (req) => {
     }
 
     // Generate Token04 with 24 hour validity
-    console.log('generate-video-token - Generating Token04');
     const token = await generateToken04(appId, user.id, serverSecret, 86400, '');
-    console.log('generate-video-token - Token04 generated successfully');
 
     const response = { 
       success: true, 
@@ -208,7 +230,6 @@ serve(async (req) => {
       roomId: room_id,
       userId: user.id 
     };
-    console.log('generate-video-token - Sending success response');
 
     return new Response(
       JSON.stringify(response),
@@ -217,7 +238,6 @@ serve(async (req) => {
   } catch (error) {
     const err = error as Error;
     console.error('generate-video-token - Error:', err.message);
-    console.error('generate-video-token - Stack:', err.stack);
     return new Response(
       JSON.stringify({ error: err.message || 'Failed to generate video token' }),
       { 
