@@ -56,41 +56,53 @@ export default function MaterialsUpload({ courseId, onUploadComplete }: Material
     setUploading(true);
 
     try {
-      let fileData = null;
-      let fileName = null;
-      let mimeType = null;
+      let resourceUrl = url;
 
-      if (file) {
-        // Convert file to base64
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve, reject) => {
-          reader.onload = () => {
-            const base64 = reader.result as string;
-            resolve(base64.split(',')[1]); // Remove data:... prefix
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+      // If it's a file upload, upload to Supabase Storage
+      if (file && resourceType !== "link") {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${courseId}/${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('course-materials')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
-        fileData = await base64Promise;
-        fileName = file.name;
-        mimeType = file.type;
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('course-materials')
+          .getPublicUrl(fileName);
+
+        resourceUrl = publicUrl;
       }
 
-      const { data, error } = await supabase.functions.invoke('upload-to-drive', {
-        body: {
+      // Get the highest position for this course
+      const { data: maxPosition } = await supabase
+        .from('course_resources')
+        .select('position')
+        .eq('course_id', courseId)
+        .order('position', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const position = (maxPosition?.position ?? -1) + 1;
+
+      // Insert into course_resources
+      const { error: insertError } = await supabase
+        .from('course_resources')
+        .insert({
           course_id: courseId,
           title,
           description,
           resource_type: resourceType,
-          file_data: fileData,
-          file_name: fileName,
-          mime_type: mimeType,
-          url: resourceType === "link" ? url : null,
-        }
-      });
+          url: resourceUrl,
+          position,
+        });
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       toast.success("Material uploaded successfully!");
       
@@ -100,6 +112,10 @@ export default function MaterialsUpload({ courseId, onUploadComplete }: Material
       setResourceType("pdf");
       setUrl("");
       setFile(null);
+      
+      // Reset file input
+      const fileInput = document.getElementById('file') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
       
       if (onUploadComplete) {
         onUploadComplete();
