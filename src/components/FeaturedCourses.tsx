@@ -1,282 +1,80 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
-import CourseCard from "./CourseCard";
-import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import CourseCard from "./CourseCard";
+import { toast } from "sonner";
 
-// In a real app, this would be fetched from your backend
-const categories = [
-  { id: "all", name: "All Categories" },
-  { id: "programming", name: "Programming" },
-  { id: "data-structures", name: "Data Structures" },
-  { id: "algorithms", name: "Algorithms" },
-  { id: "web-development", name: "Web Development" },
-  { id: "database", name: "Database" },
-  { id: "system-design", name: "System Design" },
-  { id: "data-science", name: "Data Science" },
-  { id: "cloud", name: "Cloud Computing" },
-  { id: "tools", name: "Developer Tools" }
-];
+interface FeaturedCoursesProps {
+  filterType?: "all" | "free" | "premium";
+}
 
-// Mock data as fallback in case the API fails
-const mockCourses = [
-  {
-    id: 1,
-    courseId: "web-dev-101",
-    title: "Web Development Fundamentals",
-    instructor: "Sarah Johnson",
-    rating: 4.8,
-    students: 1543,
-    duration: "8 weeks",
-    level: "Beginner",
-    price: 0,
-    discountPrice: 0,
-    image: "https://images.unsplash.com/photo-1537432376769-00f5c2f4c8d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    featured: true,
-    premium: false,
-    category: "programming",
-    externalLink: "https://www.geeksforgeeks.org/web-development/"
-  },
-  {
-    id: 2,
-    courseId: "python-basics",
-    title: "Python Programming for Beginners",
-    instructor: "Michael Chen",
-    rating: 4.7,
-    students: 2102,
-    duration: "6 weeks",
-    level: "Beginner",
-    price: 0,
-    discountPrice: 0,
-    image: "https://images.unsplash.com/photo-1526379879527-8559ecfcaec0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    featured: true,
-    premium: false,
-    category: "programming",
-    externalLink: "https://www.geeksforgeeks.org/python-programming-language/"
-  },
-  {
-    id: 3,
-    courseId: "data-structures",
-    title: "Data Structures Masterclass",
-    instructor: "Priya Sharma",
-    rating: 4.9,
-    students: 1876,
-    duration: "10 weeks",
-    level: "Intermediate",
-    price: 79.99,
-    discountPrice: 49.99,
-    image: "https://images.unsplash.com/photo-1551033406-611cf9a28f67?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    featured: true,
-    premium: true,
-    category: "data-structures",
-    externalLink: null
-  }
-];
-
-const FeaturedCourses = () => {
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [activeType, setActiveType] = useState("all"); // "all", "free", or "premium"
+const FeaturedCourses = ({ filterType = "all" }: FeaturedCoursesProps) => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const { toast } = useToast();
-  
+
   useEffect(() => {
-    const loadCourses = async () => {
+    const fetchCourses = async () => {
       try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch courses from database
-        const { data, error } = await supabase
-          .from('courses')
-          .select(`
-            *,
-            enrollments(count)
-          `)
-          .order('created_at', { ascending: false });
-        
+        let query = supabase.from("courses").select("*");
+
+        if (filterType === "free") {
+          query = query.or("is_premium.is.null,is_premium.eq.false");
+        } else if (filterType === "premium") {
+          query = query.eq("is_premium", true);
+        }
+
+        const { data, error } = await query.limit(8);
+
         if (error) throw error;
-        
-        // Transform database courses to match expected format
-        const transformedCourses = data?.map(course => ({
-          id: course.id,
-          courseId: course.id,
-          title: course.title,
-          instructor: "Expert Instructor",
-          rating: 4.5,
-          students: course.enrollments?.[0]?.count || 0,
-          duration: "8 weeks",
-          level: "All Levels",
-          price: course.price || 0,
-          discountPrice: course.price ? course.price * 0.8 : 0,
-          image: course.thumbnail_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600",
-          featured: true,
-          premium: course.is_premium || false,
-          category: "programming",
-          externalLink: null
-        })) || [];
-        
-        setCourses(transformedCourses);
+
+        setCourses(data || []);
       } catch (error) {
-        console.error('Failed to load courses:', error);
-        setError('Failed to load courses');
-        
-        toast({
-          title: "Error",
-          description: "Could not load courses. Using fallback data.",
-          variant: "destructive",
-        });
-        
-        // Use mock data as fallback
-        setCourses(mockCourses);
+        toast.error("Failed to load courses");
       } finally {
         setLoading(false);
       }
     };
 
-    loadCourses();
-  }, [toast]);
-  
-  const filteredCourses = courses.filter(course => {
-    // Filter by category
-    const categoryMatch = activeCategory === "all" || course.category === activeCategory;
-    
-    // Filter by type (free/premium)
-    const typeMatch = 
-      activeType === "all" || 
-      (activeType === "free" && !course.premium) ||
-      (activeType === "premium" && course.premium);
-    
-    return categoryMatch && typeMatch;
-  });
-  
-  // Filter to just featured courses for the homepage section
-  const featuredFilteredCourses = filteredCourses.filter(course => course.featured);
-  
-  return (
-    <section className="py-20 bg-background">
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 space-y-4 md:space-y-0">
-          <div>
-            <span className="text-primary font-medium">Learn From The Best</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-2 text-foreground">Featured Courses</h2>
-          </div>
-          
-          <Link to="/courses" className="flex items-center text-primary hover:text-primary/80 transition-colors duration-200 font-medium">
-            <span>View all courses</span>
-            <ArrowRight size={18} className="ml-1" />
-          </Link>
-        </div>
-        
-        <div className="mb-6">
-          <div className="flex overflow-x-auto scrollbar-none space-x-2 mb-4 pb-2">
-            {categories.map(category => (
-              <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={`px-4 py-2 rounded-md whitespace-nowrap transition-all duration-200 text-sm font-medium ${
-                  activeCategory === category.id
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
-                {category.name}
-              </button>
-            ))}
-          </div>
-          
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setActiveType("all")}
-              className={`px-4 py-2 rounded-md whitespace-nowrap transition-all duration-200 text-sm font-medium ${
-                activeType === "all"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              All Courses
-            </button>
-            <button
-              onClick={() => setActiveType("free")}
-              className={`px-4 py-2 rounded-md whitespace-nowrap transition-all duration-200 text-sm font-medium ${
-                activeType === "free"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              Free Courses
-            </button>
-            <button
-              onClick={() => setActiveType("premium")}
-              className={`px-4 py-2 rounded-md whitespace-nowrap transition-all duration-200 text-sm font-medium ${
-                activeType === "premium"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              Premium Courses
-            </button>
-          </div>
-        </div>
-        
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {[1, 2, 3, 4, 5, 6].map((_, index) => (
-              <div key={index} className="bg-muted rounded-lg animate-pulse h-[400px]"></div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="text-center py-12">
-            <h3 className="text-2xl font-semibold mb-2 text-foreground">Error Loading Courses</h3>
-            <p className="text-muted-foreground mb-6">
-              {error}
-            </p>
-            <p className="text-muted-foreground mb-6">
-              Using fallback data for demonstration.
-            </p>
-          </div>
-        ) : featuredFilteredCourses.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {featuredFilteredCourses.map((course) => (
-              <CourseCard 
-                key={course.id} 
-                id={course.courseId}
-                title={course.title}
-                instructor={course.instructor}
-                rating={course.rating}
-                students={course.students}
-                duration={course.duration}
-                level={course.level}
-                price={course.price}
-                discountPrice={course.discountPrice}
-                image={course.image}
-                featured={course.featured}
-                premium={course.premium}
-                externalLink={course.externalLink}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <h3 className="text-2xl font-semibold mb-2 text-foreground">No Courses Found</h3>
-            <p className="text-muted-foreground mb-6">
-              We couldn't find any courses matching your search criteria.
-            </p>
-            <button
-              onClick={() => {
-                setActiveCategory("all");
-                setActiveType("all");
-              }}
-              className="gfg-button"
-            >
-              Reset Filters
-            </button>
-          </div>
-        )}
+    fetchCourses();
+  }, [filterType]);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(8)].map((_, index) => (
+          <div key={index} className="bg-muted rounded-xl animate-pulse h-64"></div>
+        ))}
       </div>
-    </section>
+    );
+  }
+
+  if (courses.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">No courses found.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {courses.map((course: any) => (
+        <CourseCard
+          key={course.id}
+          id={course.id}
+          title={course.title}
+          instructor="Expert Instructor"
+          rating={4.5}
+          students={0}
+          duration="8 weeks"
+          level="All Levels"
+          price={course.price || 0}
+          discountPrice={course.price ? course.price * 0.8 : 0}
+          image={course.thumbnail_url || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600"}
+          featured={true}
+          premium={course.is_premium || false}
+        />
+      ))}
+    </div>
   );
 };
 
