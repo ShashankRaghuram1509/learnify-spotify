@@ -24,6 +24,8 @@ import TeacherMyCourses from "./pages/dashboard/teacher/MyCourses";
 import TeacherAnalytics from "./pages/dashboard/teacher/Analytics";
 import TeacherSchedule from "./pages/dashboard/teacher/Schedule";
 import TeacherProfile from "./pages/dashboard/teacher/Profile";
+import TeacherAssignments from "./pages/dashboard/teacher/Assignments";
+import StudentAssignments from "./pages/dashboard/student/Assignments";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
@@ -61,6 +63,7 @@ const App = () => (
               <Route index element={<StudentDashboard />} />
               <Route path="my-courses" element={<MyCoursesPage />} />
               <Route path="course/:id" element={<CourseViewer />} />
+              <Route path="assignments" element={<StudentAssignments />} />
               <Route path="certificates" element={<CertificatesPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="settings" element={<SettingsPage />} />
@@ -69,6 +72,7 @@ const App = () => (
             <Route path="/dashboard/teacher" element={<ProtectedRoute allowedRoles={["teacher"]} />}>
               <Route index element={<TeacherDashboard />} />
               <Route path="courses" element={<TeacherMyCourses />} />
+              <Route path="assignments" element={<TeacherAssignments />} />
               <Route path="analytics" element={<TeacherAnalytics />} />
               <Route path="schedule" element={<TeacherSchedule />} />
               <Route path="profile" element={<TeacherProfile />} />

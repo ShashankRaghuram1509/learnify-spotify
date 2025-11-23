@@ -14,6 +14,124 @@ export type Database = {
   }
   public: {
     Tables: {
+      assignment_submissions: {
+        Row: {
+          assignment_id: string
+          created_at: string | null
+          feedback: string | null
+          graded_at: string | null
+          id: string
+          marks_obtained: number | null
+          status: string
+          student_id: string
+          submission_text: string | null
+          submission_url: string | null
+          submitted_at: string | null
+          time_taken_minutes: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string | null
+          feedback?: string | null
+          graded_at?: string | null
+          id?: string
+          marks_obtained?: number | null
+          status?: string
+          student_id: string
+          submission_text?: string | null
+          submission_url?: string | null
+          submitted_at?: string | null
+          time_taken_minutes?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string | null
+          feedback?: string | null
+          graded_at?: string | null
+          id?: string
+          marks_obtained?: number | null
+          status?: string
+          student_id?: string
+          submission_text?: string | null
+          submission_url?: string | null
+          submitted_at?: string | null
+          time_taken_minutes?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignments: {
+        Row: {
+          allow_late_submission: boolean | null
+          attachment_url: string | null
+          course_id: string
+          created_at: string | null
+          description: string | null
+          due_date: string
+          duration_minutes: number | null
+          id: string
+          instructions: string | null
+          proctoring_enabled: boolean | null
+          teacher_id: string
+          title: string
+          total_marks: number
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          allow_late_submission?: boolean | null
+          attachment_url?: string | null
+          course_id: string
+          created_at?: string | null
+          description?: string | null
+          due_date: string
+          duration_minutes?: number | null
+          id?: string
+          instructions?: string | null
+          proctoring_enabled?: boolean | null
+          teacher_id: string
+          title: string
+          total_marks?: number
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          allow_late_submission?: boolean | null
+          attachment_url?: string | null
+          course_id?: string
+          created_at?: string | null
+          description?: string | null
+          due_date?: string
+          duration_minutes?: number | null
+          id?: string
+          instructions?: string | null
+          proctoring_enabled?: boolean | null
+          teacher_id?: string
+          title?: string
+          total_marks?: number
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string
@@ -506,6 +624,41 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proctoring_logs: {
+        Row: {
+          event_data: Json | null
+          event_type: string
+          id: string
+          student_id: string
+          submission_id: string
+          timestamp: string | null
+        }
+        Insert: {
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          student_id: string
+          submission_id: string
+          timestamp?: string | null
+        }
+        Update: {
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          student_id?: string
+          submission_id?: string
+          timestamp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proctoring_logs_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "assignment_submissions"
             referencedColumns: ["id"]
           },
         ]
