@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash, Users, DollarSign } from "lucide-react";
+import { Plus, Edit, Trash, Users, DollarSign, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import MaterialsUpload from "@/components/dashboard/MaterialsUpload";
+import MaterialsList from "@/components/dashboard/MaterialsList";
 
 interface Course {
   id: string;
@@ -33,6 +36,8 @@ export default function MyCoursesPage() {
     price: 0,
     is_premium: false,
   });
+  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -193,41 +198,72 @@ export default function MyCoursesPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {courses.map((course) => (
-            <Card key={course.id}>
-              <CardHeader>
-                <CardTitle className="line-clamp-1">{course.title}</CardTitle>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    {course.student_count} students
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <DollarSign className="w-4 h-4" />
-                    ${course.price}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                  {course.description || "No description"}
-                </p>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteCourse(course.id)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <Collapsible 
+              key={course.id}
+              open={expandedCourseId === course.id}
+              onOpenChange={(open) => setExpandedCourseId(open ? course.id : null)}
+            >
+              <Card>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="line-clamp-1">{course.title}</CardTitle>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground mt-2">
+                        <span className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          {course.student_count} students
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="w-4 h-4" />
+                          ${course.price}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <CollapsibleTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <FileText className="mr-2 h-4 w-4" />
+                          Materials
+                        </Button>
+                      </CollapsibleTrigger>
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteCourse(course.id)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {course.description || "No description"}
+                  </p>
+                </CardContent>
+                
+                <CollapsibleContent>
+                  <CardContent className="pt-0 space-y-4 border-t">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                      <MaterialsUpload 
+                        courseId={course.id} 
+                        onUploadComplete={() => setRefreshTrigger(prev => prev + 1)}
+                      />
+                      <MaterialsList 
+                        courseId={course.id} 
+                        isTeacher={true}
+                        refreshTrigger={refreshTrigger}
+                      />
+                    </div>
+                  </CardContent>
+                </CollapsibleContent>
+              </Card>
+            </Collapsible>
           ))}
         </div>
       )}

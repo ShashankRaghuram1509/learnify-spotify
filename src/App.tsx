@@ -29,8 +29,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import AIAssistant from "./components/AIAssistant";
-import Live from "./pages/Live";
-import VideoCall from "./pages/VideoCall";
 
 const queryClient = new QueryClient();
 
@@ -51,10 +49,6 @@ const App = () => (
           {/* Authentication Routes */}
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/redirect" element={<AuthRedirect />} />
-
-          {/* Live Video Call Route */}
-          <Route path="/live" element={<Live />} />
-          <Route path="/video-call/:roomID" element={<VideoCall />} />
 
           {/* Admin Route */}
           <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]} />}>

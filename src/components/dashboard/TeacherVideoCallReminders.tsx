@@ -127,29 +127,33 @@ export default function TeacherVideoCallReminders() {
     });
   };
 
-  const handleStartCall = (session: VideoCall) => {
+  const handleStartCall = async (session: VideoCall) => {
     if (session.meeting_url) {
-      // Open existing meeting (supports both full URL and room code)
-      const url = session.meeting_url.includes('/')
-        ? session.meeting_url
-        : `/video-call/${session.meeting_url}?sessionId=${session.id}`;
-      window.open(url, "_blank");
-      toast.success("Starting video call...");
+      window.open(session.meeting_url, "_blank");
+      toast.success("Opening video call...");
     } else {
-      // Generate a room id and store it; student will get realtime update
-      const roomId = `room_${session.id}`;
-
-      supabase
-        .from("video_call_schedules")
-        .update({ 
-          meeting_url: roomId
-        })
-        .eq("id", session.id)
-        .then(() => {
-          const url = `/video-call/${roomId}?sessionId=${session.id}`;
-          navigate(url);
-          toast.success("Starting video call...");
+      // Create Meet link on demand
+      toast.info("Creating Meet link...");
+      try {
+        const { data, error } = await supabase.functions.invoke('create-meet-link', {
+          body: {
+            session_id: session.id,
+            summary: `Video Call - ${session.course_title}`,
+            start_time: session.scheduled_at,
+            duration_minutes: 60
+          }
         });
+
+        if (error) throw error;
+        
+        if (data?.meeting_url) {
+          window.open(data.meeting_url, "_blank");
+          toast.success("Meet link created!");
+        }
+      } catch (error) {
+        console.error("Failed to create Meet link:", error);
+        toast.error("Failed to create Meet link");
+      }
     }
   };
 

@@ -142,26 +142,44 @@ export default function VideoCallManagement() {
       return;
     }
 
-  const roomID = Math.random().toString(36).substring(2, 9);
-  const sessionTime = `${format(date, "yyyy-MM-dd")}T${time}`;
-  
-  try {
-    const selected = enrolledStudents.find(s => s.student_id === selectedStudentId);
-    const courseId = selected?.course_id || null;
+    const sessionTime = `${format(date, "yyyy-MM-dd")}T${time}`;
+    
+    try {
+      const selected = enrolledStudents.find(s => s.student_id === selectedStudentId);
+      const courseId = selected?.course_id || null;
 
-    const { error } = await supabase
-      .from("video_call_schedules")
-      .insert({
-        teacher_id: user.id,
-        student_id: selectedStudentId,
-        course_id: courseId,
-        scheduled_at: sessionTime,
-        meeting_url: roomID,
-        status: 'scheduled'
+      // Insert schedule without meeting_url first
+      const { data: newSession, error: insertError } = await supabase
+        .from("video_call_schedules")
+        .insert({
+          teacher_id: user.id,
+          student_id: selectedStudentId,
+          course_id: courseId,
+          scheduled_at: sessionTime,
+          status: 'scheduled',
+          duration_minutes: 60
+        })
+        .select()
+        .single();
+        
+      if (insertError) throw insertError;
+
+      // Create Google Meet link
+      const { data: meetData, error: meetError } = await supabase.functions.invoke('create-meet-link', {
+        body: {
+          session_id: newSession.id,
+          summary: `Video Call with Student`,
+          start_time: sessionTime,
+          duration_minutes: 60
+        }
       });
-      
-      if (error) throw error;
-      toast.success(`Session scheduled for ${format(date, "PPP")} at ${time}`);
+
+      if (meetError) {
+        console.error('Failed to create Meet link:', meetError);
+        toast.error('Session scheduled but Meet link creation failed. You can create it later.');
+      } else {
+        toast.success(`Session scheduled for ${format(date, "PPP")} at ${time}`);
+      }
       
       // Refresh sessions
       const { data } = await supabase
@@ -177,8 +195,12 @@ export default function VideoCallManagement() {
     }
   };
 
-  const handleJoinCall = (sessionId: string, roomId: string) => {
-    navigate(`/video-call/${roomId}?sessionId=${sessionId}`);
+  const handleJoinCall = (meetingUrl: string) => {
+    if (meetingUrl) {
+      window.open(meetingUrl, '_blank');
+    } else {
+      toast.error('Meeting link not available yet');
+    }
   };
 
   return (
@@ -270,7 +292,8 @@ export default function VideoCallManagement() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => handleJoinCall(session.id, session.meeting_url || "")}
+                  onClick={() => handleJoinCall(session.meeting_url || "")}
+                  disabled={!session.meeting_url}
                 >
                   <Video className="h-5 w-5" />
                 </Button>
