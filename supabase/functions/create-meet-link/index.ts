@@ -37,9 +37,12 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('Unauthorized');
+      throw new Error('Missing authorization header');
     }
 
+    // Extract JWT token
+    const token = authHeader.replace('Bearer ', '');
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -47,12 +50,16 @@ serve(async (req) => {
         global: {
           headers: { Authorization: authHeader },
         },
+        auth: {
+          persistSession: false,
+        }
       }
     );
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !user) {
-      throw new Error('Unauthorized');
+      console.error('Auth error:', userError);
+      throw new Error('Authentication failed');
     }
 
     const { session_id, summary, start_time, duration_minutes } = await req.json();
@@ -69,7 +76,7 @@ serve(async (req) => {
     const endDate = new Date(startDate.getTime() + (duration_minutes || 60) * 60000);
 
     // Create Calendar event with Google Meet
-    const calendarResponse = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    const calendarResponse = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
