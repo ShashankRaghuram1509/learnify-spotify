@@ -75,6 +75,12 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
+    // Check request size to prevent timeouts (max 50MB)
+    const contentLength = req.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > 50 * 1024 * 1024) {
+      throw new Error('File too large. Maximum size is 50MB.');
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
