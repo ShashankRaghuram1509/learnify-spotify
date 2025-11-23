@@ -192,50 +192,6 @@ export type Database = {
           },
         ]
       }
-      course_materials: {
-        Row: {
-          code_examples: Json | null
-          course_id: string
-          created_at: string
-          id: string
-          key_points: Json | null
-          overview: string | null
-          practice_exercises: Json | null
-          resources: Json | null
-          updated_at: string
-        }
-        Insert: {
-          code_examples?: Json | null
-          course_id: string
-          created_at?: string
-          id?: string
-          key_points?: Json | null
-          overview?: string | null
-          practice_exercises?: Json | null
-          resources?: Json | null
-          updated_at?: string
-        }
-        Update: {
-          code_examples?: Json | null
-          course_id?: string
-          created_at?: string
-          id?: string
-          key_points?: Json | null
-          overview?: string | null
-          practice_exercises?: Json | null
-          resources?: Json | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "course_materials_course_id_fkey"
-            columns: ["course_id"]
-            isOneToOne: false
-            referencedRelation: "courses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       course_tags: {
         Row: {
           course_id: string
@@ -465,49 +421,31 @@ export type Database = {
       }
       profiles: {
         Row: {
-          address: string | null
           avatar_url: string | null
-          college: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
-          interests: Json | null
-          phone: string | null
-          resume_text: string | null
-          resume_url: string | null
           subscription_expires_at: string | null
           subscription_tier: string | null
           updated_at: string
         }
         Insert: {
-          address?: string | null
           avatar_url?: string | null
-          college?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
-          interests?: Json | null
-          phone?: string | null
-          resume_text?: string | null
-          resume_url?: string | null
           subscription_expires_at?: string | null
           subscription_tier?: string | null
           updated_at?: string
         }
         Update: {
-          address?: string | null
           avatar_url?: string | null
-          college?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
-          interests?: Json | null
-          phone?: string | null
-          resume_text?: string | null
-          resume_url?: string | null
           subscription_expires_at?: string | null
           subscription_tier?: string | null
           updated_at?: string
@@ -635,6 +573,7 @@ export type Database = {
           created_at: string
           duration_minutes: number | null
           id: string
+          meeting_url: string | null
           scheduled_at: string
           status: string | null
           student_id: string
@@ -645,6 +584,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          meeting_url?: string | null
           scheduled_at: string
           status?: string | null
           student_id: string
@@ -655,6 +595,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          meeting_url?: string | null
           scheduled_at?: string
           status?: string | null
           student_id?: string
@@ -675,7 +616,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      delete_expired_schedules: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

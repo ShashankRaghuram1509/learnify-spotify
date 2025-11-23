@@ -1,9 +1,9 @@
+
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { ThemeProvider } from "next-themes";
 import CourseViewer from "@/pages/dashboard/student/CourseViewer";
 import Index from "./pages/Index";
 import Courses from "./pages/Courses";
@@ -12,7 +12,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/auth/Auth";
-import PremiumFeatures from "./pages/PremiumFeatures";
+import PremiumCourses from "./pages/PremiumCourses";
 import StudentDashboard from "./pages/dashboard/StudentDashboard";
 import TeacherDashboard from "./pages/dashboard/TeacherDashboard";
 import MyCoursesPage from "./pages/dashboard/student/MyCourses";
@@ -36,18 +36,17 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <TooltipProvider>
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
+    <TooltipProvider>
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/courses" element={<Courses />} />
           <Route path="/courses/:id" element={<CourseDetail />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/premium-features" element={<PremiumFeatures />} />
+          <Route path="/premium-courses" element={<PremiumCourses />} />
 
           {/* Authentication Routes */}
           <Route path="/auth" element={<Auth />} />
@@ -89,7 +88,6 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
-    </ThemeProvider>
   </QueryClientProvider>
 );
 

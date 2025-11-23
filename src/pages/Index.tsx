@@ -1,7 +1,7 @@
 
 import React from "react";
 import HeroSection from "@/components/HeroSection";
-import TabbedCourses from "@/components/TabbedCourses";
+import FeaturedCourses from "@/components/FeaturedCourses";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { ArrowRight, BookOpen, Users, Award, Clock, CheckCircle, Sparkles, LayoutDashboard } from "lucide-react";
@@ -245,34 +245,32 @@ const Index = () => {
       <Navbar />
       
       <main>
-        {/* Hero Section with Search */}
+        {/* Hero Section */}
         <HeroSection />
+
+        {/* Dynamic Section: Auth or Dashboard Preview */}
+        {user ? <DashboardPreview /> : <FeaturedCourses />}
         
-        {/* Compact Stats Banner */}
-        <section className="py-6 bg-spotify-gray/30 border-y border-white/10">
+        {/* Stats Section */}
+        <section className="py-16 bg-spotify-dark">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
               {stats.map((stat, index) => (
                 <div 
                   key={index} 
-                  className="flex items-center gap-3 animate-fade-in"
-                  style={{ animationDelay: `${index * 0.05}s` }}
+                  className="bg-spotify-gray/30 backdrop-blur-md rounded-xl p-6 text-center border border-white/10 animate-fade-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className="w-10 h-10 bg-spotify/10 rounded-full flex items-center justify-center">
-                    <stat.icon className="h-5 w-5 text-spotify" />
+                  <div className="w-12 h-12 mx-auto bg-spotify/10 rounded-full flex items-center justify-center mb-4">
+                    <stat.icon className="h-6 w-6 text-spotify" />
                   </div>
-                  <div>
-                    <h3 className="text-xl md:text-2xl font-bold text-spotify-text">{stat.value}</h3>
-                    <p className="text-xs text-spotify-text/70">{stat.label}</p>
-                  </div>
+                  <h3 className="text-2xl md:text-3xl font-bold text-spotify-text mb-1">{stat.value}</h3>
+                  <p className="text-spotify-text/70">{stat.label}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
-        
-        {/* Tabbed Courses Section */}
-        <TabbedCourses />
         
         {/* Categories Section */}
         <section className="py-20 bg-spotify-dark relative overflow-hidden">
@@ -326,6 +324,9 @@ const Index = () => {
             </div>
           </div>
         </section>
+        
+        {/* Featured Courses Section */}
+        <FeaturedCourses />
         
         {/* Benefits Section */}
         <section className="py-20 bg-spotify-dark">
@@ -402,7 +403,7 @@ const Index = () => {
 
             <div className="text-center">
               <Link
-                to="/premium-features"
+                to="/premium-courses"
                 className="spotify-button inline-flex items-center"
               >
                 Explore Premium Features
@@ -431,7 +432,7 @@ const Index = () => {
                   Explore Courses
                 </Link>
                 <Link 
-                  to="/premium-features" 
+                  to="/premium-courses" 
                   className="bg-spotify/20 hover:bg-spotify/30 text-spotify border border-spotify/30 rounded-full py-3 px-8 font-semibold transition-colors duration-300 text-lg flex items-center justify-center"
                 >
                   <Sparkles size={16} className="mr-2" />

@@ -10,21 +10,12 @@ export default function VideoCall() {
   const [loading, setLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const { roomID } = useParams();
-  const initializedRef = useRef(false);
 
   useEffect(() => {
-    if (initializedRef.current) {
-      console.log('⏭️ VideoCall - Already initialized, skipping');
-      return;
-    }
-    initializedRef.current = true;
     const sessionId = searchParams.get('sessionId');
     const roomId = searchParams.get('roomId') || roomID || null;
 
-    console.log('🎥 VideoCall - Starting initialization', { sessionId, roomId, roomID });
-
     if (!sessionId || !roomId) {
-      console.error('❌ VideoCall - Missing parameters', { sessionId, roomId });
       toast.error('Invalid video call link');
       navigate('/');
       return;
@@ -32,106 +23,73 @@ export default function VideoCall() {
 
     const initializeVideoCall = async () => {
       try {
-        console.log('🔐 VideoCall - Getting session');
+        // Get current session
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          console.error('❌ VideoCall - No session found');
           toast.error('Please login to join video call');
           navigate('/auth');
           return;
         }
 
-        console.log('✅ VideoCall - Session found, user:', session.user.id);
-
-        console.log('👤 VideoCall - Fetching profile');
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', session.user.id)
-          .single();
-
-        const userName = profile?.full_name || session.user.email || 'User';
-        console.log('✅ VideoCall - User name:', userName);
-
-        // Call generate-video-token edge function
-        console.log('🔑 VideoCall - Calling generate-video-token endpoint');
-        const { data: tokenData, error: tokenError } = await supabase.functions.invoke('generate-video-token', {
-          body: {
-            session_id: sessionId,
-            room_id: roomId
-          }
+        // Get video token from Edge Function
+        const { data, error } = await supabase.functions.invoke('generate-video-token', {
+          body: { session_id: sessionId, room_id: roomId },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         });
 
-        if (tokenError || !tokenData) {
-          console.error('❌ VideoCall - Token generation failed:', tokenError);
-          toast.error('Failed to generate video call token');
-          navigate('/');
-          return;
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        if (!data?.token || !data?.appId) {
+          throw new Error('Failed to get video credentials');
         }
 
-        console.log('✅ VideoCall - Token received from server');
-        const { token: kitToken, appId } = tokenData;
-
+        // Initialize ZegoCloud with the token
         if (containerRef.current) {
-          console.log('📦 VideoCall - Container ref found, creating ZegoUIKit instance');
-          const zp = ZegoUIKitPrebuilt.create(kitToken);
-          console.log('✅ VideoCall - ZegoUIKit instance created');
-          
-          console.log('🚀 VideoCall - Joining room with config');
+          const zp = ZegoUIKitPrebuilt.create(data.token);
           zp.joinRoom({
             container: containerRef.current,
-            turnOnMicrophoneWhenJoining: true,
-            turnOnCameraWhenJoining: true,
-            showMyCameraToggleButton: true,
-            showMyMicrophoneToggleButton: true,
-            showAudioVideoSettingsButton: true,
-            showScreenSharingButton: true,
-            showTextChat: true,
-            showUserList: true,
-            maxUsers: 2,
-            layout: "Auto",
-            showLayoutButton: false,
             scenario: {
-              mode: ZegoUIKitPrebuilt.OneONoneCall,
-              config: {
-                role: ZegoUIKitPrebuilt.Host,
-              },
+              mode: ZegoUIKitPrebuilt.GroupCall,
             },
+            showPreJoinView: false,
           });
-          console.log('✅ VideoCall - joinRoom called successfully');
-        } else {
-          console.error('❌ VideoCall - Container ref is null');
         }
 
         setLoading(false);
-        console.log('✅ VideoCall - Initialization complete');
       } catch (error: any) {
-        console.error('💥 VideoCall - Fatal error:', error);
-        console.error('💥 VideoCall - Error message:', error.message);
-        console.error('💥 VideoCall - Error stack:', error.stack);
-        toast.error(error.message || 'Failed to join video call');
+        console.error('Video call error:', error);
+        if (error.message === 'Not authorized to join this video call') {
+          toast.error('You are not authorized to join this video call');
+        } else if (error.message === 'Payment required') {
+          toast.error('Please purchase the course to access video calls');
+        } else {
+          toast.error('Failed to join video call');
+        }
         navigate('/');
       }
     };
 
     initializeVideoCall();
-  }, [searchParams, navigate, roomID]);
+  }, [searchParams, navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-spotify-dark">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-spotify mx-auto mb-4"></div>
+          <p className="text-spotify-text">Joining video call...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-screen h-screen bg-background">
-      {loading && (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-foreground">Joining video call...</p>
-          </div>
-        </div>
-      )}
-      <div
-        ref={containerRef}
-        className="w-full h-full"
-        style={{ display: loading ? 'none' : 'block' }}
-      />
-    </div>
+    <div
+      ref={containerRef}
+      className="w-screen h-screen"
+    />
   );
 }

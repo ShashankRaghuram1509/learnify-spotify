@@ -1,6 +1,7 @@
 import ContentManager from "@/components/dashboard/ContentManager";
 import StudentAnalytics from "@/components/dashboard/StudentAnalytics";
-import TimetableScheduler from "@/components/dashboard/TimetableScheduler";
+import VideoCallManagement from "@/components/dashboard/VideoCallManagement";
+import TeacherVideoCallReminders from "@/components/dashboard/TeacherVideoCallReminders";
 import TeacherChatList from "@/components/dashboard/TeacherChatList";
 
 export default function TeacherDashboard() {
@@ -9,13 +10,16 @@ export default function TeacherDashboard() {
       <div className="md:col-span-2 lg:col-span-3">
         <StudentAnalytics />
       </div>
-      <div className="md:col-span-2 lg:col-span-4">
-        <TimetableScheduler />
+      <div className="lg:col-span-1">
+        <VideoCallManagement />
+      </div>
+      <div className="md:col-span-2 lg:col-span-2">
+        <TeacherVideoCallReminders />
       </div>
       <div className="md:col-span-2 lg:col-span-2">
         <ContentManager />
       </div>
-      <div className="md:col-span-2 lg:col-span-2">
+      <div className="md:col-span-2 lg:col-span-4">
         <TeacherChatList />
       </div>
     </div>

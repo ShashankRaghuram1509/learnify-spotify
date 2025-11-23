@@ -9,9 +9,6 @@ verify_jwt = true
 [functions.generate-video-token]
 verify_jwt = true
 
-[functions.generate-course-notes]
-verify_jwt = false
-
 [functions.razorpay-create-order]
 verify_jwt = true
 
