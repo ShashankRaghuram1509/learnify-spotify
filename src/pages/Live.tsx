@@ -22,6 +22,23 @@ export default function Live() {
 
     const initializeVideoCall = async () => {
       try {
+        // Get current user session first
+        const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+        if (sessionError || !session) {
+          toast.error('Session expired. Please login again');
+          navigate('/auth');
+          return;
+        }
+
+        // Get user profile for name
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', session.user.id)
+          .single();
+
+        const userName = profile?.full_name || session.user.email || 'User';
+
         // Get video token from Edge Function
         const { data, error } = await supabase.functions.invoke('generate-video-token', {
           body: { session_id: sessionId, room_id: roomId }
@@ -34,15 +51,37 @@ export default function Live() {
           throw new Error('Failed to get video credentials');
         }
 
+        const { token: token04, appId, userId, roomId: serverRoomId } = data;
+
         // Initialize ZegoCloud with the token
         if (containerRef.current) {
-          const zp = ZegoUIKitPrebuilt.create(data.token);
+          // Convert Token04 to KitToken
+          const kitToken = ZegoUIKitPrebuilt.generateKitTokenForProduction(
+            Number(appId),
+            token04,
+            serverRoomId || roomId,
+            userId,
+            userName
+          );
+
+          const zp = ZegoUIKitPrebuilt.create(kitToken);
           zp.joinRoom({
             container: containerRef.current,
             scenario: {
               mode: ZegoUIKitPrebuilt.GroupCall,
             },
             showPreJoinView: false,
+            turnOnCameraWhenJoining: true,
+            turnOnMicrophoneWhenJoining: true,
+            showMyCameraToggleButton: true,
+            showMyMicrophoneToggleButton: true,
+            showAudioVideoSettingsButton: true,
+            showScreenSharingButton: true,
+            showTextChat: true,
+            showUserList: true,
+            maxUsers: 10,
+            layout: "Auto",
+            showLayoutButton: true,
           });
         }
 
@@ -52,7 +91,7 @@ export default function Live() {
         if (error.message === 'Not authorized to join this video call') {
           toast.error('You are not authorized to join this video call');
         } else {
-          toast.error('Failed to join video call');
+          toast.error(error.message || 'Failed to join video call');
         }
         navigate('/');
       }
