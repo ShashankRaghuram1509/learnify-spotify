@@ -137,52 +137,52 @@ export default function StudentDetailedAnalytics() {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Course Progress</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <BookOpen className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{completionRate}%</div>
+            <div className="text-2xl font-bold text-blue-600">{completionRate}%</div>
             <p className="text-xs text-muted-foreground">
               {analytics.completedCourses} of {analytics.totalCourses} completed
             </p>
-            <Progress value={completionRate} className="mt-2" />
+            <Progress value={completionRate} className="mt-2 [&>div]:bg-blue-500" />
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-purple-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Video Watch Time</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.videoMinutesWatched}</div>
+            <div className="text-2xl font-bold text-purple-600">{analytics.videoMinutesWatched}</div>
             <p className="text-xs text-muted-foreground">minutes watched</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-amber-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Test Performance</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
+            <Award className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{testSuccessRate}%</div>
+            <div className="text-2xl font-bold text-amber-600">{testSuccessRate}%</div>
             <p className="text-xs text-muted-foreground">
               {analytics.testAttempts.passed} passed / {analytics.testAttempts.total} total
             </p>
-            <Progress value={testSuccessRate} className="mt-2" />
+            <Progress value={testSuccessRate} className="mt-2 [&>div]:bg-amber-500" />
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-emerald-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Progress Bonus</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{analytics.testProgressBonus}%</div>
+            <div className="text-2xl font-bold text-emerald-600">+{analytics.testProgressBonus}%</div>
             <p className="text-xs text-muted-foreground">from test achievements</p>
           </CardContent>
         </Card>
@@ -210,7 +210,7 @@ export default function StudentDetailedAnalytics() {
         </Card>
       )}
 
-      <Card>
+      <Card className="border-l-4 border-l-slate-500">
         <CardHeader>
           <CardTitle>Test Attempts Summary</CardTitle>
         </CardHeader>
@@ -218,15 +218,15 @@ export default function StudentDetailedAnalytics() {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-sm">Total Attempts</span>
-              <Badge variant="outline">{analytics.testAttempts.total}</Badge>
+              <Badge variant="outline" className="border-slate-500 text-slate-700">{analytics.testAttempts.total}</Badge>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm">Passed (≥75%)</span>
-              <Badge variant="default">{analytics.testAttempts.passed}</Badge>
+              <Badge className="bg-emerald-500 hover:bg-emerald-600">{analytics.testAttempts.passed}</Badge>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm">Failed (&lt;75%)</span>
-              <Badge variant="secondary">{analytics.testAttempts.failed}</Badge>
+              <Badge className="bg-orange-500 hover:bg-orange-600">{analytics.testAttempts.failed}</Badge>
             </div>
           </div>
         </CardContent>

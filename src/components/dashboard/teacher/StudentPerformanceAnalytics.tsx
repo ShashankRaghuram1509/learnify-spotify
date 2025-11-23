@@ -254,52 +254,52 @@ export default function StudentPerformanceAnalytics() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="border-l-4 border-l-cyan-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Average Progress</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-cyan-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{averageProgress}%</div>
+            <div className="text-2xl font-bold text-cyan-600">{averageProgress}%</div>
             <p className="text-xs text-muted-foreground">
               across {currentStudent.enrollmentData.length} courses
             </p>
-            <Progress value={averageProgress} className="mt-2" />
+            <Progress value={averageProgress} className="mt-2 [&>div]:bg-cyan-500" />
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-indigo-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Video Watch Time</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-indigo-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalVideoMinutes}</div>
+            <div className="text-2xl font-bold text-indigo-600">{totalVideoMinutes}</div>
             <p className="text-xs text-muted-foreground">minutes watched</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-rose-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Test Success Rate</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
+            <Award className="h-4 w-4 text-rose-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{testSuccessRate}%</div>
+            <div className="text-2xl font-bold text-rose-600">{testSuccessRate}%</div>
             <p className="text-xs text-muted-foreground">
               {currentStudent.testAttempts.passed} / {currentStudent.testAttempts.total} passed
             </p>
-            <Progress value={testSuccessRate} className="mt-2" />
+            <Progress value={testSuccessRate} className="mt-2 [&>div]:bg-rose-500" />
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-l-4 border-l-teal-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Progress Bonus</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-teal-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{totalTestBonus}%</div>
+            <div className="text-2xl font-bold text-teal-600">+{totalTestBonus}%</div>
             <p className="text-xs text-muted-foreground">from test achievements</p>
           </CardContent>
         </Card>
@@ -333,19 +333,26 @@ export default function StudentPerformanceAnalytics() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {currentStudent.enrollmentData.map((enrollment, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">{enrollment.courseTitle}</span>
-                  <Badge variant="outline">{enrollment.progress}%</Badge>
+            {currentStudent.enrollmentData.map((enrollment, index) => {
+              const colors = ['bg-violet-500', 'bg-orange-500', 'bg-sky-500', 'bg-pink-500', 'bg-lime-500'];
+              const borderColors = ['border-l-violet-500', 'border-l-orange-500', 'border-l-sky-500', 'border-l-pink-500', 'border-l-lime-500'];
+              const progressColor = colors[index % colors.length];
+              const borderColor = borderColors[index % borderColors.length];
+              
+              return (
+                <div key={index} className={`border-l-4 ${borderColor} pl-4 space-y-2`}>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">{enrollment.courseTitle}</span>
+                    <Badge variant="outline">{enrollment.progress}%</Badge>
+                  </div>
+                  <Progress value={enrollment.progress} className={`[&>div]:${progressColor}`} />
+                  <div className="flex gap-4 text-xs text-muted-foreground">
+                    <span>📹 {enrollment.videoMinutesWatched} min</span>
+                    <span>🏆 +{enrollment.testProgressBonus}%</span>
+                  </div>
                 </div>
-                <Progress value={enrollment.progress} />
-                <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span>Video: {enrollment.videoMinutesWatched} min</span>
-                  <span>Test Bonus: +{enrollment.testProgressBonus}%</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>
