@@ -171,7 +171,7 @@ export default function AssignmentsList() {
                 )}
               </div>
 
-              {assignment.submission?.marks_obtained !== null && (
+              {assignment.submission && assignment.submission.marks_obtained !== null && (
                 <div className="p-3 bg-muted rounded-lg">
                   <p className="text-sm font-medium">
                     Score: {assignment.submission.marks_obtained}/{assignment.total_marks}
