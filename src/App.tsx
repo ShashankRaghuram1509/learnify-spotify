@@ -24,6 +24,7 @@ import TeacherMyCourses from "./pages/dashboard/teacher/MyCourses";
 import TeacherAnalytics from "./pages/dashboard/teacher/Analytics";
 import TeacherSchedule from "./pages/dashboard/teacher/Schedule";
 import TeacherProfile from "./pages/dashboard/teacher/Profile";
+import TeacherSettings from "./pages/dashboard/teacher/Settings";
 import TeacherAssignments from "./pages/dashboard/teacher/Assignments";
 import StudentAssignments from "./pages/dashboard/student/Assignments";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -76,6 +77,7 @@ const App = () => (
               <Route path="analytics" element={<TeacherAnalytics />} />
               <Route path="schedule" element={<TeacherSchedule />} />
               <Route path="profile" element={<TeacherProfile />} />
+              <Route path="settings" element={<TeacherSettings />} />
             </Route>
           </Route>
 
