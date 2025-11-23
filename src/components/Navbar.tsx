@@ -65,7 +65,7 @@ const Navbar = () => {
             <div className="w-9 h-9 rounded-md bg-primary flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">LearnHub</span>
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">LEARNIFY</span>
           </Link>
 
           {/* Desktop Navigation */}

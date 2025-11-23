@@ -46,75 +46,80 @@ const CourseCard: React.FC<CourseCardProps> = ({
   const isFree = safePrice === 0 || (discountPrice !== undefined && safeDiscountPrice === 0);
   
   const CardContentComponent = () => (
-    <Card className={cn("group overflow-hidden border border-border hover:border-primary/50 transition-all duration-200 card-hover h-full flex flex-col", className)}>
+    <Card className={cn(
+      "group overflow-hidden transition-all duration-200 h-full flex flex-col",
+      premium ? "border-2 border-yellow-500/50 shadow-lg shadow-yellow-500/20" : "border border-border hover:border-primary/50",
+      "card-hover",
+      className
+    )}>
       <div className="relative overflow-hidden">
         <img 
           src={image} 
           alt={title}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300"
         />
         
-        <div className="absolute top-3 left-3 flex gap-2">
+        <div className="absolute top-2 left-2 flex gap-1">
           {featured && (
-            <Badge className="bg-primary text-primary-foreground">Featured</Badge>
+            <Badge className="bg-primary text-primary-foreground text-xs py-0">Featured</Badge>
           )}
           {premium && (
-            <Badge variant="secondary" className="bg-card border border-border">Premium</Badge>
+            <Badge className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 text-xs py-0">Premium</Badge>
           )}
         </div>
         
         {level && (
-          <Badge variant="outline" className="absolute bottom-3 left-3 bg-background/90 backdrop-blur-sm">
+          <Badge variant="outline" className="absolute bottom-2 left-2 bg-background/90 backdrop-blur-sm text-xs py-0">
             {level}
           </Badge>
         )}
       </div>
       
-      <CardHeader className="space-y-2 flex-grow pb-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <BookOpen className="w-4 h-4" />
-          <span>{instructor}</span>
+      <CardHeader className="space-y-1 flex-grow p-3 pb-2">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <BookOpen className="w-3 h-3" />
+          <span className="truncate">{instructor}</span>
         </div>
-        <CardTitle className="text-lg group-hover:text-primary transition-colors line-clamp-2">
+        <CardTitle className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-2 leading-tight">
           {title}
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-3 pt-0">
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+      <CardContent className="space-y-2 pt-0 p-3">
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 fill-primary text-primary" />
+            <Star className="w-3 h-3 fill-primary text-primary" />
             <span className="font-medium text-foreground">{safeRating.toFixed(1)}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Users className="w-4 h-4" />
+            <Users className="w-3 h-3" />
             <span>{students ?? 0}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4" />
+            <Clock className="w-3 h-3" />
             <span>{duration}</span>
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-3 border-t border-border">
+        <div className="flex items-center justify-between pt-2 border-t border-border">
           <div>
             {isFree ? (
-              <span className="text-lg font-bold text-primary">Free</span>
+              <span className="text-base font-bold text-primary">Free</span>
             ) : hasDiscount ? (
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-bold text-foreground">₹{safeDiscountPrice.toFixed(2)}</span>
-                <span className="text-sm text-muted-foreground line-through">
-                  ₹{safePrice.toFixed(2)}
+              <div className="flex items-center gap-1">
+                <span className="text-base font-bold text-foreground">₹{safeDiscountPrice.toFixed(0)}</span>
+                <span className="text-xs text-muted-foreground line-through">
+                  ₹{safePrice.toFixed(0)}
                 </span>
               </div>
             ) : (
-              <span className="text-lg font-bold text-foreground">₹{safePrice.toFixed(2)}</span>
+              <span className="text-base font-bold text-foreground">₹{safePrice.toFixed(0)}</span>
             )}
           </div>
           
-          <div className="flex items-center gap-1 text-sm font-medium text-primary group-hover:gap-2 transition-all">
-            {externalLink && <ExternalLink className="w-4 h-4" />}
-            <span>{externalLink ? "Tutorial" : "View"}</span>
+          <div className="flex items-center gap-1 text-xs font-medium text-primary group-hover:gap-2 transition-all">
+            {externalLink && <ExternalLink className="w-3 h-3" />}
+            <span>{externalLink ? "View" : "View"}</span>
           </div>
         </div>
       </CardContent>
