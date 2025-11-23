@@ -135,13 +135,23 @@ export default function TeacherVideoCallReminders() {
       // Create Meet link on demand
       toast.info("Creating Meet link...");
       try {
+        // Get current session for auth token
+        const { data: { session: authSession } } = await supabase.auth.getSession();
+        if (!authSession) {
+          toast.error("Session expired. Please login again.");
+          return;
+        }
+
         const { data, error } = await supabase.functions.invoke('create-meet-link', {
           body: {
             session_id: session.id,
             summary: `Video Call - ${session.course_title}`,
             start_time: session.scheduled_at,
             duration_minutes: 60
-          }
+          },
+          headers: {
+            Authorization: `Bearer ${authSession.access_token}`,
+          },
         });
 
         if (error) throw error;
