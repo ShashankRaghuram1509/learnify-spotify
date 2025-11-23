@@ -53,13 +53,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        spotify: {
-          DEFAULT: "#1DB954", // Spotify green
-          dark: "#121212",    // Spotify background
-          light: "#1ED760",   // Spotify light green
-          gray: "#333333",    // Spotify gray
-          text: "#FFFFFF",    // White text
-          hover: "#18A349",   // Darker green for hover states
+        gfg: {
+          DEFAULT: "#2F8D46", // GFG green
+          dark: "#1A5F34",    // Darker green
+          light: "#3DA35D",   // Lighter green
+          bg: "#F4F4F4",      // Light gray background
+          text: "#212121",    // Dark text
+          hover: "#267A3A",   // Hover green
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
