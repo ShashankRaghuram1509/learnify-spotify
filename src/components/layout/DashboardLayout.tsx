@@ -13,6 +13,7 @@ import {
   Video,
   BarChart,
   Star,
+  FileText,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ import { cn } from "@/lib/utils";
 const studentNavItems = [
   { to: "/dashboard/student", icon: Home, label: "Dashboard" },
   { to: "/dashboard/student/my-courses", icon: BookOpen, label: "My Courses" },
+  { to: "/dashboard/student/assignments", icon: FileText, label: "Assignments" },
   { to: "/dashboard/student/certificates", icon: Award, label: "Certificates" },
   { to: "/dashboard/student/profile", icon: User, label: "Profile" },
   { to: "/dashboard/student/settings", icon: Settings, label: "Settings" },
@@ -39,6 +41,7 @@ const studentNavItems = [
 const teacherNavItems = [
   { to: "/dashboard/teacher", icon: Home, label: "Dashboard" },
   { to: "/dashboard/teacher/courses", icon: BookOpen, label: "My Courses" },
+  { to: "/dashboard/teacher/assignments", icon: FileText, label: "Assignments" },
   { to: "/dashboard/teacher/analytics", icon: BarChart, label: "Student Analytics" },
   { to: "/dashboard/teacher/schedule", icon: Video, label: "Schedule Calls" },
   { to: "/dashboard/teacher/profile", icon: User, label: "Profile" },
