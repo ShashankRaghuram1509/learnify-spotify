@@ -25,9 +25,9 @@ export default function MaterialsUpload({ courseId, onUploadComplete }: Material
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      // Check file size (50MB limit)
-      if (selectedFile.size > 50 * 1024 * 1024) {
-        toast.error("File size exceeds 50MB limit. Please choose a smaller file.");
+      // Check file size (300MB limit)
+      if (selectedFile.size > 300 * 1024 * 1024) {
+        toast.error("File size exceeds 300MB limit. Please choose a smaller file.");
         e.target.value = ""; // Clear the input
         return;
       }
@@ -211,7 +211,7 @@ export default function MaterialsUpload({ courseId, onUploadComplete }: Material
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
-                Maximum file size: 50MB
+                Maximum file size: 300MB
               </p>
             </div>
           )}
