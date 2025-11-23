@@ -28,19 +28,44 @@ export default function ViewSubmissions({ assignmentId }: ViewSubmissionsProps) 
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      // First get submissions
+      const { data: submissionsData, error: submissionsError } = await supabase
         .from("assignment_submissions")
-        .select(`
-          *,
-          profiles(full_name, email)
-        `)
+        .select("*")
         .eq("assignment_id", assignmentId)
-        .order("submitted_at", { ascending: false });
+        .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setSubmissions(data || []);
+      if (submissionsError) {
+        console.error("Error fetching submissions:", submissionsError);
+        throw submissionsError;
+      }
+
+      // Then get student profiles for those submissions
+      if (submissionsData && submissionsData.length > 0) {
+        const studentIds = submissionsData.map(sub => sub.student_id);
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", studentIds);
+
+        if (profilesError) {
+          console.error("Error fetching profiles:", profilesError);
+        }
+
+        // Merge profiles with submissions
+        const mergedData = submissionsData.map(submission => ({
+          ...submission,
+          profiles: profilesData?.find(p => p.id === submission.student_id) || null
+        }));
+
+        console.log("Fetched submissions with profiles:", mergedData);
+        setSubmissions(mergedData);
+      } else {
+        setSubmissions([]);
+      }
     } catch (error: any) {
-      toast.error("Failed to load submissions");
+      console.error("Fetch error:", error);
+      toast.error("Failed to load submissions: " + error.message);
     } finally {
       setLoading(false);
     }
