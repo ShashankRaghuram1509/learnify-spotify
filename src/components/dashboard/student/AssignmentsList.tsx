@@ -40,29 +40,34 @@ export default function AssignmentsList() {
       // Get assignments for enrolled courses
       const { data: assignmentsData, error } = await supabase
         .from("assignments")
-        .select(`
-          *,
-          courses(title),
-          assignment_submissions!left(
-            id,
-            status,
-            marks_obtained,
-            feedback,
-            submitted_at
-          )
-        `)
+        .select("*")
         .in("course_id", courseIds)
         .order("due_date", { ascending: true });
 
       if (error) throw error;
 
-      // Filter to only show submissions for current user
+      // Get course details
+      const { data: coursesData } = await supabase
+        .from("courses")
+        .select("id, title")
+        .in("id", courseIds);
+
+      // Get submissions for current user
+      const assignmentIds = assignmentsData?.map(a => a.id) || [];
+      const { data: submissionsData } = await supabase
+        .from("assignment_submissions")
+        .select("*")
+        .eq("student_id", user.id)
+        .in("assignment_id", assignmentIds);
+
+      // Merge data
       const processedData = assignmentsData?.map((assignment) => {
-        const userSubmission = assignment.assignment_submissions?.find(
-          (sub: any) => sub.student_id === user.id
-        );
+        const course = coursesData?.find(c => c.id === assignment.course_id);
+        const userSubmission = submissionsData?.find(s => s.assignment_id === assignment.id);
+        
         return {
           ...assignment,
+          courses: course,
           submission: userSubmission || null,
         };
       });
