@@ -478,6 +478,8 @@ export type Database = {
           id: string
           progress: number | null
           student_id: string
+          test_progress_bonus: number | null
+          video_minutes_watched: number | null
         }
         Insert: {
           completed_at?: string | null
@@ -486,6 +488,8 @@ export type Database = {
           id?: string
           progress?: number | null
           student_id: string
+          test_progress_bonus?: number | null
+          video_minutes_watched?: number | null
         }
         Update: {
           completed_at?: string | null
@@ -494,6 +498,8 @@ export type Database = {
           id?: string
           progress?: number | null
           student_id?: string
+          test_progress_bonus?: number | null
+          video_minutes_watched?: number | null
         }
         Relationships: [
           {
@@ -663,6 +669,47 @@ export type Database = {
           },
         ]
       }
+      proctoring_violations: {
+        Row: {
+          assignment_id: string
+          blocked_until: string | null
+          created_at: string | null
+          failed_attempts: number | null
+          id: string
+          student_id: string
+          updated_at: string | null
+          violation_count: number | null
+        }
+        Insert: {
+          assignment_id: string
+          blocked_until?: string | null
+          created_at?: string | null
+          failed_attempts?: number | null
+          id?: string
+          student_id: string
+          updated_at?: string | null
+          violation_count?: number | null
+        }
+        Update: {
+          assignment_id?: string
+          blocked_until?: string | null
+          created_at?: string | null
+          failed_attempts?: number | null
+          id?: string
+          student_id?: string
+          updated_at?: string | null
+          violation_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proctoring_violations_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
@@ -751,6 +798,54 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_test_attempts: {
+        Row: {
+          assignment_id: string
+          attempt_number: number
+          created_at: string | null
+          id: string
+          marks_obtained: number | null
+          passed: boolean | null
+          student_id: string
+          submission_id: string | null
+        }
+        Insert: {
+          assignment_id: string
+          attempt_number?: number
+          created_at?: string | null
+          id?: string
+          marks_obtained?: number | null
+          passed?: boolean | null
+          student_id: string
+          submission_id?: string | null
+        }
+        Update: {
+          assignment_id?: string
+          attempt_number?: number
+          created_at?: string | null
+          id?: string
+          marks_obtained?: number | null
+          passed?: boolean | null
+          student_id?: string
+          submission_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_test_attempts_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_test_attempts_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "assignment_submissions"
             referencedColumns: ["id"]
           },
         ]
@@ -872,6 +967,57 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_watch_tracking: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          enrollment_id: string
+          id: string
+          last_position: number | null
+          minutes_watched: number | null
+          student_id: string
+          updated_at: string | null
+          video_url: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          enrollment_id: string
+          id?: string
+          last_position?: number | null
+          minutes_watched?: number | null
+          student_id: string
+          updated_at?: string | null
+          video_url: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          enrollment_id?: string
+          id?: string
+          last_position?: number | null
+          minutes_watched?: number | null
+          student_id?: string
+          updated_at?: string | null
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_watch_tracking_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_watch_tracking_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "enrollments"
             referencedColumns: ["id"]
           },
         ]
