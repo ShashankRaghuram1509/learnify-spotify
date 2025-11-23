@@ -59,7 +59,7 @@ export default function AssignmentsList() {
       // Filter to only show submissions for current user
       const processedData = assignmentsData?.map((assignment) => {
         const userSubmission = assignment.assignment_submissions?.find(
-          (sub: any) => sub.id === user.id
+          (sub: any) => sub.student_id === user.id
         );
         return {
           ...assignment,
