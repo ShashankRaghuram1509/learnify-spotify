@@ -135,12 +135,13 @@ export default function VideoCallReminders() {
     });
   };
 
-  const handleJoinCall = (meetingUrl: string | null, sessionId: string) => {
-    if (!meetingUrl) return;
-    const url = meetingUrl.includes('/')
-      ? meetingUrl
-      : `/video-call/${meetingUrl}?sessionId=${sessionId}`;
-    window.open(url, "_blank");
+  const handleJoinCall = (session: VideoCall) => {
+    if (session.meeting_url) {
+      window.open(session.meeting_url, "_blank");
+      toast.success("Opening video call...");
+    } else {
+      toast.error("Meeting link not available yet. Please wait for the teacher to start the session.");
+    }
   };
 
   if (loading) {
@@ -191,16 +192,15 @@ export default function VideoCallReminders() {
                     </div>
                   </div>
                 </div>
-                {session.meeting_url && (
-                  <Button
-                    onClick={() => handleJoinCall(session.meeting_url, session.id)}
-                    size="sm"
-                    className="w-full"
-                  >
-                    <Video className="mr-2 h-4 w-4" />
-                    Join Session
-                  </Button>
-                )}
+                <Button
+                  onClick={() => handleJoinCall(session)}
+                  size="sm"
+                  className="w-full"
+                  disabled={!session.meeting_url}
+                >
+                  <Video className="mr-2 h-4 w-4" />
+                  {session.meeting_url ? "Join Session" : "Waiting for teacher..."}
+                </Button>
               </div>
             ))}
           </div>

@@ -7,6 +7,7 @@ import { ArrowLeft, Play, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import MaterialsList from "@/components/dashboard/MaterialsList";
 
 interface CourseData {
   id: string;
@@ -389,6 +390,12 @@ export default function CourseViewer() {
           )}
         </CardContent>
       </Card>
+
+      {hasPaid && (
+        <div className="mt-6">
+          <MaterialsList courseId={course.id} isTeacher={false} />
+        </div>
+      )}
     </div>
   );
 }
