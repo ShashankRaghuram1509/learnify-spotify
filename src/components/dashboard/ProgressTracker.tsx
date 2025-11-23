@@ -17,6 +17,27 @@ export default function ProgressTracker() {
   useEffect(() => {
     if (user) {
       fetchProgress();
+      
+      // Set up real-time subscription
+      const channel = supabase
+        .channel('enrollments-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'enrollments',
+            filter: `student_id=eq.${user.id}`
+          },
+          () => {
+            fetchProgress();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [user]);
 

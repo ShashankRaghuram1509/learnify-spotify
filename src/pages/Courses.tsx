@@ -9,11 +9,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 const categories = [
   { id: "all", name: "All Categories" },
-  { id: "development", name: "Development" },
-  { id: "design", name: "Design" },
-  { id: "marketing", name: "Marketing" },
+  { id: "free", name: "Free Courses" },
+  { id: "premium", name: "Premium Courses" },
+  { id: "programming", name: "Programming" },
+  { id: "data-structures", name: "Data Structures" },
+  { id: "algorithms", name: "Algorithms" },
+  { id: "web-development", name: "Web Development" },
+  { id: "databases", name: "Databases" },
+  { id: "system-design", name: "System Design" },
   { id: "data-science", name: "Data Science" },
-  { id: "ai", name: "AI & ML" }
+  { id: "cloud-computing", name: "Cloud Computing" },
+  { id: "developer-tools", name: "Developer Tools" }
 ];
 
 const levels = [
@@ -62,18 +68,48 @@ const Courses = () => {
     }
   }, [location.search]);
   
-  // Fetch courses from Supabase
+  // Fetch courses from Supabase with categories
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase.from("courses").select("*");
+        const { data, error } = await supabase
+          .from("courses")
+          .select(`
+            *,
+            course_categories(
+              categories(name)
+            )
+          `);
 
         if (error) {
           throw error;
         }
 
-        setCourses(data);
+        // Map category names to courses
+        const coursesWithCategories = data?.map(course => {
+          const categoryName = course.course_categories?.[0]?.categories?.name || null;
+          
+          // Map database category names to our filter category IDs
+          const categoryMap = {
+            'Programming': 'programming',
+            'Data Structures': 'data-structures',
+            'Algorithms': 'algorithms',
+            'Web Development': 'web-development',
+            'Databases': 'databases',
+            'System Design': 'system-design',
+            'Data Science': 'data-science',
+            'Cloud Computing': 'cloud-computing',
+            'Developer Tools': 'developer-tools'
+          };
+          
+          return {
+            ...course,
+            category: categoryMap[categoryName] || 'programming'
+          };
+        }) || [];
+
+        setCourses(coursesWithCategories);
       } catch (error) {
         toast.error("Failed to load courses.");
       } finally {
@@ -86,50 +122,50 @@ const Courses = () => {
   
   // Apply filters and search
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        setLoading(true);
-        let query = supabase.from("courses").select("*");
-
-        // Apply search query
-        if (searchQuery) {
-          query = query.ilike("title", `%${searchQuery}%`);
-        }
-
-        // Apply sorting
-        switch (sortBy) {
-          case "newest":
-            query = query.order("created_at", { ascending: false });
-            break;
-          case "oldest":
-            query = query.order("created_at", { ascending: true });
-            break;
-          case "price-low":
-            query = query.order("price", { ascending: true, nullsFirst: false });
-            break;
-          case "price-high":
-            query = query.order("price", { ascending: false, nullsFirst: false });
-            break;
-          default:
-            query = query.order("created_at", { ascending: false });
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-          throw error;
-        }
-
-        setFilteredCourses(data);
-      } catch (error) {
-        toast.error("Failed to load courses.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCourses();
-  }, [selectedCategory, selectedLevel, searchQuery, sortBy]);
+    let filtered = [...courses];
+    
+    // Apply search query
+    if (searchQuery) {
+      filtered = filtered.filter(course =>
+        course.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Apply category filter
+    if (selectedCategory === "free") {
+      filtered = filtered.filter(course => !course.is_premium);
+    } else if (selectedCategory === "premium") {
+      filtered = filtered.filter(course => course.is_premium);
+    } else if (selectedCategory !== "all") {
+      filtered = filtered.filter(course => course.category === selectedCategory);
+    }
+    
+    // Apply level filter (if needed in future)
+    if (selectedLevel !== "all") {
+      // Add level filtering logic when level data is available
+    }
+    
+    // Apply sorting
+    switch (sortBy) {
+      case "newest":
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+      case "oldest":
+        filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      case "price-low":
+        filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
+        break;
+      case "price-high":
+        filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
+        break;
+      default:
+        // Keep default order
+        break;
+    }
+    
+    setFilteredCourses(filtered);
+  }, [courses, selectedCategory, selectedLevel, searchQuery, sortBy]);
   
   // Update URL with search parameters
   useEffect(() => {
@@ -233,7 +269,11 @@ const Courses = () => {
                     onClick={() => setSelectedCategory(category.id)}
                     className={`px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
                       selectedCategory === category.id
-                        ? "bg-spotify text-white"
+                        ? category.id === "free"
+                          ? "bg-green-500 text-white"
+                          : category.id === "premium"
+                          ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white"
+                          : "bg-spotify text-white"
                         : "bg-spotify-gray/30 text-spotify-text/70 hover:bg-spotify-gray/50"
                     }`}
                   >
@@ -312,7 +352,11 @@ const Courses = () => {
                         onClick={() => setSelectedCategory(category.id)}
                         className={`px-3 py-1 rounded-full text-sm transition-all duration-300 ${
                           selectedCategory === category.id
-                            ? "bg-spotify text-white"
+                            ? category.id === "free"
+                              ? "bg-green-500 text-white"
+                              : category.id === "premium"
+                              ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white"
+                              : "bg-spotify text-white"
                             : "bg-spotify-gray/30 text-spotify-text/70"
                         }`}
                       >

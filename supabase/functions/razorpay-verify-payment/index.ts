@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -140,6 +140,25 @@ serve(async (req) => {
       throw new Error('Payment storage failed');
     }
     console.log('Payment record stored successfully');
+
+    // If this is a course purchase, create enrollment
+    if (course_id) {
+      console.log('Creating enrollment for course:', course_id);
+      const { error: enrollmentError } = await supabaseClient
+        .from('enrollments')
+        .insert({
+          student_id: userId,
+          course_id: course_id,
+          progress: 0
+        });
+
+      if (enrollmentError) {
+        console.error('Enrollment creation error:', enrollmentError);
+        // Don't throw - payment is already recorded
+      } else {
+        console.log('Enrollment created successfully');
+      }
+    }
 
     // If this is a subscription payment (not a course purchase), update subscription
     if (planName && !course_id) {

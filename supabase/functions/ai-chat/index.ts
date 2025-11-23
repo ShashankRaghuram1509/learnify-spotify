@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,29 +24,32 @@ serve(async (req) => {
       );
     }
 
-    // Extract user from JWT token
-    const token = authHeader.replace('Bearer ', '');
-    let userId: string | null = null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1] || ''));
-      userId = payload?.sub || null;
-    } catch (e) {
-      console.error('JWT parse error:', e);
+    const accessToken = authHeader.replace('Bearer ', '');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_PUBLISHABLE_KEY') ?? '';
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase not configured');
       return new Response(
-        JSON.stringify({ error: "Invalid authentication" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Backend not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    
-    if (!userId) {
-      console.error('No user ID in token');
+
+    const supabaseClient = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: `Bearer ${accessToken}` } }
+    });
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(accessToken);
+    if (userError || !user) {
+      console.error('User auth failed:', userError);
       return new Response(
         JSON.stringify({ error: "Invalid authentication" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log('User authenticated:', userId);
+    console.log('User authenticated:', user.id);
 
     // Parse and validate input
     const body = await req.json();
