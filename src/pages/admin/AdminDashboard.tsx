@@ -18,27 +18,33 @@ import MOUManagement from "@/components/admin/MOUManagement";
 
 export default function AdminDashboard() {
   const { userRole, loading } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const handleCreateInstructor = async (e: React.FormEvent) => {
+  const handleCreateInstructor = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setCreating(true);
 
     try {
+      const formData = new FormData(e.currentTarget);
+      
       const { data, error } = await supabase.functions.invoke('admin-create-instructor', {
-        body: { email, password, fullName }
+        body: { 
+          email: formData.get('email') as string,
+          password: formData.get('password') as string,
+          fullName: formData.get('fullName') as string,
+          experienceLevel: formData.get('experienceLevel') as string,
+          linkedin: formData.get('linkedin') as string,
+          phone: formData.get('phone') as string,
+          resumeUrl: formData.get('resumeUrl') as string,
+          college: formData.get('college') as string
+        }
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
       toast.success("Instructor account created successfully!");
-      setEmail("");
-      setPassword("");
-      setFullName("");
+      e.currentTarget.reset();
     } catch (error: any) {
       console.error('Create instructor error:', error);
       toast.error(error.message || "Failed to create instructor account");
@@ -104,26 +110,25 @@ export default function AdminDashboard() {
             </TabsContent>
 
             <TabsContent value="instructor" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <UserPlus className="h-5 w-5 text-primary" />
-                      <CardTitle>Create Instructor Account</CardTitle>
-                    </div>
-                    <CardDescription>
-                      Add a new instructor to the platform with secure credentials
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleCreateInstructor} className="space-y-4">
+              <Card className="max-w-3xl">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5 text-primary" />
+                    <CardTitle>Create Instructor Account</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Add a new instructor to the platform with complete profile details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleCreateInstructor} className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="fullName">Full Name</Label>
+                        <Label htmlFor="fullName">Full Name *</Label>
                         <Input
                           id="fullName"
+                          name="fullName"
                           type="text"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
                           required
                           placeholder="John Doe"
                           maxLength={100}
@@ -131,25 +136,25 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
+                        <Label htmlFor="email">Email Address *</Label>
                         <Input
                           id="email"
+                          name="email"
                           type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
                           required
                           placeholder="instructor@example.com"
                           maxLength={255}
                         />
                       </div>
+                    </div>
 
+                    <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="password">Initial Password</Label>
+                        <Label htmlFor="password">Initial Password *</Label>
                         <Input
                           id="password"
+                          name="password"
                           type="password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
                           required
                           placeholder="••••••••"
                           minLength={8}
@@ -160,13 +165,79 @@ export default function AdminDashboard() {
                         </p>
                       </div>
 
-                      <Button type="submit" disabled={creating} className="w-full">
-                        {creating ? "Creating Account..." : "Create Instructor Account"}
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-              </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <Input
+                          id="phone"
+                          name="phone"
+                          type="tel"
+                          placeholder="+91 9876543210"
+                          maxLength={20}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="experienceLevel">Experience Level *</Label>
+                        <select
+                          id="experienceLevel"
+                          name="experienceLevel"
+                          required
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <option value="">Select experience level</option>
+                          <option value="beginner">Beginner (0-2 years)</option>
+                          <option value="intermediate">Intermediate (2-5 years)</option>
+                          <option value="advanced">Advanced (5-10 years)</option>
+                          <option value="expert">Expert (10+ years)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="college">Institution/Organization</Label>
+                        <Input
+                          id="college"
+                          name="college"
+                          type="text"
+                          placeholder="University name or company"
+                          maxLength={200}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="linkedin">LinkedIn Profile URL</Label>
+                      <Input
+                        id="linkedin"
+                        name="linkedin"
+                        type="url"
+                        placeholder="https://linkedin.com/in/username"
+                        maxLength={255}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="resumeUrl">Resume/CV URL *</Label>
+                      <Input
+                        id="resumeUrl"
+                        name="resumeUrl"
+                        type="url"
+                        required
+                        placeholder="https://drive.google.com/file/d/..."
+                        maxLength={500}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Provide a public link to Google Drive, Dropbox, or similar
+                      </p>
+                    </div>
+
+                    <Button type="submit" disabled={creating} className="w-full">
+                      {creating ? "Creating Account..." : "Create Instructor Account"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
