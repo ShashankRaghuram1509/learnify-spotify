@@ -233,6 +233,36 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -511,6 +541,56 @@ export type Database = {
           },
         ]
       }
+      job_roles: {
+        Row: {
+          company_id: string
+          created_at: string
+          description: string | null
+          experience_level: string
+          id: string
+          salary_max: number | null
+          salary_min: number | null
+          skills_required: Json | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          description?: string | null
+          experience_level: string
+          id?: string
+          salary_max?: number | null
+          salary_min?: number | null
+          skills_required?: Json | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          description?: string | null
+          experience_level?: string
+          id?: string
+          salary_max?: number | null
+          salary_min?: number | null
+          skills_required?: Json | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_roles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           content_text: string | null
@@ -633,6 +713,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_analytics: {
+        Row: {
+          active_users: number | null
+          avg_session_duration: number | null
+          date: string
+          id: string
+          new_signups: number | null
+          total_courses: number | null
+          total_enrollments: number | null
+          total_revenue: number | null
+          total_users: number | null
+        }
+        Insert: {
+          active_users?: number | null
+          avg_session_duration?: number | null
+          date?: string
+          id?: string
+          new_signups?: number | null
+          total_courses?: number | null
+          total_enrollments?: number | null
+          total_revenue?: number | null
+          total_users?: number | null
+        }
+        Update: {
+          active_users?: number | null
+          avg_session_duration?: number | null
+          date?: string
+          id?: string
+          new_signups?: number | null
+          total_courses?: number | null
+          total_enrollments?: number | null
+          total_revenue?: number | null
+          total_users?: number | null
+        }
+        Relationships: []
       }
       proctoring_logs: {
         Row: {
@@ -802,6 +918,47 @@ export type Database = {
           },
         ]
       }
+      student_applications: {
+        Row: {
+          applied_at: string
+          cover_letter: string | null
+          id: string
+          job_role_id: string
+          resume_url: string | null
+          status: string | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          applied_at?: string
+          cover_letter?: string | null
+          id?: string
+          job_role_id: string
+          resume_url?: string | null
+          status?: string | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          applied_at?: string
+          cover_letter?: string | null
+          id?: string
+          job_role_id?: string
+          resume_url?: string | null
+          status?: string | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_applications_job_role_id_fkey"
+            columns: ["job_role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_test_attempts: {
         Row: {
           assignment_id: string
@@ -867,6 +1024,69 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      teacher_feedback: {
+        Row: {
+          application_id: string | null
+          areas_for_improvement: string | null
+          course_id: string | null
+          created_at: string
+          id: string
+          rating: number | null
+          recommendation: string | null
+          soft_skills: string | null
+          strengths: string | null
+          student_id: string
+          teacher_id: string
+          technical_skills: string | null
+          updated_at: string
+        }
+        Insert: {
+          application_id?: string | null
+          areas_for_improvement?: string | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          rating?: number | null
+          recommendation?: string | null
+          soft_skills?: string | null
+          strengths?: string | null
+          student_id: string
+          teacher_id: string
+          technical_skills?: string | null
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string | null
+          areas_for_improvement?: string | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          rating?: number | null
+          recommendation?: string | null
+          soft_skills?: string | null
+          strengths?: string | null
+          student_id?: string
+          teacher_id?: string
+          technical_skills?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_feedback_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "student_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teacher_feedback_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transcripts: {
         Row: {

@@ -14,6 +14,7 @@ import {
   BarChart,
   Star,
   FileText,
+  Briefcase,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -33,6 +34,7 @@ const studentNavItems = [
   { to: "/dashboard/student/my-courses", icon: BookOpen, label: "My Courses" },
   { to: "/dashboard/student/assignments", icon: FileText, label: "Assignments" },
   { to: "/dashboard/student/certificates", icon: Award, label: "Certificates" },
+  { to: "/dashboard/student/placement", icon: Briefcase, label: "Placement" },
   { to: "/dashboard/student/profile", icon: User, label: "Profile" },
   { to: "/dashboard/student/settings", icon: Settings, label: "Settings" },
   { to: "/dashboard/student/upgrade", icon: Star, label: "Upgrade to Pro" },
@@ -61,7 +63,11 @@ export default function DashboardLayout() {
 
   const baseItems = userRole === "student" ? studentNavItems : teacherNavItems;
   const navItems = userRole === "student"
-    ? baseItems.filter(item => item.to !== "/dashboard/student/upgrade" || !hasValidSubscription)
+    ? baseItems.filter(item => {
+        if (item.to === "/dashboard/student/upgrade" && hasValidSubscription) return false;
+        if (item.to === "/dashboard/student/placement" && !hasValidSubscription) return false;
+        return true;
+      })
     : baseItems;
 
   return (

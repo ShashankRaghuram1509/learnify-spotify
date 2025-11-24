@@ -17,6 +17,7 @@ import StudentDashboard from "./pages/dashboard/StudentDashboard";
 import TeacherDashboard from "./pages/dashboard/TeacherDashboard";
 import MyCoursesPage from "./pages/dashboard/student/MyCourses";
 import CertificatesPage from "./pages/dashboard/student/Certificates";
+import PlacementPage from "./pages/dashboard/student/Placement";
 import ProfilePage from "./pages/dashboard/student/Profile";
 import SettingsPage from "./pages/dashboard/student/Settings";
 import UpgradeToProPage from "./pages/dashboard/student/UpgradeToPro";
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="course/:id" element={<CourseViewer />} />
               <Route path="assignments" element={<StudentAssignments />} />
               <Route path="certificates" element={<CertificatesPage />} />
+              <Route path="placement" element={<PlacementPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="upgrade" element={<UpgradeToProPage />} />
