@@ -41,28 +41,51 @@ export default function CourseReviewsManagement() {
 
   const fetchReviews = async () => {
     try {
-      const { data: reviewsData, error } = await supabase
+      // Fetch reviews
+      const { data: reviewsData, error: reviewsError } = await supabase
         .from('reviews')
-        .select(`
-          *,
-          courses(id, title),
-          profiles(full_name, email)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (reviewsError) throw reviewsError;
 
-      const enrichedReviews = reviewsData || [];
-      setReviews(enrichedReviews);
-      setFilteredReviews(enrichedReviews);
+      if (reviewsData && reviewsData.length > 0) {
+        // Fetch related courses
+        const courseIds = [...new Set(reviewsData.map(r => r.course_id))];
+        const { data: coursesData } = await supabase
+          .from('courses')
+          .select('id, title')
+          .in('id', courseIds);
 
-      // Calculate stats
-      const total = enrichedReviews.length;
-      const avgRating = total > 0 
-        ? enrichedReviews.reduce((sum, r) => sum + r.rating, 0) / total 
-        : 0;
-      
-      setStats({ total, avgRating });
+        // Fetch related profiles
+        const userIds = [...new Set(reviewsData.map(r => r.user_id))];
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', userIds);
+
+        // Enrich reviews with course and profile data
+        const enrichedReviews = reviewsData.map(review => ({
+          ...review,
+          courses: coursesData?.find(c => c.id === review.course_id),
+          profiles: profilesData?.find(p => p.id === review.user_id)
+        }));
+
+        setReviews(enrichedReviews);
+        setFilteredReviews(enrichedReviews);
+
+        // Calculate stats
+        const total = enrichedReviews.length;
+        const avgRating = total > 0 
+          ? enrichedReviews.reduce((sum, r) => sum + r.rating, 0) / total 
+          : 0;
+        
+        setStats({ total, avgRating });
+      } else {
+        setReviews([]);
+        setFilteredReviews([]);
+        setStats({ total: 0, avgRating: 0 });
+      }
     } catch (error) {
       console.error('Error fetching reviews:', error);
       toast.error('Failed to load reviews');
