@@ -28,6 +28,9 @@ import TeacherProfile from "./pages/dashboard/teacher/Profile";
 import TeacherSettings from "./pages/dashboard/teacher/Settings";
 import TeacherAssignments from "./pages/dashboard/teacher/Assignments";
 import StudentAssignments from "./pages/dashboard/student/Assignments";
+import StudentPartnersPage from "./pages/dashboard/student/Partners";
+import TeacherPartnersPage from "./pages/dashboard/teacher/Partners";
+import TeacherPlacementReviewPage from "./pages/dashboard/teacher/PlacementReview";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
@@ -68,6 +71,7 @@ const App = () => (
               <Route path="assignments" element={<StudentAssignments />} />
               <Route path="certificates" element={<CertificatesPage />} />
               <Route path="placement" element={<PlacementPage />} />
+              <Route path="partners" element={<StudentPartnersPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="upgrade" element={<UpgradeToProPage />} />
@@ -77,6 +81,8 @@ const App = () => (
               <Route path="courses" element={<TeacherMyCourses />} />
               <Route path="assignments" element={<TeacherAssignments />} />
               <Route path="analytics" element={<TeacherAnalytics />} />
+              <Route path="placement-review" element={<TeacherPlacementReviewPage />} />
+              <Route path="partners" element={<TeacherPartnersPage />} />
               <Route path="schedule" element={<TeacherSchedule />} />
               <Route path="profile" element={<TeacherProfile />} />
               <Route path="settings" element={<TeacherSettings />} />

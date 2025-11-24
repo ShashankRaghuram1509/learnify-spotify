@@ -33,6 +33,7 @@ export default function MyCoursesPage() {
     title: "",
     description: "",
     video_url: "",
+    thumbnail_url: "",
     price: 0,
     is_premium: false,
   });
@@ -90,7 +91,7 @@ export default function MyCoursesPage() {
 
       toast.success("Course created successfully!");
       setIsCreateDialogOpen(false);
-      setNewCourse({ title: "", description: "", video_url: "", price: 0, is_premium: false });
+      setNewCourse({ title: "", description: "", video_url: "", thumbnail_url: "", price: 0, is_premium: false });
       fetchMyCourses();
     } catch (error: any) {
       toast.error("Failed to create course");
@@ -161,7 +162,17 @@ export default function MyCoursesPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="price">Price ($)</Label>
+                <Label htmlFor="thumbnail_url">Cover/Thumbnail Image URL</Label>
+                <Input
+                  id="thumbnail_url"
+                  type="url"
+                  value={newCourse.thumbnail_url}
+                  onChange={(e) => setNewCourse({ ...newCourse, thumbnail_url: e.target.value })}
+                  placeholder="https://..."
+                />
+              </div>
+              <div>
+                <Label htmlFor="price">Price (₹)</Label>
                 <Input
                   id="price"
                   type="number"
