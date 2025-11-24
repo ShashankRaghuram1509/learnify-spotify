@@ -31,6 +31,7 @@ import StudentAssignments from "./pages/dashboard/student/Assignments";
 import StudentPartnersPage from "./pages/dashboard/student/Partners";
 import TeacherPartnersPage from "./pages/dashboard/teacher/Partners";
 import TeacherPlacementReviewPage from "./pages/dashboard/teacher/PlacementReview";
+import TeacherAdminFeedbackPage from "./pages/dashboard/teacher/AdminFeedback";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
@@ -82,6 +83,7 @@ const App = () => (
               <Route path="assignments" element={<TeacherAssignments />} />
               <Route path="analytics" element={<TeacherAnalytics />} />
               <Route path="placement-review" element={<TeacherPlacementReviewPage />} />
+              <Route path="admin-feedback" element={<TeacherAdminFeedbackPage />} />
               <Route path="partners" element={<TeacherPartnersPage />} />
               <Route path="schedule" element={<TeacherSchedule />} />
               <Route path="profile" element={<TeacherProfile />} />

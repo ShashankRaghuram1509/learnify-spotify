@@ -15,6 +15,7 @@ import {
   Star,
   FileText,
   Briefcase,
+  MessageCircle,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -47,6 +48,7 @@ const teacherNavItems = [
   { to: "/dashboard/teacher/assignments", icon: FileText, label: "Assignments" },
   { to: "/dashboard/teacher/analytics", icon: BarChart, label: "Student Analytics" },
   { to: "/dashboard/teacher/placement-review", icon: Briefcase, label: "Placement Review" },
+  { to: "/dashboard/teacher/admin-feedback", icon: MessageCircle, label: "Admin Feedback" },
   { to: "/dashboard/teacher/partners", icon: Users, label: "Partners" },
   { to: "/dashboard/teacher/schedule", icon: Video, label: "Schedule Calls" },
   { to: "/dashboard/teacher/profile", icon: User, label: "Profile" },
