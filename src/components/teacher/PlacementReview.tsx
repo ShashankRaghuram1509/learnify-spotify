@@ -18,6 +18,7 @@ interface Application {
   job_role_id: string;
   status: string;
   applied_at: string;
+  resume_url?: string;
   profiles: {
     full_name: string;
     email: string;
@@ -196,6 +197,7 @@ export default function PlacementReview() {
                 <TableHead>Job Role</TableHead>
                 <TableHead>Company</TableHead>
                 <TableHead>Applied Date</TableHead>
+                <TableHead>Resume</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Action</TableHead>
               </TableRow>
@@ -212,6 +214,20 @@ export default function PlacementReview() {
                   <TableCell>{app.job_roles?.title}</TableCell>
                   <TableCell>{app.job_roles?.companies?.name}</TableCell>
                   <TableCell>{new Date(app.applied_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {app.resume_url ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(app.resume_url, '_blank')}
+                      >
+                        <FileText className="h-4 w-4 mr-1" />
+                        View Resume
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">No resume</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={
                       app.status === 'selected' ? 'default' :
