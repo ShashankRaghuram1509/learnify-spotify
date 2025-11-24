@@ -70,18 +70,25 @@ export default function PlacementReview() {
     const studentIds = [...new Set(enrollments.map(e => e.student_id))];
 
     // Get applications from these students
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('student_applications')
       .select(`
         *,
         profiles!student_applications_student_id_fkey(full_name, email),
-        job_roles(title, companies(name))
+        job_roles(title, companies!job_roles_company_id_fkey(name))
       `)
       .in('student_id', studentIds)
       .order('applied_at', { ascending: false });
 
+    if (error) {
+      console.error('Error fetching applications:', error);
+      toast.error('Failed to fetch applications');
+    }
+
     if (data) {
       setApplications(data as any);
+    } else {
+      setApplications([]);
     }
   };
 
