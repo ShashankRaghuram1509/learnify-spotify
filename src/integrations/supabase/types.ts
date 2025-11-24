@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_course_feedback: {
+        Row: {
+          admin_id: string
+          course_id: string
+          created_at: string | null
+          feedback_text: string
+          id: string
+          improvement_suggestions: string | null
+          rating: number | null
+          review_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          admin_id: string
+          course_id: string
+          created_at?: string | null
+          feedback_text: string
+          id?: string
+          improvement_suggestions?: string | null
+          rating?: number | null
+          review_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          admin_id?: string
+          course_id?: string
+          created_at?: string | null
+          feedback_text?: string
+          id?: string
+          improvement_suggestions?: string | null
+          rating?: number | null
+          review_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_course_feedback_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_course_feedback_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assignment_submissions: {
         Row: {
           assignment_id: string
