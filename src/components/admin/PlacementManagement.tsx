@@ -36,16 +36,63 @@ export default function PlacementManagement() {
   }, []);
 
   const fetchData = async () => {
-    const { data: companiesData } = await supabase.from('companies').select('*').order('created_at', { ascending: false });
-    const { data: jobsData } = await supabase.from('job_roles').select('*, companies(name)').order('created_at', { ascending: false });
-    const { data: appsData } = await supabase
-      .from('student_applications')
-      .select('*, job_roles(title, companies(name)), profiles(full_name, email)')
-      .order('applied_at', { ascending: false });
+    try {
+      const { data: companiesData } = await supabase
+        .from('companies')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      const { data: jobsData } = await supabase
+        .from('job_roles')
+        .select('*, companies(name)')
+        .order('created_at', { ascending: false });
 
-    setCompanies(companiesData || []);
-    setJobRoles(jobsData || []);
-    setApplications(appsData || []);
+      // Fetch applications
+      const { data: appsData } = await supabase
+        .from('student_applications')
+        .select('*')
+        .order('applied_at', { ascending: false });
+
+      if (appsData && appsData.length > 0) {
+        // Fetch student profiles
+        const studentIds = [...new Set(appsData.map(app => app.student_id))];
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name, email')
+          .in('id', studentIds);
+
+        // Fetch job roles with companies
+        const jobRoleIds = [...new Set(appsData.map(app => app.job_role_id))];
+        const { data: jobRolesWithCompanies } = await supabase
+          .from('job_roles')
+          .select('id, title, company_id, companies(name)');
+
+        // Combine the data
+        const enrichedApplications = appsData.map(app => {
+          const profile = profilesData?.find(p => p.id === app.student_id);
+          const jobRole = jobRolesWithCompanies?.find(jr => jr.id === app.job_role_id);
+
+          return {
+            ...app,
+            profiles: profile,
+            job_roles: {
+              title: jobRole?.title,
+              companies: jobRole?.companies
+            }
+          };
+        });
+
+        setApplications(enrichedApplications);
+      } else {
+        setApplications([]);
+      }
+
+      setCompanies(companiesData || []);
+      setJobRoles(jobsData || []);
+    } catch (error) {
+      console.error('Error fetching placement data:', error);
+      toast.error('Failed to load placement data');
+    }
   };
 
   const handleCreateCompany = async (e: React.FormEvent<HTMLFormElement>) => {
