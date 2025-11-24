@@ -325,7 +325,6 @@ export default function PlacementManagement() {
       toast.success("Company response letter uploaded successfully");
       setShowUploadDialog(false);
       setSelectedApplication(null);
-      e.currentTarget.reset();
       fetchData();
     } catch (error) {
       console.error('Error uploading company response:', error);
