@@ -667,6 +667,42 @@ export type Database = {
           },
         ]
       }
+      partner_companies: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          logo_url: string | null
+          mou_signed_date: string | null
+          name: string
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          logo_url?: string | null
+          mou_signed_date?: string | null
+          name: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          logo_url?: string | null
+          mou_signed_date?: string | null
+          name?: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -833,6 +869,7 @@ export type Database = {
           college: string | null
           created_at: string
           email: string
+          experience_level: string | null
           full_name: string | null
           id: string
           interests: Json | null
@@ -850,6 +887,7 @@ export type Database = {
           college?: string | null
           created_at?: string
           email: string
+          experience_level?: string | null
           full_name?: string | null
           id: string
           interests?: Json | null
@@ -867,6 +905,7 @@ export type Database = {
           college?: string | null
           created_at?: string
           email?: string
+          experience_level?: string | null
           full_name?: string | null
           id?: string
           interests?: Json | null
@@ -924,6 +963,8 @@ export type Database = {
           cover_letter: string | null
           id: string
           job_role_id: string
+          recommendation_generated_at: string | null
+          recommendation_letter_url: string | null
           resume_url: string | null
           status: string | null
           student_id: string
@@ -934,6 +975,8 @@ export type Database = {
           cover_letter?: string | null
           id?: string
           job_role_id: string
+          recommendation_generated_at?: string | null
+          recommendation_letter_url?: string | null
           resume_url?: string | null
           status?: string | null
           student_id: string
@@ -944,6 +987,8 @@ export type Database = {
           cover_letter?: string | null
           id?: string
           job_role_id?: string
+          recommendation_generated_at?: string | null
+          recommendation_letter_url?: string | null
           resume_url?: string | null
           status?: string | null
           student_id?: string

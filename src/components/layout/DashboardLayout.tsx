@@ -35,6 +35,7 @@ const studentNavItems = [
   { to: "/dashboard/student/assignments", icon: FileText, label: "Assignments" },
   { to: "/dashboard/student/certificates", icon: Award, label: "Certificates" },
   { to: "/dashboard/student/placement", icon: Briefcase, label: "Placement" },
+  { to: "/dashboard/student/partners", icon: Users, label: "Partners" },
   { to: "/dashboard/student/profile", icon: User, label: "Profile" },
   { to: "/dashboard/student/settings", icon: Settings, label: "Settings" },
   { to: "/dashboard/student/upgrade", icon: Star, label: "Upgrade to Pro" },
@@ -45,6 +46,8 @@ const teacherNavItems = [
   { to: "/dashboard/teacher/courses", icon: BookOpen, label: "My Courses" },
   { to: "/dashboard/teacher/assignments", icon: FileText, label: "Assignments" },
   { to: "/dashboard/teacher/analytics", icon: BarChart, label: "Student Analytics" },
+  { to: "/dashboard/teacher/placement-review", icon: Briefcase, label: "Placement Review" },
+  { to: "/dashboard/teacher/partners", icon: Users, label: "Partners" },
   { to: "/dashboard/teacher/schedule", icon: Video, label: "Schedule Calls" },
   { to: "/dashboard/teacher/profile", icon: User, label: "Profile" },
 ];
