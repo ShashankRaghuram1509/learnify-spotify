@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import MaterialsList from "@/components/dashboard/MaterialsList";
+import CourseReview from "@/components/student/CourseReview";
 
 interface CourseData {
   id: string;
@@ -392,8 +393,13 @@ export default function CourseViewer() {
       </Card>
 
       {hasPaid && (
-        <div className="mt-6">
+        <div className="mt-6 space-y-6">
           <MaterialsList courseId={course.id} isTeacher={false} />
+          
+          <CourseReview 
+            courseId={course.id} 
+            courseName={course.title}
+          />
         </div>
       )}
     </div>
