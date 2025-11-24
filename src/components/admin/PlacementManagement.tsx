@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Building2, Briefcase, Users, FileText, Download, Package } from "lucide-react";
+import { Plus, Building2, Briefcase, Users, FileText, Download, Package, Upload } from "lucide-react";
 
 export default function PlacementManagement() {
   const [companies, setCompanies] = useState<any[]>([]);
@@ -19,6 +19,9 @@ export default function PlacementManagement() {
   const [showCompanyDialog, setShowCompanyDialog] = useState(false);
   const [showJobDialog, setShowJobDialog] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<string>("");
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -296,6 +299,42 @@ export default function PlacementManagement() {
     return letter;
   };
 
+  const handleUploadCompanyResponse = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setUploading(true);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const responseUrl = formData.get('response_url') as string;
+
+      if (!responseUrl || !selectedApplication) {
+        toast.error("Please provide the company response letter URL");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('student_applications')
+        .update({
+          company_response_letter_url: responseUrl,
+          company_response_uploaded_at: new Date().toISOString()
+        })
+        .eq('id', selectedApplication.id);
+
+      if (error) throw error;
+
+      toast.success("Company response letter uploaded successfully");
+      setShowUploadDialog(false);
+      setSelectedApplication(null);
+      e.currentTarget.reset();
+      fetchData();
+    } catch (error) {
+      console.error('Error uploading company response:', error);
+      toast.error('Failed to upload company response');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-4">
@@ -453,6 +492,7 @@ export default function PlacementManagement() {
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
                 <TableHead>Download</TableHead>
+                <TableHead>Company Response</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -512,12 +552,102 @@ export default function PlacementManagement() {
                       <span className="text-muted-foreground text-sm">-</span>
                     )}
                   </TableCell>
+                  <TableCell>
+                    {app.company_response_letter_url ? (
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(app.company_response_letter_url, '_blank')}
+                        >
+                          <FileText className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedApplication(app);
+                            setShowUploadDialog(true);
+                          }}
+                        >
+                          <Upload className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedApplication(app);
+                          setShowUploadDialog(true);
+                        }}
+                      >
+                        <Upload className="h-4 w-4 mr-1" />
+                        Upload
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload Company Response Letter</DialogTitle>
+            <DialogDescription>
+              Upload the company's acceptance letter, interview invitation, or response
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedApplication && (
+            <div className="space-y-4">
+              <div className="p-3 border rounded-lg bg-muted/50 text-sm">
+                <div><strong>Student:</strong> {selectedApplication.profiles?.full_name}</div>
+                <div><strong>Job Role:</strong> {selectedApplication.job_roles?.title}</div>
+                <div><strong>Company:</strong> {selectedApplication.job_roles?.companies?.name}</div>
+              </div>
+
+              <form onSubmit={handleUploadCompanyResponse} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="response_url">Company Response Letter URL *</Label>
+                  <Input
+                    id="response_url"
+                    name="response_url"
+                    type="url"
+                    placeholder="https://drive.google.com/file/d/..."
+                    defaultValue={selectedApplication.company_response_letter_url || ''}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Provide a publicly accessible URL (Google Drive, Dropbox, etc.)
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={uploading}>
+                    {uploading ? "Uploading..." : selectedApplication.company_response_letter_url ? "Update Letter" : "Upload Letter"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowUploadDialog(false);
+                      setSelectedApplication(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

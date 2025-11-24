@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Briefcase, Building2, DollarSign, Clock, Lock, Download } from "lucide-react";
+import { Briefcase, Building2, DollarSign, Clock, Lock, Download, FileCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function PlacementAssistance() {
@@ -235,6 +235,41 @@ export default function PlacementAssistance() {
                       >
                         <Download className="h-4 w-4 mr-1" />
                         Download Letter
+                      </Button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {applications.some(a => a.company_response_letter_url) && (
+            <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+              <h3 className="font-semibold mb-2 flex items-center gap-2 text-green-700 dark:text-green-400">
+                <FileCheck className="h-5 w-5" />
+                Company Response Letters
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                You have received response(s) from companies!
+              </p>
+              <div className="space-y-2">
+                {applications
+                  .filter(a => a.company_response_letter_url)
+                  .map(app => (
+                    <div key={app.id} className="flex items-center justify-between p-3 border rounded bg-background">
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">
+                          Response from company (Application: {app.id.slice(0, 8)}...)
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Uploaded: {new Date(app.company_response_uploaded_at || app.updated_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => window.open(app.company_response_letter_url, '_blank')}
+                      >
+                        <FileCheck className="h-4 w-4 mr-1" />
+                        View Letter
                       </Button>
                     </div>
                   ))}
