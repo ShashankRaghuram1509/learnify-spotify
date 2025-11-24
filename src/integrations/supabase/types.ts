@@ -1011,6 +1011,8 @@ export type Database = {
       student_applications: {
         Row: {
           applied_at: string
+          company_response_letter_url: string | null
+          company_response_uploaded_at: string | null
           cover_letter: string | null
           id: string
           job_role_id: string
@@ -1023,6 +1025,8 @@ export type Database = {
         }
         Insert: {
           applied_at?: string
+          company_response_letter_url?: string | null
+          company_response_uploaded_at?: string | null
           cover_letter?: string | null
           id?: string
           job_role_id: string
@@ -1035,6 +1039,8 @@ export type Database = {
         }
         Update: {
           applied_at?: string
+          company_response_letter_url?: string | null
+          company_response_uploaded_at?: string | null
           cover_letter?: string | null
           id?: string
           job_role_id?: string
