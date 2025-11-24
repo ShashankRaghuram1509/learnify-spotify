@@ -20,7 +20,7 @@ export default function PlacementAssistance() {
 
   const hasValidSubscription = (() => {
     if (!subscriptionTier) return false;
-    const valid = ["Lite", "Premium", "Premium Pro"].includes(subscriptionTier);
+    const valid = ["pro", "premium", "Lite", "Premium", "Premium Pro"].includes(subscriptionTier);
     if (!valid) return false;
     if (!subscriptionExpiresAt) return true;
     return new Date(subscriptionExpiresAt) > new Date();

@@ -62,7 +62,16 @@ serve(async (req) => {
       );
     }
 
-    const { email, password, fullName } = await req.json();
+    const { 
+      email, 
+      password, 
+      fullName, 
+      experienceLevel,
+      linkedin,
+      phone,
+      resumeUrl,
+      college 
+    } = await req.json();
 
     if (!email || !password || !fullName) {
       return new Response(
@@ -159,6 +168,24 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
+    }
+
+    // Update the profile with all additional info
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({ 
+        full_name: fullName,
+        experience_level: experienceLevel || null,
+        linkedin_url: linkedin || null,
+        phone: phone || null,
+        resume_url: resumeUrl || null,
+        college: college || null
+      })
+      .eq('id', newUser.user.id);
+
+    if (profileError) {
+      console.error('Profile update error:', profileError);
+      throw new Error('Failed to update profile');
     }
 
     console.log('Instructor created successfully:', newUser.user.id);
