@@ -82,31 +82,59 @@ export default function PlacementReview() {
 
       const studentIds = [...new Set(enrollments.map(e => e.student_id))];
 
-      // Get applications from these students with related data
-      const { data, error } = await supabase
+      // Fetch applications, job roles, companies, and profiles separately
+      const { data: applicationsData, error: appsError } = await supabase
         .from('student_applications')
-        .select(`
-          *,
-          profiles!student_id(full_name, email),
-          job_roles!job_role_id(
-            title,
-            companies!company_id(name)
-          )
-        `)
+        .select('*')
         .in('student_id', studentIds)
         .order('applied_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching applications:', error);
+      if (appsError) {
+        console.error('Error fetching applications:', appsError);
         toast.error('Failed to fetch applications');
         return;
       }
 
-      if (data) {
-        setApplications(data as any);
-      } else {
+      if (!applicationsData || applicationsData.length === 0) {
         setApplications([]);
+        return;
       }
+
+      // Fetch student profiles
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', studentIds);
+
+      // Fetch job roles with companies
+      const jobRoleIds = [...new Set(applicationsData.map(app => app.job_role_id))];
+      const { data: jobRolesData } = await supabase
+        .from('job_roles')
+        .select('id, title, company_id');
+
+      const companyIds = jobRolesData ? [...new Set(jobRolesData.map(jr => jr.company_id))] : [];
+      const { data: companiesData } = await supabase
+        .from('companies')
+        .select('id, name')
+        .in('id', companyIds);
+
+      // Combine the data
+      const enrichedApplications = applicationsData.map(app => {
+        const profile = profilesData?.find(p => p.id === app.student_id);
+        const jobRole = jobRolesData?.find(jr => jr.id === app.job_role_id);
+        const company = companiesData?.find(c => c.id === jobRole?.company_id);
+
+        return {
+          ...app,
+          profiles: profile,
+          job_roles: {
+            title: jobRole?.title,
+            companies: { name: company?.name }
+          }
+        };
+      });
+
+      setApplications(enrichedApplications as any);
     } catch (err) {
       console.error('Unexpected error:', err);
       toast.error('An unexpected error occurred');
@@ -115,7 +143,6 @@ export default function PlacementReview() {
 
   const handleSubmitFeedback = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedApp) return;
 
     const formData = new FormData(e.currentTarget);
     
