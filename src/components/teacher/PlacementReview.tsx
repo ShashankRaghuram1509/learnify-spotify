@@ -143,6 +143,7 @@ export default function PlacementReview() {
 
   const handleSubmitFeedback = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!selectedApp) return;
 
     const formData = new FormData(e.currentTarget);
     
@@ -161,7 +162,8 @@ export default function PlacementReview() {
       });
 
     if (error) {
-      toast.error("Failed to submit feedback");
+      console.error("Feedback submission error:", error);
+      toast.error(`Failed to submit feedback: ${error.message}`);
     } else {
       toast.success("Feedback submitted successfully");
       setShowFeedbackDialog(false);
@@ -252,14 +254,15 @@ export default function PlacementReview() {
           </DialogHeader>
           <form onSubmit={handleSubmitFeedback} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="rating">Overall Rating (1-10) *</Label>
+              <Label htmlFor="rating">Overall Rating (1-5) *</Label>
               <Input
                 id="rating"
                 name="rating"
                 type="number"
                 min="1"
-                max="10"
+                max="5"
                 required
+                placeholder="Rate from 1 to 5"
               />
             </div>
             <div className="space-y-2">
