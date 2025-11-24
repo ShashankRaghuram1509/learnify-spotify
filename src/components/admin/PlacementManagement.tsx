@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Building2, Briefcase, Users, FileText } from "lucide-react";
+import { Plus, Building2, Briefcase, Users, FileText, Download, Package } from "lucide-react";
 
 export default function PlacementManagement() {
   const [companies, setCompanies] = useState<any[]>([]);
@@ -163,8 +163,137 @@ export default function PlacementManagement() {
       toast.error("Failed to update status");
     } else {
       toast.success("Application status updated");
-      fetchData(); // Refresh data after successful update
+      fetchData();
     }
+  };
+
+  const downloadApplicationPackage = async (app: any) => {
+    try {
+      toast.loading("Preparing application package...");
+      
+      // Fetch teacher feedback
+      const { data: feedback } = await supabase
+        .from('teacher_feedback')
+        .select('*, profiles!teacher_feedback_teacher_id_fkey(full_name)')
+        .eq('student_id', app.student_id);
+
+      // Fetch certificates
+      const { data: certificates } = await supabase
+        .from('certificates')
+        .select('*, courses(title)')
+        .eq('student_id', app.student_id);
+
+      // Generate recommendation letter
+      const letterContent = generateRecommendationLetter(app, feedback);
+      
+      // Create downloadable content
+      let packageContent = `APPLICATION PACKAGE FOR ${app.profiles?.full_name}\n`;
+      packageContent += `================================================\n\n`;
+      packageContent += `JOB ROLE: ${app.job_roles?.title}\n`;
+      packageContent += `COMPANY: ${app.job_roles?.companies?.name}\n`;
+      packageContent += `APPLICATION DATE: ${new Date(app.applied_at).toLocaleDateString()}\n`;
+      packageContent += `STATUS: ${app.status}\n\n`;
+      
+      if (app.resume_url) {
+        packageContent += `RESUME: ${app.resume_url}\n\n`;
+      }
+
+      if (app.cover_letter) {
+        packageContent += `COVER LETTER:\n${app.cover_letter}\n\n`;
+      }
+
+      if (feedback && feedback.length > 0) {
+        packageContent += `TEACHER REVIEWS:\n`;
+        packageContent += `================================================\n`;
+        feedback.forEach((f: any) => {
+          packageContent += `Teacher: ${f.profiles?.full_name}\n`;
+          packageContent += `Rating: ${f.rating}/5\n`;
+          packageContent += `Technical Skills: ${f.technical_skills || 'N/A'}\n`;
+          packageContent += `Soft Skills: ${f.soft_skills || 'N/A'}\n`;
+          packageContent += `Strengths: ${f.strengths || 'N/A'}\n`;
+          packageContent += `Areas for Improvement: ${f.areas_for_improvement || 'N/A'}\n`;
+          packageContent += `Recommendation: ${f.recommendation || 'N/A'}\n\n`;
+        });
+      }
+
+      if (certificates && certificates.length > 0) {
+        packageContent += `CERTIFICATES:\n`;
+        packageContent += `================================================\n`;
+        certificates.forEach((cert: any) => {
+          packageContent += `Course: ${cert.courses?.title}\n`;
+          packageContent += `Issued: ${new Date(cert.issued_at).toLocaleDateString()}\n`;
+          if (cert.certificate_url) {
+            packageContent += `Certificate URL: ${cert.certificate_url}\n`;
+          }
+          packageContent += `\n`;
+        });
+      }
+
+      packageContent += `\n\nLETTER OF RECOMMENDATION:\n`;
+      packageContent += `================================================\n`;
+      packageContent += letterContent;
+
+      // Save recommendation letter URL to database
+      await supabase
+        .from('student_applications')
+        .update({ 
+          recommendation_letter_url: 'generated',
+          recommendation_generated_at: new Date().toISOString()
+        })
+        .eq('id', app.id);
+
+      // Download as text file
+      const blob = new Blob([packageContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `application_package_${app.profiles?.full_name?.replace(/\s+/g, '_')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.dismiss();
+      toast.success("Application package downloaded");
+      fetchData();
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Failed to generate package");
+      console.error(error);
+    }
+  };
+
+  const generateRecommendationLetter = (app: any, feedback: any[]) => {
+    const studentName = app.profiles?.full_name || 'Student';
+    const companyName = app.job_roles?.companies?.name || 'Company';
+    const position = app.job_roles?.title || 'Position';
+    
+    let letter = `To Whom It May Concern,\n\n`;
+    letter += `I am pleased to recommend ${studentName} for the position of ${position} at ${companyName}.\n\n`;
+    
+    if (feedback && feedback.length > 0) {
+      letter += `${studentName} has been an outstanding student in our program, earning high praise from multiple instructors:\n\n`;
+      
+      feedback.forEach((f: any, index: number) => {
+        const teacherName = f.profiles?.full_name || 'Instructor';
+        letter += `${teacherName} rated ${studentName} ${f.rating}/5 and noted:\n`;
+        if (f.strengths) {
+          letter += `- Strengths: ${f.strengths}\n`;
+        }
+        if (f.recommendation) {
+          letter += `- Recommendation: ${f.recommendation}\n`;
+        }
+        letter += `\n`;
+      });
+    }
+
+    letter += `Based on their performance and dedication, I strongly recommend ${studentName} for this opportunity. They have demonstrated the skills, commitment, and professionalism that would make them a valuable asset to your organization.\n\n`;
+    letter += `Please feel free to contact us if you require any additional information.\n\n`;
+    letter += `Sincerely,\n`;
+    letter += `Academic Administration\n`;
+    letter += `Date: ${new Date().toLocaleDateString()}\n`;
+    
+    return letter;
   };
 
   return (
@@ -323,6 +452,7 @@ export default function PlacementManagement() {
                 <TableHead>Resume</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
+                <TableHead>Download</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -367,6 +497,20 @@ export default function PlacementManagement() {
                         <SelectItem value="selected">Selected</SelectItem>
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell>
+                    {app.status === 'shortlisted' || app.status === 'selected' ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadApplicationPackage(app)}
+                      >
+                        <Package className="h-4 w-4 mr-1" />
+                        Package
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">-</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
