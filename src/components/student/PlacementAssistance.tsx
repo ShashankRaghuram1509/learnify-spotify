@@ -213,22 +213,28 @@ export default function PlacementAssistance() {
             </div>
           </div>
 
-          {applications.some(a => a.recommendation_letter_url && (a.status === 'shortlisted' || a.status === 'selected')) && (
+          {applications.some(a => a.status === 'shortlisted' || a.status === 'selected') && (
             <div className="p-4 border rounded-lg bg-muted/50">
-              <h3 className="font-semibold mb-3">Recommendation Letters</h3>
+              <h3 className="font-semibold mb-3">Recommendation Letters Available</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Your application has been shortlisted! Download your recommendation letter below.
+              </p>
               <div className="space-y-2">
                 {applications
-                  .filter(a => a.recommendation_letter_url && (a.status === 'shortlisted' || a.status === 'selected'))
+                  .filter(a => a.status === 'shortlisted' || a.status === 'selected')
                   .map(app => (
-                    <div key={app.id} className="flex items-center justify-between p-2 border rounded">
-                      <span className="text-sm">Application ID: {app.id.slice(0, 8)}...</span>
+                    <div key={app.id} className="flex items-center justify-between p-3 border rounded bg-background">
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">Application ID: {app.id.slice(0, 8)}...</div>
+                        <div className="text-xs text-muted-foreground">Status: {app.status}</div>
+                      </div>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="default"
                         onClick={() => downloadRecommendationLetter(app)}
                       >
                         <Download className="h-4 w-4 mr-1" />
-                        Download
+                        Download Letter
                       </Button>
                     </div>
                   ))}
