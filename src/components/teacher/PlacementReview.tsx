@@ -74,8 +74,8 @@ export default function PlacementReview() {
       .from('student_applications')
       .select(`
         *,
-        profiles!student_applications_student_id_fkey(full_name, email),
-        job_roles(title, companies!job_roles_company_id_fkey(name))
+        profiles:student_id(full_name, email),
+        job_roles:job_role_id(title, companies:company_id(name))
       `)
       .in('student_id', studentIds)
       .order('applied_at', { ascending: false });
