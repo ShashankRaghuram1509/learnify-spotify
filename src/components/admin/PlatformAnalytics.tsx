@@ -48,9 +48,14 @@ export default function PlatformAnalytics() {
     // Enrollments
     const { count: totalEnrollments } = await supabase.from('enrollments').select('*', { count: 'exact', head: true });
     
-    // Revenue
-    const { data: payments } = await supabase.from('payments').select('amount').eq('status', 'completed');
+    // Revenue - Include ALL completed payments (courses + subscriptions)
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('amount, plan_name')
+      .eq('status', 'completed');
+    
     const totalRevenue = payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+    const subscriptionRevenue = payments?.filter(p => p.plan_name).reduce((sum, p) => sum + Number(p.amount), 0) || 0;
     
     // Today's signups
     const today = new Date().toISOString().split('T')[0];
@@ -70,38 +75,53 @@ export default function PlatformAnalytics() {
       newSignupsToday: newSignupsToday || 0
     });
 
-    // Revenue trends (last 7 days)
+    // Revenue trends (last 7 days) - with all days filled
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const { data: recentPayments } = await supabase
       .from('payments')
-      .select('created_at, amount')
+      .select('created_at, amount, plan_name')
       .eq('status', 'completed')
-      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('created_at', sevenDaysAgo.toISOString())
       .order('created_at');
 
-    const revenueByDay = recentPayments?.reduce((acc: any, payment) => {
-      const date = new Date(payment.created_at).toLocaleDateString();
-      if (!acc[date]) acc[date] = 0;
-      acc[date] += Number(payment.amount);
-      return acc;
-    }, {});
+    // Create array with all 7 days
+    const revenueTrends: any[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayRevenue = recentPayments?.filter(p => p.created_at.startsWith(dateStr))
+        .reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      
+      revenueTrends.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        amount: dayRevenue
+      });
+    }
 
-    setRevenueData(Object.entries(revenueByDay || {}).map(([date, amount]) => ({ date, amount })));
+    setRevenueData(revenueTrends);
 
-    // Enrollment trends (last 30 days)
+    // Enrollment trends (last 30 days) - with all days filled
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const { data: recentEnrollments } = await supabase
       .from('enrollments')
       .select('enrolled_at')
-      .gte('enrolled_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('enrolled_at', thirtyDaysAgo.toISOString())
       .order('enrolled_at');
 
-    const enrollmentsByDay = recentEnrollments?.reduce((acc: any, enrollment) => {
-      const date = new Date(enrollment.enrolled_at).toLocaleDateString();
-      if (!acc[date]) acc[date] = 0;
-      acc[date]++;
-      return acc;
-    }, {});
+    // Create array with all 30 days
+    const enrollTrends: any[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayEnrollments = recentEnrollments?.filter(e => e.enrolled_at.startsWith(dateStr)).length || 0;
+      
+      enrollTrends.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        count: dayEnrollments
+      });
+    }
 
-    setEnrollmentTrends(Object.entries(enrollmentsByDay || {}).map(([date, count]) => ({ date, count })));
+    setEnrollmentTrends(enrollTrends);
   };
 
   const userDistribution = [
@@ -141,7 +161,7 @@ export default function PlatformAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{stats.totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">From {stats.totalEnrollments} enrollments</p>
+            <p className="text-xs text-muted-foreground">From courses & premium subscriptions</p>
           </CardContent>
         </Card>
 
@@ -167,10 +187,21 @@ export default function PlatformAnalytics() {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={revenueData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="amount" stroke="#10b981" strokeWidth={2} />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => `₹${value}`}
+                />
+                <Tooltip 
+                  formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, 'Revenue']}
+                />
+                <Line type="monotone" dataKey="amount" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -185,9 +216,16 @@ export default function PlatformAnalytics() {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={enrollmentTrends}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 10 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  interval="preserveStartEnd"
+                />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(value: any) => [value, 'Enrollments']} />
                 <Bar dataKey="count" fill="#3b82f6" />
               </BarChart>
             </ResponsiveContainer>
