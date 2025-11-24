@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Briefcase, Building2, DollarSign, Clock, Lock } from "lucide-react";
+import { Briefcase, Building2, DollarSign, Clock, Lock, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function PlacementAssistance() {
@@ -90,6 +90,76 @@ export default function PlacementAssistance() {
     return applications.find(app => app.job_role_id === jobId)?.status;
   };
 
+  const downloadRecommendationLetter = async (app: any) => {
+    try {
+      toast.loading("Generating recommendation letter...");
+
+      // Fetch job role details
+      const { data: jobRole } = await supabase
+        .from('job_roles')
+        .select('*, companies(name)')
+        .eq('id', app.job_role_id)
+        .single();
+
+      // Fetch teacher feedback
+      const { data: feedback } = await supabase
+        .from('teacher_feedback')
+        .select('*, profiles!teacher_feedback_teacher_id_fkey(full_name)')
+        .eq('student_id', user?.id);
+
+      // Fetch profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user?.id)
+        .single();
+
+      // Generate letter
+      let letter = `LETTER OF RECOMMENDATION\n`;
+      letter += `================================================\n\n`;
+      letter += `To Whom It May Concern,\n\n`;
+      letter += `This is to certify that ${profile?.full_name || 'the student'} has successfully completed our training program and has applied for the position of ${jobRole?.title} at ${jobRole?.companies?.name}.\n\n`;
+      
+      if (feedback && feedback.length > 0) {
+        letter += `Performance Summary:\n\n`;
+        feedback.forEach((f: any) => {
+          const teacherName = f.profiles?.full_name || 'Instructor';
+          letter += `Instructor: ${teacherName}\n`;
+          letter += `Rating: ${f.rating}/5\n`;
+          if (f.technical_skills) letter += `Technical Skills: ${f.technical_skills}\n`;
+          if (f.soft_skills) letter += `Soft Skills: ${f.soft_skills}\n`;
+          if (f.strengths) letter += `Strengths: ${f.strengths}\n`;
+          if (f.recommendation) letter += `Recommendation: ${f.recommendation}\n`;
+          letter += `\n`;
+        });
+      }
+
+      letter += `We strongly recommend this candidate for the position and believe they will be a valuable asset to your organization.\n\n`;
+      letter += `For any queries, please feel free to contact us.\n\n`;
+      letter += `Sincerely,\n`;
+      letter += `Academic Administration\n`;
+      letter += `Date: ${new Date().toLocaleDateString()}\n`;
+
+      // Download
+      const blob = new Blob([letter], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `recommendation_letter_${profile?.full_name?.replace(/\s+/g, '_')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.dismiss();
+      toast.success("Recommendation letter downloaded");
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Failed to generate letter");
+      console.error(error);
+    }
+  };
+
   if (!hasValidSubscription) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -121,7 +191,7 @@ export default function PlacementAssistance() {
           <CardTitle>My Applications</CardTitle>
           <CardDescription>Track your job applications</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-blue-500">
@@ -137,11 +207,34 @@ export default function PlacementAssistance() {
             </div>
             <div className="text-center p-4 border rounded-lg">
               <div className="text-2xl font-bold text-emerald-500">
-                {applications.filter(a => a.status === 'shortlisted').length}
+                {applications.filter(a => a.status === 'shortlisted' || a.status === 'selected').length}
               </div>
-              <div className="text-sm text-muted-foreground">Shortlisted</div>
+              <div className="text-sm text-muted-foreground">Shortlisted/Selected</div>
             </div>
           </div>
+
+          {applications.some(a => a.recommendation_letter_url && (a.status === 'shortlisted' || a.status === 'selected')) && (
+            <div className="p-4 border rounded-lg bg-muted/50">
+              <h3 className="font-semibold mb-3">Recommendation Letters</h3>
+              <div className="space-y-2">
+                {applications
+                  .filter(a => a.recommendation_letter_url && (a.status === 'shortlisted' || a.status === 'selected'))
+                  .map(app => (
+                    <div key={app.id} className="flex items-center justify-between p-2 border rounded">
+                      <span className="text-sm">Application ID: {app.id.slice(0, 8)}...</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => downloadRecommendationLetter(app)}
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Download
+                      </Button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
