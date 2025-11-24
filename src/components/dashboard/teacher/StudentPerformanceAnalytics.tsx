@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Clock, Award, TrendingUp, AlertTriangle, User } from "lucide-react";
+import { Clock, Award, TrendingUp, AlertTriangle, User, DollarSign } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 interface StudentData {
@@ -39,13 +39,51 @@ export default function StudentPerformanceAnalytics() {
   const [students, setStudents] = useState<StudentData[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [completedPayments, setCompletedPayments] = useState(0);
 
   useEffect(() => {
     if (user) {
       fetchStudentData();
+      fetchRevenueData();
       setupRealtimeSubscription();
     }
   }, [user]);
+
+  const fetchRevenueData = async () => {
+    if (!user) return;
+
+    try {
+      // Get teacher's courses
+      const { data: courses } = await supabase
+        .from("courses")
+        .select("id")
+        .eq("teacher_id", user.id);
+
+      if (!courses || courses.length === 0) {
+        setTotalRevenue(0);
+        setCompletedPayments(0);
+        return;
+      }
+
+      const courseIds = courses.map(c => c.id);
+
+      // Fetch payments for teacher's courses
+      const { data: payments } = await supabase
+        .from("payments")
+        .select("amount, status")
+        .in("course_id", courseIds)
+        .eq("status", "completed");
+
+      if (payments) {
+        const revenue = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+        setTotalRevenue(revenue);
+        setCompletedPayments(payments.length);
+      }
+    } catch (error) {
+      console.error("Error fetching revenue data:", error);
+    }
+  };
 
   const setupRealtimeSubscription = () => {
     const channel = supabase
@@ -76,6 +114,15 @@ export default function StudentPerformanceAnalytics() {
           table: 'assignment_submissions',
         },
         () => fetchStudentData()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'payments',
+        },
+        () => fetchRevenueData()
       )
       .subscribe();
 
@@ -227,6 +274,34 @@ export default function StudentPerformanceAnalytics() {
 
   return (
     <div className="space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="border-l-4 border-l-emerald-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-emerald-600">₹{totalRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              from {completedPayments} completed payments
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-amber-500">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <User className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">{students.length}</div>
+            <p className="text-xs text-muted-foreground">
+              enrolled across your courses
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
