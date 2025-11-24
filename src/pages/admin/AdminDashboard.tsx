@@ -5,11 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { UserPlus, Shield } from "lucide-react";
+import PlatformAnalytics from "@/components/admin/PlatformAnalytics";
+import StudentTeacherMonitoring from "@/components/admin/StudentTeacherMonitoring";
+import PlacementManagement from "@/components/admin/PlacementManagement";
 
 export default function AdminDashboard() {
   const { userRole, loading } = useAuth();
@@ -69,94 +73,96 @@ export default function AdminDashboard() {
               <h1 className="text-3xl font-bold">Admin Dashboard</h1>
             </div>
             <p className="text-muted-foreground">
-              Manage platform instructors and settings
+              Platform analytics, user monitoring, and placement management
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="md:col-span-2 lg:col-span-2">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-primary" />
-                  <CardTitle>Create Instructor Account</CardTitle>
-                </div>
-                <CardDescription>
-                  Add a new instructor to the platform with secure credentials
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleCreateInstructor} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                      placeholder="John Doe"
-                      maxLength={100}
-                    />
-                  </div>
+          <Tabs defaultValue="analytics" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="monitoring">Users</TabsTrigger>
+              <TabsTrigger value="placement">Placement</TabsTrigger>
+              <TabsTrigger value="instructor">Add Instructor</TabsTrigger>
+            </TabsList>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      placeholder="instructor@example.com"
-                      maxLength={255}
-                    />
-                  </div>
+            <TabsContent value="analytics" className="space-y-6">
+              <PlatformAnalytics />
+            </TabsContent>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Initial Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      placeholder="••••••••"
-                      minLength={8}
-                      maxLength={100}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Must be at least 8 characters
-                    </p>
-                  </div>
+            <TabsContent value="monitoring" className="space-y-6">
+              <StudentTeacherMonitoring />
+            </TabsContent>
 
-                  <Button type="submit" disabled={creating} className="w-full">
-                    {creating ? "Creating Account..." : "Create Instructor Account"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            <TabsContent value="placement" className="space-y-6">
+              <PlacementManagement />
+            </TabsContent>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Stats</CardTitle>
-                <CardDescription>Platform overview</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                  <span className="text-sm font-medium">Total Instructors</span>
-                  <span className="text-2xl font-bold text-primary">-</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                  <span className="text-sm font-medium">Total Students</span>
-                  <span className="text-2xl font-bold text-primary">-</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                  <span className="text-sm font-medium">Active Courses</span>
-                  <span className="text-2xl font-bold text-primary">-</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+            <TabsContent value="instructor" className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <UserPlus className="h-5 w-5 text-primary" />
+                      <CardTitle>Create Instructor Account</CardTitle>
+                    </div>
+                    <CardDescription>
+                      Add a new instructor to the platform with secure credentials
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleCreateInstructor} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">Full Name</Label>
+                        <Input
+                          id="fullName"
+                          type="text"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          required
+                          placeholder="John Doe"
+                          maxLength={100}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          placeholder="instructor@example.com"
+                          maxLength={255}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Initial Password</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          placeholder="••••••••"
+                          minLength={8}
+                          maxLength={100}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Must be at least 8 characters
+                        </p>
+                      </div>
+
+                      <Button type="submit" disabled={creating} className="w-full">
+                        {creating ? "Creating Account..." : "Create Instructor Account"}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 

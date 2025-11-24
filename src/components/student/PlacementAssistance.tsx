@@ -1,0 +1,245 @@
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import { Briefcase, Building2, DollarSign, Clock, Lock } from "lucide-react";
+import { Link } from "react-router-dom";
+
+export default function PlacementAssistance() {
+  const { user, subscriptionTier, subscriptionExpiresAt } = useAuth();
+  const [jobRoles, setJobRoles] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [showApplyDialog, setShowApplyDialog] = useState(false);
+
+  const hasValidSubscription = (() => {
+    if (!subscriptionTier) return false;
+    const valid = ["Lite", "Premium", "Premium Pro"].includes(subscriptionTier);
+    if (!valid) return false;
+    if (!subscriptionExpiresAt) return true;
+    return new Date(subscriptionExpiresAt) > new Date();
+  })();
+
+  useEffect(() => {
+    if (user && hasValidSubscription) {
+      fetchData();
+
+      const channel = supabase
+        .channel('student-placement-changes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'job_roles' }, fetchData)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'student_applications' }, fetchData)
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user, hasValidSubscription]);
+
+  const fetchData = async () => {
+    const { data: jobs } = await supabase
+      .from('job_roles')
+      .select('*, companies(*)')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false });
+
+    const { data: apps } = await supabase
+      .from('student_applications')
+      .select('*')
+      .eq('student_id', user?.id);
+
+    setJobRoles(jobs || []);
+    setApplications(apps || []);
+  };
+
+  const handleApply = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    const { error } = await supabase.from('student_applications').insert({
+      student_id: user?.id,
+      job_role_id: selectedJob.id,
+      cover_letter: formData.get('cover_letter') as string,
+      resume_url: formData.get('resume_url') as string,
+    });
+
+    if (error) {
+      if (error.code === '23505') {
+        toast.error("You have already applied for this role");
+      } else {
+        toast.error("Failed to submit application");
+      }
+    } else {
+      toast.success("Application submitted successfully");
+      setShowApplyDialog(false);
+      e.currentTarget.reset();
+    }
+  };
+
+  const hasApplied = (jobId: string) => {
+    return applications.some(app => app.job_role_id === jobId);
+  };
+
+  const getApplicationStatus = (jobId: string) => {
+    return applications.find(app => app.job_role_id === jobId)?.status;
+  };
+
+  if (!hasValidSubscription) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Card className="max-w-md">
+          <CardHeader className="text-center">
+            <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <CardTitle>Premium Feature</CardTitle>
+            <CardDescription>
+              Placement assistance is available only for Premium subscribers
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-sm text-muted-foreground mb-4">
+              Upgrade to Premium to access exclusive job opportunities and placement assistance
+            </p>
+            <Button asChild>
+              <Link to="/dashboard/student/upgrade">Upgrade to Premium</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>My Applications</CardTitle>
+          <CardDescription>Track your job applications</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="text-center p-4 border rounded-lg">
+              <div className="text-2xl font-bold text-blue-500">
+                {applications.length}
+              </div>
+              <div className="text-sm text-muted-foreground">Total Applied</div>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <div className="text-2xl font-bold text-amber-500">
+                {applications.filter(a => a.status === 'pending').length}
+              </div>
+              <div className="text-sm text-muted-foreground">Pending</div>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <div className="text-2xl font-bold text-emerald-500">
+                {applications.filter(a => a.status === 'shortlisted').length}
+              </div>
+              <div className="text-sm text-muted-foreground">Shortlisted</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold">Available Opportunities</h2>
+        <div className="grid gap-4 md:grid-cols-2">
+          {jobRoles.map((job) => (
+            <Card key={job.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-xl">{job.title}</CardTitle>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Building2 className="h-4 w-4" />
+                      {job.companies?.name}
+                    </div>
+                  </div>
+                  {hasApplied(job.id) && (
+                    <Badge variant={
+                      getApplicationStatus(job.id) === 'selected' ? 'default' :
+                      getApplicationStatus(job.id) === 'shortlisted' ? 'secondary' :
+                      getApplicationStatus(job.id) === 'rejected' ? 'destructive' : 'outline'
+                    }>
+                      {getApplicationStatus(job.id)}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {job.description}
+                </p>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    <span className="capitalize">{job.experience_level} Level</span>
+                  </div>
+                  {job.salary_min && job.salary_max && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <DollarSign className="h-4 w-4 text-muted-foreground" />
+                      <span>₹{job.salary_min.toLocaleString()} - ₹{job.salary_max.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    <span>Posted {new Date(job.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                <Dialog open={showApplyDialog && selectedJob?.id === job.id} onOpenChange={(open) => {
+                  setShowApplyDialog(open);
+                  if (open) setSelectedJob(job);
+                }}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      className="w-full" 
+                      disabled={hasApplied(job.id)}
+                    >
+                      {hasApplied(job.id) ? 'Already Applied' : 'Apply Now'}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Apply for {job.title}</DialogTitle>
+                      <DialogDescription>{job.companies?.name}</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleApply} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="resume_url">Resume URL</Label>
+                        <input
+                          id="resume_url"
+                          name="resume_url"
+                          type="url"
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          placeholder="https://..."
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cover_letter">Cover Letter</Label>
+                        <Textarea
+                          id="cover_letter"
+                          name="cover_letter"
+                          placeholder="Tell us why you're a great fit..."
+                          rows={6}
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">Submit Application</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
