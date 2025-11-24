@@ -43,52 +43,73 @@ export default function PlacementReview() {
   }, [user]);
 
   const fetchApplications = async () => {
-    // First get courses taught by this teacher
-    const { data: teacherCourses } = await supabase
-      .from('courses')
-      .select('id')
-      .eq('teacher_id', user?.id);
+    try {
+      // First get courses taught by this teacher
+      const { data: teacherCourses, error: coursesError } = await supabase
+        .from('courses')
+        .select('id')
+        .eq('teacher_id', user?.id);
 
-    if (!teacherCourses || teacherCourses.length === 0) {
-      setApplications([]);
-      return;
-    }
+      if (coursesError) {
+        console.error('Error fetching courses:', coursesError);
+        toast.error('Failed to fetch courses');
+        return;
+      }
 
-    const courseIds = teacherCourses.map(c => c.id);
+      if (!teacherCourses || teacherCourses.length === 0) {
+        setApplications([]);
+        return;
+      }
 
-    // Get students enrolled in these courses
-    const { data: enrollments } = await supabase
-      .from('enrollments')
-      .select('student_id')
-      .in('course_id', courseIds);
+      const courseIds = teacherCourses.map(c => c.id);
 
-    if (!enrollments || enrollments.length === 0) {
-      setApplications([]);
-      return;
-    }
+      // Get students enrolled in these courses
+      const { data: enrollments, error: enrollmentsError } = await supabase
+        .from('enrollments')
+        .select('student_id')
+        .in('course_id', courseIds);
 
-    const studentIds = [...new Set(enrollments.map(e => e.student_id))];
+      if (enrollmentsError) {
+        console.error('Error fetching enrollments:', enrollmentsError);
+        toast.error('Failed to fetch enrollments');
+        return;
+      }
 
-    // Get applications from these students
-    const { data, error } = await supabase
-      .from('student_applications')
-      .select(`
-        *,
-        profiles:student_id(full_name, email),
-        job_roles:job_role_id(title, companies:company_id(name))
-      `)
-      .in('student_id', studentIds)
-      .order('applied_at', { ascending: false });
+      if (!enrollments || enrollments.length === 0) {
+        setApplications([]);
+        return;
+      }
 
-    if (error) {
-      console.error('Error fetching applications:', error);
-      toast.error('Failed to fetch applications');
-    }
+      const studentIds = [...new Set(enrollments.map(e => e.student_id))];
 
-    if (data) {
-      setApplications(data as any);
-    } else {
-      setApplications([]);
+      // Get applications from these students with related data
+      const { data, error } = await supabase
+        .from('student_applications')
+        .select(`
+          *,
+          profiles!student_id(full_name, email),
+          job_roles!job_role_id(
+            title,
+            companies!company_id(name)
+          )
+        `)
+        .in('student_id', studentIds)
+        .order('applied_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching applications:', error);
+        toast.error('Failed to fetch applications');
+        return;
+      }
+
+      if (data) {
+        setApplications(data as any);
+      } else {
+        setApplications([]);
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      toast.error('An unexpected error occurred');
     }
   };
 
