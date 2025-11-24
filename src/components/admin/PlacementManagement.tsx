@@ -56,32 +56,49 @@ export default function PlacementManagement() {
       if (appsData && appsData.length > 0) {
         // Fetch student profiles
         const studentIds = [...new Set(appsData.map(app => app.student_id))];
-        const { data: profilesData } = await supabase
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, full_name, email')
           .in('id', studentIds);
 
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        }
+
         // Fetch job roles with companies
         const jobRoleIds = [...new Set(appsData.map(app => app.job_role_id))];
-        const { data: jobRolesWithCompanies } = await supabase
+        const { data: jobRolesWithCompanies, error: jobRolesError } = await supabase
           .from('job_roles')
-          .select('id, title, company_id, companies(name)');
+          .select('id, title, company_id, companies(name)')
+          .in('id', jobRoleIds);
+
+        if (jobRolesError) {
+          console.error('Error fetching job roles:', jobRolesError);
+        }
 
         // Combine the data
         const enrichedApplications = appsData.map(app => {
           const profile = profilesData?.find(p => p.id === app.student_id);
           const jobRole = jobRolesWithCompanies?.find(jr => jr.id === app.job_role_id);
 
+          console.log('Enriching app:', {
+            appId: app.id,
+            studentId: app.student_id,
+            profile,
+            jobRole
+          });
+
           return {
             ...app,
-            profiles: profile,
+            profiles: profile || { full_name: 'Unknown', email: 'N/A' },
             job_roles: {
-              title: jobRole?.title,
-              companies: jobRole?.companies
+              title: jobRole?.title || 'N/A',
+              companies: jobRole?.companies || { name: 'N/A' }
             }
           };
         });
 
+        console.log('Setting enriched applications:', enrichedApplications);
         setApplications(enrichedApplications);
       } else {
         setApplications([]);
