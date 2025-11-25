@@ -116,11 +116,22 @@ export default function VideoCallManagement() {
           setEnrolledStudents([]);
         }
 
-        // Fetch upcoming sessions
+        // Delete old sessions (ended more than 1 hour ago)
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+        await supabase
+          .from("video_call_schedules")
+          .delete()
+          .eq("teacher_id", user.id)
+          .lt("scheduled_at", oneHourAgo);
+
+        // Fetch upcoming sessions (future sessions only)
+        const now = new Date().toISOString();
         const { data, error } = await supabase
           .from("video_call_schedules")
           .select("*")
-          .eq("teacher_id", user.id);
+          .eq("teacher_id", user.id)
+          .gte("scheduled_at", now)
+          .order("scheduled_at", { ascending: true });
         if (error) throw error;
         setUpcomingSessions(data || []);
       } catch (error) {
@@ -142,7 +153,9 @@ export default function VideoCallManagement() {
       return;
     }
 
-    const sessionTime = `${format(date, "yyyy-MM-dd")}T${time}`;
+    // Create local datetime and convert to ISO string (UTC)
+    const localDateTime = new Date(`${format(date, "yyyy-MM-dd")}T${time}`);
+    const sessionTime = localDateTime.toISOString();
     
     try {
       const selected = enrolledStudents.find(s => s.student_id === selectedStudentId);

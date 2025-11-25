@@ -30,8 +30,16 @@ export default function VideoCallReminders() {
 
   const fetchUpcomingSessions = async () => {
     try {
-      const now = new Date();
-      const from = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour back to include just-started sessions
+      // Delete old sessions (ended more than 1 hour ago)
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      await supabase
+        .from("video_call_schedules")
+        .delete()
+        .eq("student_id", user?.id)
+        .lt("scheduled_at", oneHourAgo);
+
+      // Fetch upcoming sessions (future sessions only)
+      const now = new Date().toISOString();
       const { data, error } = await supabase
         .from("video_call_schedules")
         .select(`
@@ -46,7 +54,7 @@ export default function VideoCallReminders() {
         `)
         .eq("student_id", user?.id)
         .in("status", ["scheduled", "in-progress"]) 
-        .gte("scheduled_at", from.toISOString())
+        .gte("scheduled_at", now)
         .order("scheduled_at", { ascending: true })
         .limit(5);
 
