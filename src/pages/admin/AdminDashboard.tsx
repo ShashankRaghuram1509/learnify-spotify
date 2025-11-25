@@ -88,16 +88,16 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs defaultValue="analytics" className="space-y-6">
-            <div className="overflow-x-auto pb-2">
-              <TabsList className="inline-flex w-auto min-w-full">
-                <TabsTrigger value="analytics" className="whitespace-nowrap">Analytics</TabsTrigger>
-                <TabsTrigger value="users" className="whitespace-nowrap">Users</TabsTrigger>
-                <TabsTrigger value="courses" className="whitespace-nowrap">Courses</TabsTrigger>
-                <TabsTrigger value="monitoring" className="whitespace-nowrap">Monitoring</TabsTrigger>
-                <TabsTrigger value="placement" className="whitespace-nowrap">Placement</TabsTrigger>
-                <TabsTrigger value="reviews" className="whitespace-nowrap">Reviews</TabsTrigger>
-                <TabsTrigger value="mou" className="whitespace-nowrap">MOU Partners</TabsTrigger>
-                <TabsTrigger value="instructor" className="whitespace-nowrap">Add Instructor</TabsTrigger>
+            <div className="w-full overflow-x-auto scrollbar-thin">
+              <TabsList className="inline-flex w-auto h-auto p-1 gap-1">
+                <TabsTrigger value="analytics" className="whitespace-nowrap px-4">Analytics</TabsTrigger>
+                <TabsTrigger value="users" className="whitespace-nowrap px-4">Users</TabsTrigger>
+                <TabsTrigger value="courses" className="whitespace-nowrap px-4">Courses</TabsTrigger>
+                <TabsTrigger value="monitoring" className="whitespace-nowrap px-4">Monitoring</TabsTrigger>
+                <TabsTrigger value="placement" className="whitespace-nowrap px-4">Placement</TabsTrigger>
+                <TabsTrigger value="reviews" className="whitespace-nowrap px-4">Reviews</TabsTrigger>
+                <TabsTrigger value="mou" className="whitespace-nowrap px-4">MOU Partners</TabsTrigger>
+                <TabsTrigger value="instructor" className="whitespace-nowrap px-4">Add Instructor</TabsTrigger>
               </TabsList>
             </div>
 
