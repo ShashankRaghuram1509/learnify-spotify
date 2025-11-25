@@ -16,6 +16,7 @@ import StudentTeacherMonitoring from "@/components/admin/StudentTeacherMonitorin
 import PlacementManagement from "@/components/admin/PlacementManagement";
 import MOUManagement from "@/components/admin/MOUManagement";
 import CourseReviewsManagement from "@/components/admin/CourseReviewsManagement";
+import UserManagement from "@/components/admin/UserManagement";
 
 export default function AdminDashboard() {
   const { userRole, loading } = useAuth();
@@ -86,9 +87,10 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs defaultValue="analytics" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="monitoring">Users</TabsTrigger>
+              <TabsTrigger value="users">User Management</TabsTrigger>
+              <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
               <TabsTrigger value="placement">Placement</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
               <TabsTrigger value="mou">MOU Partners</TabsTrigger>
@@ -97,6 +99,10 @@ export default function AdminDashboard() {
 
             <TabsContent value="analytics" className="space-y-6">
               <PlatformAnalytics />
+            </TabsContent>
+
+            <TabsContent value="users" className="space-y-6">
+              <UserManagement />
             </TabsContent>
 
             <TabsContent value="monitoring" className="space-y-6">
