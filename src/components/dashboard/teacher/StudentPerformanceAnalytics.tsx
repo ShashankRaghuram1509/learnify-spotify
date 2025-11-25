@@ -109,7 +109,11 @@ export default function StudentPerformanceAnalytics() {
           schema: 'public',
           table: 'enrollments',
         },
-        () => fetchStudentData()
+        () => {
+          console.log('Enrollment updated in teacher view, refetching...');
+          fetchStudentData();
+          fetchRevenueData();
+        }
       )
       .on(
         'postgres_changes',
@@ -118,7 +122,10 @@ export default function StudentPerformanceAnalytics() {
           schema: 'public',
           table: 'student_test_attempts',
         },
-        () => fetchStudentData()
+        () => {
+          console.log('Test attempt updated in teacher view, refetching...');
+          fetchStudentData();
+        }
       )
       .on(
         'postgres_changes',
@@ -127,7 +134,10 @@ export default function StudentPerformanceAnalytics() {
           schema: 'public',
           table: 'assignment_submissions',
         },
-        () => fetchStudentData()
+        () => {
+          console.log('Assignment submission updated in teacher view, refetching...');
+          fetchStudentData();
+        }
       )
       .on(
         'postgres_changes',
@@ -136,7 +146,10 @@ export default function StudentPerformanceAnalytics() {
           schema: 'public',
           table: 'payments',
         },
-        () => fetchRevenueData()
+        () => {
+          console.log('Payment updated, refetching revenue...');
+          fetchRevenueData();
+        }
       )
       .subscribe();
 
@@ -164,11 +177,16 @@ export default function StudentPerformanceAnalytics() {
 
       const courseIds = courses.map(c => c.id);
 
-      // Get enrollments for teacher's courses
+      // Get enrollments for teacher's courses with explicit fields
       const { data: enrollments } = await supabase
         .from("enrollments")
-        .select("*")
+        .select("student_id, course_id, progress, video_minutes_watched, test_progress_bonus")
         .in("course_id", courseIds);
+      
+      console.log('Fetched enrollments with progress bonus:', enrollments?.map(e => ({
+        student_id: e.student_id,
+        bonus: e.test_progress_bonus
+      })));
 
       if (!enrollments || enrollments.length === 0) {
         setStudents([]);

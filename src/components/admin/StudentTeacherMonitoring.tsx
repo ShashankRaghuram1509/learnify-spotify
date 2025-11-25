@@ -17,6 +17,51 @@ export default function StudentTeacherMonitoring() {
 
   useEffect(() => {
     fetchData();
+    
+    // Set up real-time subscriptions for admin monitoring
+    const channel = supabase
+      .channel('admin-monitoring-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'enrollments',
+        },
+        () => {
+          console.log('Enrollment updated, refetching admin monitoring...');
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'courses',
+        },
+        () => {
+          console.log('Course updated, refetching admin monitoring...');
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+        },
+        () => {
+          console.log('Profile updated, refetching admin monitoring...');
+          fetchData();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchData = async () => {
