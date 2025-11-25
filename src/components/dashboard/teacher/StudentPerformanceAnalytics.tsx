@@ -268,7 +268,7 @@ export default function StudentPerformanceAnalytics() {
       setStudents(studentsArray);
 
       if (studentsArray.length > 0 && !selectedStudent) {
-        setSelectedStudent(studentsArray[0].id);
+        setSelectedStudent("all");
       }
     } catch (error) {
       console.error("Error fetching student data:", error);
@@ -291,17 +291,80 @@ export default function StudentPerformanceAnalytics() {
     );
   }
 
-  const currentStudent = students.find(s => s.id === selectedStudent);
+  const currentStudent = selectedStudent === "all" ? null : students.find(s => s.id === selectedStudent);
 
-  if (!currentStudent) return null;
+  // Calculate aggregated data for "All Students" view
+  const allStudentsData = {
+    totalVideoMinutes: students.reduce((sum, s) => sum + s.enrollmentData.reduce((s2, e) => s2 + e.videoMinutesWatched, 0), 0),
+    averageProgress: students.length > 0
+      ? Math.round(
+          students.reduce((sum, s) => {
+            const studentAvg = s.enrollmentData.length > 0
+              ? s.enrollmentData.reduce((s2, e) => s2 + e.progress, 0) / s.enrollmentData.length
+              : 0;
+            return sum + studentAvg;
+          }, 0) / students.length
+        )
+      : 0,
+    totalTestBonus: students.reduce((sum, s) => sum + s.enrollmentData.reduce((s2, e) => s2 + e.testProgressBonus, 0), 0),
+    totalTestAttempts: students.reduce((sum, s) => sum + s.testAttempts.total, 0),
+    passedTestAttempts: students.reduce((sum, s) => sum + s.testAttempts.passed, 0),
+    totalViolations: students.reduce((sum, s) => sum + s.violations.count, 0),
+  };
 
-  const totalVideoMinutes = currentStudent.enrollmentData.reduce((sum, e) => sum + e.videoMinutesWatched, 0);
-  const averageProgress = currentStudent.enrollmentData.length > 0
-    ? Math.round(currentStudent.enrollmentData.reduce((sum, e) => sum + e.progress, 0) / currentStudent.enrollmentData.length)
+  const allStudentsTestSuccessRate = allStudentsData.totalTestAttempts > 0
+    ? Math.round((allStudentsData.passedTestAttempts / allStudentsData.totalTestAttempts) * 100)
     : 0;
-  const totalTestBonus = currentStudent.enrollmentData.reduce((sum, e) => sum + e.testProgressBonus, 0);
-  const testSuccessRate = currentStudent.testAttempts.total > 0
-    ? Math.round((currentStudent.testAttempts.passed / currentStudent.testAttempts.total) * 100)
+
+  // Course-wise aggregated data
+  const courseWiseData = new Map<string, {
+    title: string;
+    totalProgress: number;
+    studentCount: number;
+    totalVideoMinutes: number;
+    totalTestBonus: number;
+  }>();
+
+  students.forEach(student => {
+    student.enrollmentData.forEach(enrollment => {
+      if (!courseWiseData.has(enrollment.courseTitle)) {
+        courseWiseData.set(enrollment.courseTitle, {
+          title: enrollment.courseTitle,
+          totalProgress: 0,
+          studentCount: 0,
+          totalVideoMinutes: 0,
+          totalTestBonus: 0,
+        });
+      }
+      const course = courseWiseData.get(enrollment.courseTitle)!;
+      course.totalProgress += enrollment.progress;
+      course.studentCount += 1;
+      course.totalVideoMinutes += enrollment.videoMinutesWatched;
+      course.totalTestBonus += enrollment.testProgressBonus;
+    });
+  });
+
+  const courseWiseArray = Array.from(courseWiseData.values()).map(course => ({
+    ...course,
+    avgProgress: Math.round(course.totalProgress / course.studentCount),
+  }));
+
+  // Compute values for individual student
+  const totalVideoMinutes = currentStudent
+    ? currentStudent.enrollmentData.reduce((sum, e) => sum + e.videoMinutesWatched, 0)
+    : 0;
+  const averageProgress = currentStudent
+    ? currentStudent.enrollmentData.length > 0
+      ? Math.round(currentStudent.enrollmentData.reduce((sum, e) => sum + e.progress, 0) / currentStudent.enrollmentData.length)
+      : 0
+    : 0;
+  const totalTestBonus = currentStudent
+    ? currentStudent.enrollmentData.reduce((sum, e) => sum + e.testProgressBonus, 0)
+    : 0;
+  const testSuccessRate = currentStudent
+    ? currentStudent.testAttempts.total > 0
+      ? Math.round((currentStudent.testAttempts.passed / currentStudent.testAttempts.total) * 100)
+      : 0
     : 0;
 
   return (
@@ -343,6 +406,7 @@ export default function StudentPerformanceAnalytics() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">All Students</SelectItem>
                 {students.map(student => (
                   <SelectItem key={student.id} value={student.id}>
                     {student.full_name}
@@ -352,12 +416,14 @@ export default function StudentPerformanceAnalytics() {
             </Select>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <User className="h-4 w-4" />
-            {currentStudent.email}
-          </div>
-        </CardContent>
+        {currentStudent && (
+          <CardContent>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+              <User className="h-4 w-4" />
+              {currentStudent.email}
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -367,11 +433,18 @@ export default function StudentPerformanceAnalytics() {
             <TrendingUp className="h-4 w-4 text-cyan-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-cyan-600">{averageProgress}%</div>
+            <div className="text-2xl font-bold text-cyan-600">
+              {currentStudent ? averageProgress : allStudentsData.averageProgress}%
+            </div>
             <p className="text-xs text-muted-foreground">
-              across {currentStudent.enrollmentData.length} courses
+              {currentStudent
+                ? `across ${currentStudent.enrollmentData.length} courses`
+                : `average across ${students.length} students`}
             </p>
-            <Progress value={averageProgress} className="mt-2 [&>div]:bg-cyan-500" />
+            <Progress
+              value={currentStudent ? averageProgress : allStudentsData.averageProgress}
+              className="mt-2 [&>div]:bg-cyan-500"
+            />
           </CardContent>
         </Card>
 
@@ -381,7 +454,9 @@ export default function StudentPerformanceAnalytics() {
             <Clock className="h-4 w-4 text-indigo-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-indigo-600">{totalVideoMinutes}</div>
+            <div className="text-2xl font-bold text-indigo-600">
+              {currentStudent ? totalVideoMinutes : allStudentsData.totalVideoMinutes}
+            </div>
             <p className="text-xs text-muted-foreground">minutes watched</p>
           </CardContent>
         </Card>
@@ -392,11 +467,18 @@ export default function StudentPerformanceAnalytics() {
             <Award className="h-4 w-4 text-rose-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-rose-600">{testSuccessRate}%</div>
+            <div className="text-2xl font-bold text-rose-600">
+              {currentStudent ? testSuccessRate : allStudentsTestSuccessRate}%
+            </div>
             <p className="text-xs text-muted-foreground">
-              {currentStudent.testAttempts.passed} / {currentStudent.testAttempts.total} passed
+              {currentStudent
+                ? `${currentStudent.testAttempts.passed} / ${currentStudent.testAttempts.total} passed`
+                : `${allStudentsData.passedTestAttempts} / ${allStudentsData.totalTestAttempts} passed`}
             </p>
-            <Progress value={testSuccessRate} className="mt-2 [&>div]:bg-rose-500" />
+            <Progress
+              value={currentStudent ? testSuccessRate : allStudentsTestSuccessRate}
+              className="mt-2 [&>div]:bg-rose-500"
+            />
           </CardContent>
         </Card>
 
@@ -406,13 +488,15 @@ export default function StudentPerformanceAnalytics() {
             <TrendingUp className="h-4 w-4 text-teal-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-teal-600">+{totalTestBonus}%</div>
+            <div className="text-2xl font-bold text-teal-600">
+              +{currentStudent ? totalTestBonus : allStudentsData.totalTestBonus}%
+            </div>
             <p className="text-xs text-muted-foreground">from test achievements</p>
           </CardContent>
         </Card>
       </div>
 
-      {currentStudent.violations.blockedUntil && (
+      {currentStudent && currentStudent.violations.blockedUntil && (
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
@@ -434,104 +518,134 @@ export default function StudentPerformanceAnalytics() {
         </Card>
       )}
 
-      <Card className="border-l-4 border-l-blue-500">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-blue-500" />
-            Areas of Improvement
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {averageProgress < 30 && (
-              <div className="flex gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-amber-900 dark:text-amber-100">Low Course Progress</p>
-                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                    Student is behind schedule. Consider scheduling a check-in call to address any blockers.
-                  </p>
+      {currentStudent && (
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              Areas of Improvement
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {averageProgress < 30 && (
+                <div className="flex gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-amber-900 dark:text-amber-100">Low Course Progress</p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                      Student is behind schedule. Consider scheduling a check-in call to address any blockers.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            {testSuccessRate < 60 && currentStudent.testAttempts.total > 0 && (
-              <div className="flex gap-3 p-3 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-800">
-                <AlertTriangle className="h-5 w-5 text-rose-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-rose-900 dark:text-rose-100">Low Test Success Rate</p>
-                  <p className="text-xs text-rose-700 dark:text-rose-300 mt-1">
-                    Student is struggling with assessments. Recommend reviewing course materials and offering additional practice exercises.
-                  </p>
+              )}
+              
+              {testSuccessRate < 60 && currentStudent.testAttempts.total > 0 && (
+                <div className="flex gap-3 p-3 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-800">
+                  <AlertTriangle className="h-5 w-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-rose-900 dark:text-rose-100">Low Test Success Rate</p>
+                    <p className="text-xs text-rose-700 dark:text-rose-300 mt-1">
+                      Student is struggling with assessments. Recommend reviewing course materials and offering additional practice exercises.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            {totalVideoMinutes < 60 && currentStudent.enrollmentData.length > 0 && (
-              <div className="flex gap-3 p-3 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                <Clock className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Limited Video Engagement</p>
-                  <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
-                    Low video watch time indicates minimal engagement. Consider sending motivational messages or breaking content into shorter segments.
-                  </p>
+              )}
+              
+              {totalVideoMinutes < 60 && currentStudent.enrollmentData.length > 0 && (
+                <div className="flex gap-3 p-3 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                  <Clock className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Limited Video Engagement</p>
+                    <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
+                      Low video watch time indicates minimal engagement. Consider sending motivational messages or breaking content into shorter segments.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            {currentStudent.violations.count > 0 && (
-              <div className="flex gap-3 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
-                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-red-900 dark:text-red-100">Proctoring Violations Detected</p>
-                  <p className="text-xs text-red-700 dark:text-red-300 mt-1">
-                    {currentStudent.violations.count} violation(s) recorded. Discuss academic integrity policies with the student.
-                  </p>
+              )}
+              
+              {currentStudent.violations.count > 0 && (
+                <div className="flex gap-3 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-red-900 dark:text-red-100">Proctoring Violations Detected</p>
+                    <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+                      {currentStudent.violations.count} violation(s) recorded. Discuss academic integrity policies with the student.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {averageProgress >= 70 && testSuccessRate >= 80 && totalVideoMinutes >= 120 && currentStudent.violations.count === 0 && (
-              <div className="flex gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                <Award className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">Excellent Performance!</p>
-                  <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
-                    Student is performing exceptionally well across all metrics. Consider offering advanced challenges or mentorship opportunities.
-                  </p>
+              {averageProgress >= 70 && testSuccessRate >= 80 && totalVideoMinutes >= 120 && currentStudent.violations.count === 0 && (
+                <div className="flex gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                  <Award className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">Excellent Performance!</p>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
+                      Student is performing exceptionally well across all metrics. Consider offering advanced challenges or mentorship opportunities.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Course-wise Performance</CardTitle>
+          <CardTitle>
+            {currentStudent ? 'Course-wise Performance' : 'Course-wise Performance (All Students)'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {currentStudent.enrollmentData.map((enrollment, index) => {
-              const colors = ['bg-violet-500', 'bg-orange-500', 'bg-sky-500', 'bg-pink-500', 'bg-lime-500'];
-              const borderColors = ['border-l-violet-500', 'border-l-orange-500', 'border-l-sky-500', 'border-l-pink-500', 'border-l-lime-500'];
-              const progressColor = colors[index % colors.length];
-              const borderColor = borderColors[index % borderColors.length];
-              
-              return (
-                <div key={index} className={`border-l-4 ${borderColor} pl-4 space-y-2`}>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">{enrollment.courseTitle}</span>
-                    <Badge variant="outline">{enrollment.progress}%</Badge>
+            {currentStudent ? (
+              currentStudent.enrollmentData.map((enrollment, index) => {
+                const colors = ['bg-violet-500', 'bg-orange-500', 'bg-sky-500', 'bg-pink-500', 'bg-lime-500'];
+                const borderColors = ['border-l-violet-500', 'border-l-orange-500', 'border-l-sky-500', 'border-l-pink-500', 'border-l-lime-500'];
+                const progressColor = colors[index % colors.length];
+                const borderColor = borderColors[index % borderColors.length];
+                
+                return (
+                  <div key={index} className={`border-l-4 ${borderColor} pl-4 space-y-2`}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">{enrollment.courseTitle}</span>
+                      <Badge variant="outline">{enrollment.progress}%</Badge>
+                    </div>
+                    <Progress value={enrollment.progress} className={`[&>div]:${progressColor}`} />
+                    <div className="flex gap-4 text-xs text-muted-foreground">
+                      <span>📹 {enrollment.videoMinutesWatched} min</span>
+                      <span>🏆 +{enrollment.testProgressBonus}%</span>
+                    </div>
                   </div>
-                  <Progress value={enrollment.progress} className={`[&>div]:${progressColor}`} />
-                  <div className="flex gap-4 text-xs text-muted-foreground">
-                    <span>📹 {enrollment.videoMinutesWatched} min</span>
-                    <span>🏆 +{enrollment.testProgressBonus}%</span>
+                );
+              })
+            ) : (
+              courseWiseArray.map((course, index) => {
+                const colors = ['bg-violet-500', 'bg-orange-500', 'bg-sky-500', 'bg-pink-500', 'bg-lime-500'];
+                const borderColors = ['border-l-violet-500', 'border-l-orange-500', 'border-l-sky-500', 'border-l-pink-500', 'border-l-lime-500'];
+                const progressColor = colors[index % colors.length];
+                const borderColor = borderColors[index % borderColors.length];
+                
+                return (
+                  <div key={index} className={`border-l-4 ${borderColor} pl-4 space-y-2`}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">{course.title}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">{course.studentCount} students</Badge>
+                        <Badge variant="outline">{course.avgProgress}%</Badge>
+                      </div>
+                    </div>
+                    <Progress value={course.avgProgress} className={`[&>div]:${progressColor}`} />
+                    <div className="flex gap-4 text-xs text-muted-foreground">
+                      <span>📹 {course.totalVideoMinutes} min total</span>
+                      <span>🏆 +{course.totalTestBonus}% total bonus</span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </CardContent>
       </Card>
