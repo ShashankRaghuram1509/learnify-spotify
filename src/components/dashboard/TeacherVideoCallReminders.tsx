@@ -32,6 +32,15 @@ export default function TeacherVideoCallReminders() {
 
   const fetchUpcomingSessions = async () => {
     try {
+      // Delete old sessions (ended more than 1 hour ago)
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      await supabase
+        .from("video_call_schedules")
+        .delete()
+        .eq("teacher_id", user?.id)
+        .lt("scheduled_at", oneHourAgo);
+
+      // Fetch upcoming sessions (future only)
       const now = new Date().toISOString();
       const { data, error } = await supabase
         .from("video_call_schedules")
