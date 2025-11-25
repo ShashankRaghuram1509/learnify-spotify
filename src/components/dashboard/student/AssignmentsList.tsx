@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, Clock, Award, AlertCircle, Eye } from "lucide-react";
+import { FileText, Clock, Award, AlertCircle, Eye, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -133,6 +133,12 @@ export default function AssignmentsList() {
                 <Badge variant={assignment.type === "test" ? "default" : "secondary"}>
                   {assignment.type}
                 </Badge>
+                {assignment.attachment_url && assignment.attachment_url.includes('docs.google.com/forms') && (
+                  <Badge variant="outline" className="gap-1">
+                    <FileSpreadsheet className="w-3 h-3" />
+                    Google Form
+                  </Badge>
+                )}
                 {assignment.submission?.status && (
                   <Badge
                     variant={
@@ -208,15 +214,17 @@ export default function AssignmentsList() {
                       )}
                     </DialogContent>
                   </Dialog>
-                )}
-                {assignment.attachment_url && (
-                  <Button variant="outline" asChild>
-                    <a href={assignment.attachment_url} target="_blank" rel="noopener noreferrer">
-                      <Eye className="w-4 h-4 mr-2" />
-                      View Attachment
-                    </a>
-                  </Button>
-                )}
+                 )}
+                 {assignment.attachment_url && (
+                   <Button variant="outline" asChild>
+                     <a href={assignment.attachment_url} target="_blank" rel="noopener noreferrer">
+                       <Eye className="w-4 h-4 mr-2" />
+                       {assignment.attachment_url.includes('docs.google.com/forms') 
+                         ? 'Open Google Form' 
+                         : 'View Attachment'}
+                     </a>
+                   </Button>
+                 )}
               </div>
             </div>
           </CardContent>
