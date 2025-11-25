@@ -416,6 +416,78 @@ export default function StudentPerformanceAnalytics() {
         </Card>
       )}
 
+      <Card className="border-l-4 border-l-blue-500">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-blue-500" />
+            Areas of Improvement
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {averageProgress < 30 && (
+              <div className="flex gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-100">Low Course Progress</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                    Student is behind schedule. Consider scheduling a check-in call to address any blockers.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {testSuccessRate < 60 && currentStudent.testAttempts.total > 0 && (
+              <div className="flex gap-3 p-3 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-800">
+                <AlertTriangle className="h-5 w-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-rose-900 dark:text-rose-100">Low Test Success Rate</p>
+                  <p className="text-xs text-rose-700 dark:text-rose-300 mt-1">
+                    Student is struggling with assessments. Recommend reviewing course materials and offering additional practice exercises.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {totalVideoMinutes < 60 && currentStudent.enrollmentData.length > 0 && (
+              <div className="flex gap-3 p-3 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                <Clock className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Limited Video Engagement</p>
+                  <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
+                    Low video watch time indicates minimal engagement. Consider sending motivational messages or breaking content into shorter segments.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {currentStudent.violations.count > 0 && (
+              <div className="flex gap-3 p-3 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200 dark:border-red-800">
+                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-red-900 dark:text-red-100">Proctoring Violations Detected</p>
+                  <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+                    {currentStudent.violations.count} violation(s) recorded. Discuss academic integrity policies with the student.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {averageProgress >= 70 && testSuccessRate >= 80 && totalVideoMinutes >= 120 && currentStudent.violations.count === 0 && (
+              <div className="flex gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <Award className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">Excellent Performance!</p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
+                    Student is performing exceptionally well across all metrics. Consider offering advanced challenges or mentorship opportunities.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Course-wise Performance</CardTitle>
