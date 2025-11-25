@@ -54,10 +54,10 @@ export default function StudentPerformanceAnalytics() {
     if (!user) return;
 
     try {
-      // Get teacher's courses
+      // Get teacher's courses with prices
       const { data: courses } = await supabase
         .from("courses")
-        .select("id")
+        .select("id, price")
         .eq("teacher_id", user.id);
 
       if (!courses || courses.length === 0) {
@@ -66,20 +66,34 @@ export default function StudentPerformanceAnalytics() {
         return;
       }
 
-      const courseIds = courses.map(c => c.id);
+      const courseIds = courses.map((c) => c.id);
 
-      // Fetch payments for teacher's courses
-      const { data: payments } = await supabase
-        .from("payments")
-        .select("amount, status")
-        .in("course_id", courseIds)
-        .eq("status", "completed");
+      // Get enrollments for teacher's courses
+      const { data: enrollments } = await supabase
+        .from("enrollments")
+        .select("course_id")
+        .in("course_id", courseIds);
 
-      if (payments) {
-        const revenue = payments.reduce((sum, p) => sum + Number(p.amount), 0);
-        setTotalRevenue(revenue);
-        setCompletedPayments(payments.length);
+      if (!enrollments || enrollments.length === 0) {
+        setTotalRevenue(0);
+        setCompletedPayments(0);
+        return;
       }
+
+      // Map course prices
+      const priceMap = new Map<string, number>();
+      courses.forEach((course) => {
+        priceMap.set(course.id, Number(course.price) || 0);
+      });
+
+      // Total revenue is sum of course price per enrollment
+      const revenue = enrollments.reduce((sum, enrollment) => {
+        const coursePrice = priceMap.get(enrollment.course_id) ?? 0;
+        return sum + coursePrice;
+      }, 0);
+
+      setTotalRevenue(revenue);
+      setCompletedPayments(enrollments.length);
     } catch (error) {
       console.error("Error fetching revenue data:", error);
     }
@@ -283,7 +297,7 @@ export default function StudentPerformanceAnalytics() {
           <CardContent>
             <div className="text-2xl font-bold text-emerald-600">₹{totalRevenue.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              from {completedPayments} completed payments
+              from {completedPayments} enrolled students
             </p>
           </CardContent>
         </Card>
