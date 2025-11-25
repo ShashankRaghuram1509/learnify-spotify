@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
-import { Users, BookOpen, DollarSign, UserPlus } from "lucide-react";
+import { Users, BookOpen, DollarSign, UserPlus, TrendingUp, AlertTriangle, Award } from "lucide-react";
 import DateRangeSelector from "./analytics/DateRangeSelector";
 import FinancialMetrics from "./analytics/FinancialMetrics";
 import TopCoursesCard from "./analytics/TopCoursesCard";
@@ -194,6 +194,79 @@ export default function PlatformAnalytics() {
 
       {/* Activity Metrics */}
       <ActivityMetrics />
+
+      {/* Platform Health Insights */}
+      <Card className="border-l-4 border-l-blue-500">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-blue-500" />
+            Platform Health & Areas of Improvement
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {stats.totalEnrollments / Math.max(stats.totalCourses, 1) < 5 && stats.totalCourses > 0 && (
+              <div className="flex gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-100">Low Enrollment Rate</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                    Average {(stats.totalEnrollments / Math.max(stats.totalCourses, 1)).toFixed(1)} enrollments per course. Consider promotional campaigns or course visibility improvements.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {stats.totalTeachers < 5 && (
+              <div className="flex gap-3 p-3 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                <Users className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100">Limited Teacher Pool</p>
+                  <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
+                    Only {stats.totalTeachers} teachers on platform. Consider teacher recruitment campaigns to expand course offerings.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {stats.courseRevenue / Math.max(stats.totalRevenue, 1) < 0.3 && stats.totalRevenue > 0 && (
+              <div className="flex gap-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <DollarSign className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-purple-900 dark:text-purple-100">Low Course Revenue</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                    Course sales represent only {((stats.courseRevenue / Math.max(stats.totalRevenue, 1)) * 100).toFixed(0)}% of total revenue. Consider promoting individual courses or adjusting pricing.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {stats.newSignupsToday === 0 && (
+              <div className="flex gap-3 p-3 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-200 dark:border-rose-800">
+                <UserPlus className="h-5 w-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-rose-900 dark:text-rose-100">No New Signups Today</p>
+                  <p className="text-xs text-rose-700 dark:text-rose-300 mt-1">
+                    No new user registrations today. Review marketing efforts and user acquisition strategies.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {stats.totalStudents > 50 && stats.totalTeachers > 5 && stats.totalEnrollments / Math.max(stats.totalCourses, 1) >= 5 && (
+              <div className="flex gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <Award className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">Strong Platform Growth!</p>
+                  <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-1">
+                    Platform showing healthy metrics across users, courses, and engagement. Continue current strategies.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Revenue & Enrollment Trends */}
       <div className="grid gap-4 md:grid-cols-2">

@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { AlertTriangle, BookOpen, Users, TrendingDown } from "lucide-react";
 
 export default function StudentTeacherMonitoring() {
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -97,6 +98,45 @@ export default function StudentTeacherMonitoring() {
       </TabsList>
 
       <TabsContent value="teachers" className="space-y-4">
+        {/* Teacher Insights */}
+        <Card className="border-l-4 border-l-purple-500">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-purple-500" />
+              Teachers Requiring Attention
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {teachers.filter(t => t.totalCourses === 0).length > 0 && (
+                <div className="text-sm p-2 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
+                  <p className="font-medium text-amber-900 dark:text-amber-100">
+                    <BookOpen className="h-3 w-3 inline mr-1" />
+                    {teachers.filter(t => t.totalCourses === 0).length} teacher(s) without courses
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                    Reach out to onboard and help create their first course.
+                  </p>
+                </div>
+              )}
+              {teachers.filter(t => t.totalStudents === 0 && t.totalCourses > 0).length > 0 && (
+                <div className="text-sm p-2 bg-indigo-50 dark:bg-indigo-950/20 rounded border border-indigo-200 dark:border-indigo-800">
+                  <p className="font-medium text-indigo-900 dark:text-indigo-100">
+                    <Users className="h-3 w-3 inline mr-1" />
+                    {teachers.filter(t => t.totalStudents === 0 && t.totalCourses > 0).length} teacher(s) with no enrollments
+                  </p>
+                  <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
+                    Help promote their courses or review course visibility settings.
+                  </p>
+                </div>
+              )}
+              {teachers.filter(t => t.totalCourses === 0).length === 0 && teachers.filter(t => t.totalStudents === 0 && t.totalCourses > 0).length === 0 && (
+                <p className="text-sm text-muted-foreground">All teachers are performing well!</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {teachers.map((teacher) => (
             <Card key={teacher.id}>
@@ -138,6 +178,56 @@ export default function StudentTeacherMonitoring() {
       </TabsContent>
 
       <TabsContent value="students" className="space-y-4">
+        {/* Student Insights */}
+        <Card className="border-l-4 border-l-blue-500">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-blue-500" />
+              Students Requiring Attention
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {students.filter(s => s.totalCourses === 0).length > 0 && (
+                <div className="text-sm p-2 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
+                  <p className="font-medium text-amber-900 dark:text-amber-100">
+                    <BookOpen className="h-3 w-3 inline mr-1" />
+                    {students.filter(s => s.totalCourses === 0).length} student(s) not enrolled in any course
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                    Send course recommendations to encourage enrollment.
+                  </p>
+                </div>
+              )}
+              {students.filter(s => s.avgProgress < 20 && s.totalCourses > 0).length > 0 && (
+                <div className="text-sm p-2 bg-rose-50 dark:bg-rose-950/20 rounded border border-rose-200 dark:border-rose-800">
+                  <p className="font-medium text-rose-900 dark:text-rose-100">
+                    <TrendingDown className="h-3 w-3 inline mr-1" />
+                    {students.filter(s => s.avgProgress < 20 && s.totalCourses > 0).length} student(s) with very low progress (&lt;20%)
+                  </p>
+                  <p className="text-xs text-rose-700 dark:text-rose-300 mt-1">
+                    May be at risk of dropping out. Consider engagement campaigns.
+                  </p>
+                </div>
+              )}
+              {students.filter(s => s.subscription_tier === 'free' || !s.subscription_tier).length > students.length * 0.8 && (
+                <div className="text-sm p-2 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
+                  <p className="font-medium text-purple-900 dark:text-purple-100">
+                    <Users className="h-3 w-3 inline mr-1" />
+                    High proportion of free-tier users ({Math.round((students.filter(s => s.subscription_tier === 'free' || !s.subscription_tier).length / Math.max(students.length, 1)) * 100)}%)
+                  </p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                    Promote premium features to increase conversion rates.
+                  </p>
+                </div>
+              )}
+              {students.filter(s => s.totalCourses === 0).length === 0 && students.filter(s => s.avgProgress < 20 && s.totalCourses > 0).length === 0 && (
+                <p className="text-sm text-muted-foreground">All students are actively engaged!</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {students.map((student) => (
             <Card key={student.id}>
