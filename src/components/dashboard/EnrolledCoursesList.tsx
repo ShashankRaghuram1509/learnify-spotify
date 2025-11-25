@@ -34,6 +34,7 @@ export default function EnrolledCoursesList() {
         .select(`
           id,
           progress,
+          test_progress_bonus,
           courses (
             id,
             title,
@@ -63,14 +64,20 @@ export default function EnrolledCoursesList() {
         }, {}) || {};
       }
 
-      const formattedCourses = data?.map((enrollment: any) => ({
-        id: enrollment.courses.id,
-        title: enrollment.courses.title,
-        description: enrollment.courses.description || "No description available",
-        progress: enrollment.progress || 0,
-        thumbnail_url: enrollment.courses.thumbnail_url,
-        teacher_name: teacherProfiles[enrollment.courses.teacher_id]?.full_name || "Unknown Teacher",
-      })) || [];
+      const formattedCourses = data?.map((enrollment: any) => {
+        const rawProgress = enrollment.progress || 0;
+        const bonus = enrollment.test_progress_bonus || 0;
+        const combinedProgress = Math.min(rawProgress + bonus, 100);
+
+        return {
+          id: enrollment.courses.id,
+          title: enrollment.courses.title,
+          description: enrollment.courses.description || "No description available",
+          progress: combinedProgress,
+          thumbnail_url: enrollment.courses.thumbnail_url,
+          teacher_name: teacherProfiles[enrollment.courses.teacher_id]?.full_name || "Unknown Teacher",
+        };
+      }) || [];
 
       setCourses(formattedCourses);
     } catch (error: any) {

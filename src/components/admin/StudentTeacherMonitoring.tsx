@@ -114,10 +114,15 @@ export default function StudentTeacherMonitoring() {
         (studentProfiles || []).map(async (student) => {
           const { data: enrollments } = await supabase
             .from('enrollments')
-            .select('*, courses(title)')
+            .select('progress, test_progress_bonus, courses(title)')
             .eq('student_id', student.id);
 
-          const avgProgress = enrollments?.reduce((sum, e) => sum + (e.progress || 0), 0) / (enrollments?.length || 1) || 0;
+          const avgProgress = enrollments && enrollments.length > 0
+            ? enrollments.reduce((sum, e) => {
+                const combined = Math.min((e.progress || 0) + (e.test_progress_bonus || 0), 100);
+                return sum + combined;
+              }, 0) / enrollments.length
+            : 0;
 
           return {
             ...student,

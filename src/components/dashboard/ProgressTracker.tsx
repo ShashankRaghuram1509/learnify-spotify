@@ -24,15 +24,24 @@ export default function ProgressTracker() {
     try {
       const { data: enrollments, error } = await supabase
         .from("enrollments")
-        .select("progress, completed_at")
+        .select("progress, test_progress_bonus, completed_at")
         .eq("student_id", user?.id);
 
       if (error) throw error;
 
       const totalCourses = enrollments?.length || 0;
-      const completedCourses = enrollments?.filter(e => e.completed_at)?.length || 0;
+      const completedCourses = enrollments?.filter(e => {
+        const combined = Math.min((e.progress || 0) + (e.test_progress_bonus || 0), 100);
+        return combined >= 100 || e.completed_at;
+      })?.length || 0;
+
       const averageProgress = totalCourses > 0
-        ? Math.round(enrollments.reduce((sum, e) => sum + e.progress, 0) / totalCourses)
+        ? Math.round(
+            enrollments.reduce((sum, e) => {
+              const combined = Math.min((e.progress || 0) + (e.test_progress_bonus || 0), 100);
+              return sum + combined;
+            }, 0) / totalCourses
+          )
         : 0;
 
       setStats({
