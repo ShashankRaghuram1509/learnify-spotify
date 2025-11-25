@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
-import { Users, BookOpen, DollarSign, TrendingUp, Clock, UserPlus } from "lucide-react";
+import { Users, BookOpen, DollarSign, UserPlus } from "lucide-react";
+import DateRangeSelector from "./analytics/DateRangeSelector";
+import FinancialMetrics from "./analytics/FinancialMetrics";
+import TopCoursesCard from "./analytics/TopCoursesCard";
+import ActivityMetrics from "./analytics/ActivityMetrics";
 
 export default function PlatformAnalytics() {
   const [stats, setStats] = useState({
@@ -12,12 +16,15 @@ export default function PlatformAnalytics() {
     totalCourses: 0,
     totalEnrollments: 0,
     totalRevenue: 0,
-    activeToday: 0,
+    subscriptionRevenue: 0,
+    courseRevenue: 0,
     newSignupsToday: 0
   });
 
   const [revenueData, setRevenueData] = useState<any[]>([]);
   const [enrollmentTrends, setEnrollmentTrends] = useState<any[]>([]);
+  const [revenueDateRange, setRevenueDateRange] = useState("7");
+  const [enrollmentDateRange, setEnrollmentDateRange] = useState("30");
 
   useEffect(() => {
     fetchAnalytics();
@@ -31,7 +38,7 @@ export default function PlatformAnalytics() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [revenueDateRange, enrollmentDateRange]);
 
   const fetchAnalytics = async () => {
     // Total users
@@ -51,11 +58,12 @@ export default function PlatformAnalytics() {
     // Revenue - Include ALL completed payments (courses + subscriptions)
     const { data: payments } = await supabase
       .from('payments')
-      .select('amount, plan_name')
+      .select('amount, plan_name, course_id')
       .eq('status', 'completed');
     
     const totalRevenue = payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-    const subscriptionRevenue = payments?.filter(p => p.plan_name).reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+    const subscriptionRevenue = payments?.filter(p => p.plan_name && !p.course_id).reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+    const courseRevenue = payments?.filter(p => p.course_id).reduce((sum, p) => sum + Number(p.amount), 0) || 0;
     
     // Today's signups
     const today = new Date().toISOString().split('T')[0];
@@ -71,22 +79,23 @@ export default function PlatformAnalytics() {
       totalCourses: totalCourses || 0,
       totalEnrollments: totalEnrollments || 0,
       totalRevenue,
-      activeToday: 0,
+      subscriptionRevenue,
+      courseRevenue,
       newSignupsToday: newSignupsToday || 0
     });
 
-    // Revenue trends (last 7 days) - with all days filled
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    // Revenue trends with dynamic date range
+    const revenueDays = parseInt(revenueDateRange);
+    const revenueStartDate = new Date(Date.now() - revenueDays * 24 * 60 * 60 * 1000);
     const { data: recentPayments } = await supabase
       .from('payments')
       .select('created_at, amount, plan_name')
       .eq('status', 'completed')
-      .gte('created_at', sevenDaysAgo.toISOString())
+      .gte('created_at', revenueStartDate.toISOString())
       .order('created_at');
 
-    // Create array with all 7 days
     const revenueTrends: any[] = [];
-    for (let i = 6; i >= 0; i--) {
+    for (let i = revenueDays - 1; i >= 0; i--) {
       const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
       const dateStr = date.toISOString().split('T')[0];
       const dayRevenue = recentPayments?.filter(p => p.created_at.startsWith(dateStr))
@@ -100,17 +109,17 @@ export default function PlatformAnalytics() {
 
     setRevenueData(revenueTrends);
 
-    // Enrollment trends (last 30 days) - with all days filled
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    // Enrollment trends with dynamic date range
+    const enrollmentDays = parseInt(enrollmentDateRange);
+    const enrollmentStartDate = new Date(Date.now() - enrollmentDays * 24 * 60 * 60 * 1000);
     const { data: recentEnrollments } = await supabase
       .from('enrollments')
       .select('enrolled_at')
-      .gte('enrolled_at', thirtyDaysAgo.toISOString())
+      .gte('enrolled_at', enrollmentStartDate.toISOString())
       .order('enrolled_at');
 
-    // Create array with all 30 days
     const enrollTrends: any[] = [];
-    for (let i = 29; i >= 0; i--) {
+    for (let i = enrollmentDays - 1; i >= 0; i--) {
       const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
       const dateStr = date.toISOString().split('T')[0];
       const dayEnrollments = recentEnrollments?.filter(e => e.enrolled_at.startsWith(dateStr)).length || 0;
@@ -131,6 +140,7 @@ export default function PlatformAnalytics() {
 
   return (
     <div className="space-y-6">
+      {/* Overview Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -161,27 +171,39 @@ export default function PlatformAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{stats.totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">From courses & premium subscriptions</p>
+            <p className="text-xs text-muted-foreground">
+              ₹{stats.subscriptionRevenue.toLocaleString()} subscriptions
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">New Signups</CardTitle>
-            <UserPlus className="h-4 w-4 text-amber-500" />
+            <CardTitle className="text-sm font-medium">Course Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.newSignupsToday}</div>
-            <p className="text-xs text-muted-foreground">Today</p>
+            <div className="text-2xl font-bold">₹{stats.courseRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">From course purchases</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Financial Metrics */}
+      <FinancialMetrics />
+
+      {/* Activity Metrics */}
+      <ActivityMetrics />
+
+      {/* Revenue & Enrollment Trends */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle>Revenue Trends (Last 7 Days)</CardTitle>
-            <CardDescription>Daily revenue overview</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Revenue Trends</CardTitle>
+              <CardDescription>Daily revenue overview</CardDescription>
+            </div>
+            <DateRangeSelector value={revenueDateRange} onChange={setRevenueDateRange} />
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -208,9 +230,12 @@ export default function PlatformAnalytics() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Enrollment Trends (Last 30 Days)</CardTitle>
-            <CardDescription>Daily enrollment count</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Enrollment Trends</CardTitle>
+              <CardDescription>Daily enrollment count</CardDescription>
+            </div>
+            <DateRangeSelector value={enrollmentDateRange} onChange={setEnrollmentDateRange} />
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -233,35 +258,40 @@ export default function PlatformAnalytics() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>User Distribution</CardTitle>
-          <CardDescription>Students vs Teachers</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={userDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={(entry) => `${entry.name}: ${entry.value}`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {userDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Top Courses & User Distribution */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <TopCoursesCard />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>User Distribution</CardTitle>
+            <CardDescription>Students vs Teachers</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center">
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={userDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={(entry) => `${entry.name}: ${entry.value}`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {userDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
