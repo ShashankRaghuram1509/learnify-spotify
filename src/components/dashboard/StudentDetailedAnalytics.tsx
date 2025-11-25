@@ -11,6 +11,7 @@ interface AnalyticsData {
   completedCourses: number;
   videoMinutesWatched: number;
   testProgressBonus: number;
+  totalProgressWithBonus: number;
   testAttempts: {
     total: number;
     passed: number;
@@ -114,11 +115,27 @@ export default function StudentDetailedAnalytics() {
         .eq("student_id", user.id);
 
       const totalCourses = enrollments?.length || 0;
-      const completedCourses = enrollments?.filter(e => e.completed_at)?.length || 0;
-      const videoMinutesWatched = enrollments?.reduce((sum, e) => sum + (e.video_minutes_watched || 0), 0) || 0;
-      const testProgressBonus = enrollments?.reduce((sum, e) => sum + (e.test_progress_bonus || 0), 0) || 0;
+      const completedCourses = enrollments?.filter(e => {
+        const combined = Math.min((e.progress || 0) + (e.test_progress_bonus || 0), 100);
+        return combined >= 100 || e.completed_at;
+      }).length || 0;
+
+      const videoMinutesWatched = enrollments?.reduce(
+        (sum, e) => sum + (e.video_minutes_watched || 0),
+        0
+      ) || 0;
+
+      const totalProgressWithBonus = enrollments?.reduce((sum, e) => {
+        const combined = Math.min((e.progress || 0) + (e.test_progress_bonus || 0), 100);
+        return sum + combined;
+      }, 0) || 0;
+
+      const testProgressBonus = enrollments?.reduce(
+        (sum, e) => sum + (e.test_progress_bonus || 0),
+        0
+      ) || 0;
       
-      console.log('Student analytics - Calculated test progress bonus:', testProgressBonus);
+      console.log('Student analytics - Calculated test progress bonus:', testProgressBonus, 'total progress with bonus:', totalProgressWithBonus);
 
       const totalAttempts = attempts?.length || 0;
       const passedAttempts = attempts?.filter(a => a.passed)?.length || 0;
@@ -132,6 +149,7 @@ export default function StudentDetailedAnalytics() {
         completedCourses,
         videoMinutesWatched,
         testProgressBonus,
+        totalProgressWithBonus,
         testAttempts: {
           total: totalAttempts,
           passed: passedAttempts,
@@ -153,8 +171,8 @@ export default function StudentDetailedAnalytics() {
     return <div className="text-center py-8">Loading analytics...</div>;
   }
 
-  const completionRate = analytics.totalCourses > 0 
-    ? Math.round((analytics.completedCourses / analytics.totalCourses) * 100)
+  const completionRate = analytics.totalCourses > 0
+    ? Math.round((analytics.totalProgressWithBonus || 0) / analytics.totalCourses)
     : 0;
 
   const testSuccessRate = analytics.testAttempts.total > 0

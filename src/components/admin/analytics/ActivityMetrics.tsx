@@ -34,10 +34,13 @@ export default function ActivityMetrics() {
     // Average completion rate
     const { data: enrollments } = await supabase
       .from('enrollments')
-      .select('progress');
+      .select('progress, test_progress_bonus');
 
-    const avgProgress = enrollments?.length 
-      ? enrollments.reduce((sum, e) => sum + (e.progress || 0), 0) / enrollments.length 
+    const avgProgress = enrollments?.length
+      ? enrollments.reduce((sum, e) => {
+          const combined = Math.min((e.progress || 0) + (e.test_progress_bonus || 0), 100);
+          return sum + combined;
+        }, 0) / enrollments.length
       : 0;
 
     setMetrics({
