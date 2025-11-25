@@ -5,12 +5,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, BookOpen, Users, TrendingDown } from "lucide-react";
+import { AlertTriangle, BookOpen, Users, TrendingDown, ChevronDown, ChevronUp } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
 
 export default function StudentTeacherMonitoring() {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedInsights, setExpandedInsights] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     fetchData();
@@ -109,27 +112,92 @@ export default function StudentTeacherMonitoring() {
           <CardContent>
             <div className="space-y-2">
               {teachers.filter(t => t.totalCourses === 0).length > 0 && (
-                <div className="text-sm p-2 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
-                  <p className="font-medium text-amber-900 dark:text-amber-100">
-                    <BookOpen className="h-3 w-3 inline mr-1" />
-                    {teachers.filter(t => t.totalCourses === 0).length} teacher(s) without courses
-                  </p>
-                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                    Reach out to onboard and help create their first course.
-                  </p>
-                </div>
+                <Collapsible
+                  open={expandedInsights['teacher-no-courses']}
+                  onOpenChange={(open) => setExpandedInsights(prev => ({ ...prev, 'teacher-no-courses': open }))}
+                >
+                  <div className="text-sm p-2 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-amber-900 dark:text-amber-100">
+                          <BookOpen className="h-3 w-3 inline mr-1" />
+                          {teachers.filter(t => t.totalCourses === 0).length} teacher(s) without courses
+                        </p>
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                          Reach out to onboard and help create their first course.
+                        </p>
+                      </div>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          {expandedInsights['teacher-no-courses'] ? 
+                            <ChevronUp className="h-3 w-3" /> : 
+                            <ChevronDown className="h-3 w-3" />
+                          }
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent className="mt-3 space-y-2">
+                      {teachers.filter(t => t.totalCourses === 0).map(teacher => (
+                        <div key={teacher.id} className="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={teacher.avatar_url} />
+                            <AvatarFallback className="text-xs">{teacher.full_name?.[0] || 'T'}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{teacher.full_name || 'Unnamed'}</p>
+                            <p className="text-xs text-muted-foreground truncate">{teacher.email}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
               )}
+              
               {teachers.filter(t => t.totalStudents === 0 && t.totalCourses > 0).length > 0 && (
-                <div className="text-sm p-2 bg-indigo-50 dark:bg-indigo-950/20 rounded border border-indigo-200 dark:border-indigo-800">
-                  <p className="font-medium text-indigo-900 dark:text-indigo-100">
-                    <Users className="h-3 w-3 inline mr-1" />
-                    {teachers.filter(t => t.totalStudents === 0 && t.totalCourses > 0).length} teacher(s) with no enrollments
-                  </p>
-                  <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
-                    Help promote their courses or review course visibility settings.
-                  </p>
-                </div>
+                <Collapsible
+                  open={expandedInsights['teacher-no-enrollments']}
+                  onOpenChange={(open) => setExpandedInsights(prev => ({ ...prev, 'teacher-no-enrollments': open }))}
+                >
+                  <div className="text-sm p-2 bg-indigo-50 dark:bg-indigo-950/20 rounded border border-indigo-200 dark:border-indigo-800">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-indigo-900 dark:text-indigo-100">
+                          <Users className="h-3 w-3 inline mr-1" />
+                          {teachers.filter(t => t.totalStudents === 0 && t.totalCourses > 0).length} teacher(s) with no enrollments
+                        </p>
+                        <p className="text-xs text-indigo-700 dark:text-indigo-300 mt-1">
+                          Help promote their courses or review course visibility settings.
+                        </p>
+                      </div>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          {expandedInsights['teacher-no-enrollments'] ? 
+                            <ChevronUp className="h-3 w-3" /> : 
+                            <ChevronDown className="h-3 w-3" />
+                          }
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent className="mt-3 space-y-2">
+                      {teachers.filter(t => t.totalStudents === 0 && t.totalCourses > 0).map(teacher => (
+                        <div key={teacher.id} className="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={teacher.avatar_url} />
+                            <AvatarFallback className="text-xs">{teacher.full_name?.[0] || 'T'}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{teacher.full_name || 'Unnamed'}</p>
+                            <p className="text-xs text-muted-foreground truncate">{teacher.email}</p>
+                          </div>
+                          <Badge variant="secondary" className="text-xs">{teacher.totalCourses} courses</Badge>
+                        </div>
+                      ))}
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
               )}
+              
               {teachers.filter(t => t.totalCourses === 0).length === 0 && teachers.filter(t => t.totalStudents === 0 && t.totalCourses > 0).length === 0 && (
                 <p className="text-sm text-muted-foreground">All teachers are performing well!</p>
               )}
@@ -189,38 +257,141 @@ export default function StudentTeacherMonitoring() {
           <CardContent>
             <div className="space-y-2">
               {students.filter(s => s.totalCourses === 0).length > 0 && (
-                <div className="text-sm p-2 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
-                  <p className="font-medium text-amber-900 dark:text-amber-100">
-                    <BookOpen className="h-3 w-3 inline mr-1" />
-                    {students.filter(s => s.totalCourses === 0).length} student(s) not enrolled in any course
-                  </p>
-                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
-                    Send course recommendations to encourage enrollment.
-                  </p>
-                </div>
+                <Collapsible
+                  open={expandedInsights['student-no-enrollment']}
+                  onOpenChange={(open) => setExpandedInsights(prev => ({ ...prev, 'student-no-enrollment': open }))}
+                >
+                  <div className="text-sm p-2 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-amber-900 dark:text-amber-100">
+                          <BookOpen className="h-3 w-3 inline mr-1" />
+                          {students.filter(s => s.totalCourses === 0).length} student(s) not enrolled in any course
+                        </p>
+                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                          Send course recommendations to encourage enrollment.
+                        </p>
+                      </div>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          {expandedInsights['student-no-enrollment'] ? 
+                            <ChevronUp className="h-3 w-3" /> : 
+                            <ChevronDown className="h-3 w-3" />
+                          }
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent className="mt-3 space-y-2">
+                      {students.filter(s => s.totalCourses === 0).map(student => (
+                        <div key={student.id} className="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={student.avatar_url} />
+                            <AvatarFallback className="text-xs">{student.full_name?.[0] || 'S'}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{student.full_name || 'Unnamed'}</p>
+                            <p className="text-xs text-muted-foreground truncate">{student.email}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
               )}
+              
               {students.filter(s => s.avgProgress < 20 && s.totalCourses > 0).length > 0 && (
-                <div className="text-sm p-2 bg-rose-50 dark:bg-rose-950/20 rounded border border-rose-200 dark:border-rose-800">
-                  <p className="font-medium text-rose-900 dark:text-rose-100">
-                    <TrendingDown className="h-3 w-3 inline mr-1" />
-                    {students.filter(s => s.avgProgress < 20 && s.totalCourses > 0).length} student(s) with very low progress (&lt;20%)
-                  </p>
-                  <p className="text-xs text-rose-700 dark:text-rose-300 mt-1">
-                    May be at risk of dropping out. Consider engagement campaigns.
-                  </p>
-                </div>
+                <Collapsible
+                  open={expandedInsights['student-low-progress']}
+                  onOpenChange={(open) => setExpandedInsights(prev => ({ ...prev, 'student-low-progress': open }))}
+                >
+                  <div className="text-sm p-2 bg-rose-50 dark:bg-rose-950/20 rounded border border-rose-200 dark:border-rose-800">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-rose-900 dark:text-rose-100">
+                          <TrendingDown className="h-3 w-3 inline mr-1" />
+                          {students.filter(s => s.avgProgress < 20 && s.totalCourses > 0).length} student(s) with very low progress (&lt;20%)
+                        </p>
+                        <p className="text-xs text-rose-700 dark:text-rose-300 mt-1">
+                          May be at risk of dropping out. Consider engagement campaigns.
+                        </p>
+                      </div>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          {expandedInsights['student-low-progress'] ? 
+                            <ChevronUp className="h-3 w-3" /> : 
+                            <ChevronDown className="h-3 w-3" />
+                          }
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent className="mt-3 space-y-2">
+                      {students.filter(s => s.avgProgress < 20 && s.totalCourses > 0).map(student => (
+                        <div key={student.id} className="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={student.avatar_url} />
+                            <AvatarFallback className="text-xs">{student.full_name?.[0] || 'S'}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{student.full_name || 'Unnamed'}</p>
+                            <p className="text-xs text-muted-foreground truncate">{student.email}</p>
+                          </div>
+                          <Badge variant="destructive" className="text-xs">{Math.round(student.avgProgress)}%</Badge>
+                        </div>
+                      ))}
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
               )}
-              {students.filter(s => s.subscription_tier === 'free' || !s.subscription_tier).length > students.length * 0.8 && (
-                <div className="text-sm p-2 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
-                  <p className="font-medium text-purple-900 dark:text-purple-100">
-                    <Users className="h-3 w-3 inline mr-1" />
-                    High proportion of free-tier users ({Math.round((students.filter(s => s.subscription_tier === 'free' || !s.subscription_tier).length / Math.max(students.length, 1)) * 100)}%)
-                  </p>
-                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
-                    Promote premium features to increase conversion rates.
-                  </p>
-                </div>
+              
+              {students.filter(s => s.subscription_tier === 'free' || !s.subscription_tier).length > students.length * 0.8 && students.length > 0 && (
+                <Collapsible
+                  open={expandedInsights['student-free-tier']}
+                  onOpenChange={(open) => setExpandedInsights(prev => ({ ...prev, 'student-free-tier': open }))}
+                >
+                  <div className="text-sm p-2 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <p className="font-medium text-purple-900 dark:text-purple-100">
+                          <Users className="h-3 w-3 inline mr-1" />
+                          High proportion of free-tier users ({Math.round((students.filter(s => s.subscription_tier === 'free' || !s.subscription_tier).length / Math.max(students.length, 1)) * 100)}%)
+                        </p>
+                        <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                          Promote premium features to increase conversion rates.
+                        </p>
+                      </div>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          {expandedInsights['student-free-tier'] ? 
+                            <ChevronUp className="h-3 w-3" /> : 
+                            <ChevronDown className="h-3 w-3" />
+                          }
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent className="mt-3 space-y-2 max-h-48 overflow-y-auto">
+                      {students.filter(s => s.subscription_tier === 'free' || !s.subscription_tier).slice(0, 20).map(student => (
+                        <div key={student.id} className="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={student.avatar_url} />
+                            <AvatarFallback className="text-xs">{student.full_name?.[0] || 'S'}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{student.full_name || 'Unnamed'}</p>
+                            <p className="text-xs text-muted-foreground truncate">{student.email}</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">{student.subscription_tier || 'free'}</Badge>
+                        </div>
+                      ))}
+                      {students.filter(s => s.subscription_tier === 'free' || !s.subscription_tier).length > 20 && (
+                        <p className="text-xs text-center text-muted-foreground py-1">
+                          +{students.filter(s => s.subscription_tier === 'free' || !s.subscription_tier).length - 20} more...
+                        </p>
+                      )}
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
               )}
+              
               {students.filter(s => s.totalCourses === 0).length === 0 && students.filter(s => s.avgProgress < 20 && s.totalCourses > 0).length === 0 && (
                 <p className="text-sm text-muted-foreground">All students are actively engaged!</p>
               )}
