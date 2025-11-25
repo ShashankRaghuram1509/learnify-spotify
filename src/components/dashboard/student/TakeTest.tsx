@@ -136,19 +136,33 @@ export default function TakeTest({ assignment, onComplete }: TakeTestProps) {
           </AlertDescription>
         </Alert>
 
-        {assignment.instructions && (
-          <div className="p-4 bg-muted rounded-lg">
-            <h3 className="font-semibold mb-2">Instructions:</h3>
-            <p className="text-sm whitespace-pre-wrap">{assignment.instructions}</p>
-          </div>
-        )}
+      {assignment.instructions && (
+        <div className="p-4 bg-muted rounded-lg">
+          <h3 className="font-semibold mb-2">Instructions:</h3>
+          <p className="text-sm whitespace-pre-wrap">{assignment.instructions}</p>
+        </div>
+      )}
 
-        <Button onClick={handleStart} className="w-full" size="lg">
-          Start Test
-        </Button>
+      {assignment.attachment_url && assignment.attachment_url.includes('docs.google.com/forms') && (
+        <Alert>
+          <AlertDescription>
+            This test uses Google Forms. After clicking "Start Test", you'll see the form below. Complete it and submit through Google Forms.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Button onClick={handleStart} className="w-full" size="lg">
+        Start Test
+      </Button>
       </div>
     );
   }
+
+  // Check if this is a Google Form assignment
+  const isGoogleForm = assignment.attachment_url && assignment.attachment_url.includes('docs.google.com/forms');
+  const googleFormEmbedUrl = isGoogleForm 
+    ? assignment.attachment_url.replace('/viewform', '/viewform?embedded=true')
+    : null;
 
   return (
     <div className="space-y-6">
@@ -176,20 +190,49 @@ export default function TakeTest({ assignment, onComplete }: TakeTestProps) {
         </Alert>
       )}
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Your Answer</label>
-        <Textarea
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          rows={15}
-          placeholder="Type your answer here..."
-          className="resize-none"
-        />
-      </div>
+      {isGoogleForm && googleFormEmbedUrl ? (
+        <div className="space-y-4">
+          <Alert>
+            <AlertDescription>
+              Complete the Google Form below. After submitting the form, click "Submit Test" to record your submission.
+            </AlertDescription>
+          </Alert>
+          <iframe
+            src={googleFormEmbedUrl}
+            className="w-full h-[600px] border rounded-lg"
+            frameBorder="0"
+            marginHeight={0}
+            marginWidth={0}
+          >
+            Loading…
+          </iframe>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Additional Notes (Optional)</label>
+            <Textarea
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              rows={4}
+              placeholder="Add any additional notes or comments here..."
+              className="resize-none"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Your Answer</label>
+          <Textarea
+            value={answer}
+            onChange={(e) => setAnswer(e.target.value)}
+            rows={15}
+            placeholder="Type your answer here..."
+            className="resize-none"
+          />
+        </div>
+      )}
 
       <Button
         onClick={() => submitTest(false)}
-        disabled={submitting || !answer.trim()}
+        disabled={submitting || (!isGoogleForm && !answer.trim())}
         className="w-full"
         size="lg"
       >

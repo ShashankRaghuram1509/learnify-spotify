@@ -78,6 +78,11 @@ export default function SubmitAssignment({ assignment, onSuccess }: SubmitAssign
     }
   };
 
+  const isGoogleForm = assignment.attachment_url && assignment.attachment_url.includes('docs.google.com/forms');
+  const googleFormEmbedUrl = isGoogleForm 
+    ? assignment.attachment_url.replace('/viewform', '/viewform?embedded=true')
+    : null;
+
   return (
     <div className="space-y-6">
       {assignment.instructions && (
@@ -87,33 +92,57 @@ export default function SubmitAssignment({ assignment, onSuccess }: SubmitAssign
         </div>
       )}
 
+      {isGoogleForm && googleFormEmbedUrl ? (
+        <div className="space-y-4">
+          <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg text-sm">
+            <p className="font-medium text-blue-900 dark:text-blue-100">
+              This assignment uses Google Forms
+            </p>
+            <p className="text-blue-700 dark:text-blue-300 mt-1">
+              Complete the form below and submit. You can also add additional notes in the text area if needed.
+            </p>
+          </div>
+          <iframe
+            src={googleFormEmbedUrl}
+            className="w-full h-[600px] border rounded-lg"
+            frameBorder="0"
+            marginHeight={0}
+            marginWidth={0}
+          >
+            Loading…
+          </iframe>
+        </div>
+      ) : null}
+
       <div className="space-y-2">
-        <Label>Written Answer (Optional)</Label>
+        <Label>Written Answer {isGoogleForm ? '(Optional - Additional Notes)' : '(Optional)'}</Label>
         <Textarea
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           rows={10}
-          placeholder="Type your answer here..."
+          placeholder={isGoogleForm ? "Add any additional notes or comments here..." : "Type your answer here..."}
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>Upload File (Optional)</Label>
-        <div className="relative">
-          <Input
-            type="file"
-            onChange={handleFileUpload}
-            className="absolute inset-0 opacity-0 cursor-pointer"
-            disabled={uploading}
-          />
-          <Button type="button" variant="outline" className="w-full" disabled={uploading}>
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
-            {fileUrl ? "File Uploaded" : "Upload File"}
-          </Button>
+      {!isGoogleForm && (
+        <div className="space-y-2">
+          <Label>Upload File (Optional)</Label>
+          <div className="relative">
+            <Input
+              type="file"
+              onChange={handleFileUpload}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              disabled={uploading}
+            />
+            <Button type="button" variant="outline" className="w-full" disabled={uploading}>
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
+              {fileUrl ? "File Uploaded" : "Upload File"}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
-      <Button onClick={handleSubmit} disabled={submitting} className="w-full" size="lg">
+      <Button onClick={handleSubmit} disabled={submitting || (!isGoogleForm && !answer.trim() && !fileUrl)} className="w-full" size="lg">
         {submitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
         Submit Assignment
       </Button>

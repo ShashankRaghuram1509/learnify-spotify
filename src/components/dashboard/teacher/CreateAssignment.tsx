@@ -23,6 +23,7 @@ export default function CreateAssignment({ onSuccess }: CreateAssignmentProps) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [courses, setCourses] = useState([]);
+  const [attachmentType, setAttachmentType] = useState<"file" | "google-form">("file");
   const [formData, setFormData] = useState({
     course_id: "",
     title: "",
@@ -215,20 +216,53 @@ export default function CreateAssignment({ onSuccess }: CreateAssignmentProps) {
         </div>
       )}
 
-      <div className="space-y-2">
-        <Label>Attachment (Optional)</Label>
-        <div className="relative">
-          <Input
-            type="file"
-            onChange={handleFileUpload}
-            className="absolute inset-0 opacity-0 cursor-pointer"
-            disabled={uploading}
-          />
-          <Button type="button" variant="outline" className="w-full" disabled={uploading}>
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
-            {formData.attachment_url ? "File Uploaded" : "Upload File"}
-          </Button>
-        </div>
+      <div className="space-y-4">
+        <Label>Attachment Type (Optional)</Label>
+        <RadioGroup
+          value={attachmentType}
+          onValueChange={(value: "file" | "google-form") => {
+            setAttachmentType(value);
+            setFormData({ ...formData, attachment_url: "" });
+          }}
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="file" id="file" />
+            <Label htmlFor="file">Upload File</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="google-form" id="google-form" />
+            <Label htmlFor="google-form">Google Form</Label>
+          </div>
+        </RadioGroup>
+
+        {attachmentType === "file" ? (
+          <div className="relative">
+            <Input
+              type="file"
+              onChange={handleFileUpload}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              disabled={uploading}
+            />
+            <Button type="button" variant="outline" className="w-full" disabled={uploading}>
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
+              {formData.attachment_url ? "File Uploaded" : "Upload File"}
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="google-form-url">Google Form URL</Label>
+            <Input
+              id="google-form-url"
+              type="url"
+              placeholder="https://docs.google.com/forms/d/e/..."
+              value={formData.attachment_url}
+              onChange={(e) => setFormData({ ...formData, attachment_url: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Paste the Google Form URL or embed link. Students will be able to access it directly from the assignment.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between">
