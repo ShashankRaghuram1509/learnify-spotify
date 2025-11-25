@@ -88,16 +88,18 @@ export default function AdminDashboard() {
           </div>
 
           <Tabs defaultValue="analytics" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-8">
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="courses">Courses</TabsTrigger>
-              <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
-              <TabsTrigger value="placement">Placement</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              <TabsTrigger value="mou">MOU</TabsTrigger>
-              <TabsTrigger value="instructor">Add Instructor</TabsTrigger>
-            </TabsList>
+            <div className="overflow-x-auto pb-2">
+              <TabsList className="inline-flex w-auto min-w-full">
+                <TabsTrigger value="analytics" className="whitespace-nowrap">Analytics</TabsTrigger>
+                <TabsTrigger value="users" className="whitespace-nowrap">Users</TabsTrigger>
+                <TabsTrigger value="courses" className="whitespace-nowrap">Courses</TabsTrigger>
+                <TabsTrigger value="monitoring" className="whitespace-nowrap">Monitoring</TabsTrigger>
+                <TabsTrigger value="placement" className="whitespace-nowrap">Placement</TabsTrigger>
+                <TabsTrigger value="reviews" className="whitespace-nowrap">Reviews</TabsTrigger>
+                <TabsTrigger value="mou" className="whitespace-nowrap">MOU Partners</TabsTrigger>
+                <TabsTrigger value="instructor" className="whitespace-nowrap">Add Instructor</TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="analytics" className="space-y-6">
               <PlatformAnalytics />
