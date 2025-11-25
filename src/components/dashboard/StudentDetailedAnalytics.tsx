@@ -45,7 +45,10 @@ export default function StudentDetailedAnalytics() {
           table: 'enrollments',
           filter: `student_id=eq.${user?.id}`,
         },
-        () => fetchAnalytics()
+        () => {
+          console.log('Enrollment updated, refetching analytics...');
+          fetchAnalytics();
+        }
       )
       .on(
         'postgres_changes',
@@ -55,7 +58,23 @@ export default function StudentDetailedAnalytics() {
           table: 'student_test_attempts',
           filter: `student_id=eq.${user?.id}`,
         },
-        () => fetchAnalytics()
+        () => {
+          console.log('Test attempt updated, refetching analytics...');
+          fetchAnalytics();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'assignment_submissions',
+          filter: `student_id=eq.${user?.id}`,
+        },
+        () => {
+          console.log('Assignment submission updated, refetching analytics...');
+          fetchAnalytics();
+        }
       )
       .subscribe();
 
@@ -70,11 +89,17 @@ export default function StudentDetailedAnalytics() {
     try {
       setLoading(true);
 
-      // Fetch enrollments
+      // Fetch enrollments with fresh data
       const { data: enrollments } = await supabase
         .from("enrollments")
-        .select("*, courses(title)")
+        .select("id, progress, completed_at, video_minutes_watched, test_progress_bonus, courses(title)")
         .eq("student_id", user.id);
+      
+      console.log('Student analytics - Fetched enrollments:', enrollments?.map(e => ({
+        progress: e.progress,
+        test_progress_bonus: e.test_progress_bonus,
+        course: e.courses?.title
+      })));
 
       // Fetch test attempts
       const { data: attempts } = await supabase
@@ -92,6 +117,8 @@ export default function StudentDetailedAnalytics() {
       const completedCourses = enrollments?.filter(e => e.completed_at)?.length || 0;
       const videoMinutesWatched = enrollments?.reduce((sum, e) => sum + (e.video_minutes_watched || 0), 0) || 0;
       const testProgressBonus = enrollments?.reduce((sum, e) => sum + (e.test_progress_bonus || 0), 0) || 0;
+      
+      console.log('Student analytics - Calculated test progress bonus:', testProgressBonus);
 
       const totalAttempts = attempts?.length || 0;
       const passedAttempts = attempts?.filter(a => a.passed)?.length || 0;
