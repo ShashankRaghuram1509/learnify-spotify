@@ -80,22 +80,42 @@ export default function PlacementAssistance() {
   const fetchExternalJobs = async (keywords?: string) => {
     setIsLoadingExternal(true);
     try {
-      const { data, error } = await supabase.functions.invoke('fetch-adzuna-jobs', {
-        body: { 
-          keywords: keywords || searchKeywords || '',
-          location: 'India',
-          results_per_page: 20
-        }
-      });
-
-      if (error) throw error;
+      const searchTerm = keywords || searchKeywords || '';
       
-      if (data?.success) {
-        setExternalJobs(data.jobs || []);
-        toast.success(`Found ${data.jobs?.length || 0} jobs from Adzuna`);
-      } else {
-        toast.error(data?.error || 'Failed to fetch external jobs');
-      }
+      // Fetch from both Adzuna and JSearch in parallel
+      const [adzunaResponse, jsearchResponse] = await Promise.all([
+        supabase.functions.invoke('fetch-adzuna-jobs', {
+          body: { 
+            keywords: searchTerm,
+            location: 'India',
+            results_per_page: 15
+          }
+        }),
+        supabase.functions.invoke('fetch-jsearch-jobs', {
+          body: { 
+            keywords: searchTerm,
+            location: 'India',
+            results_per_page: 15
+          }
+        })
+      ]);
+
+      const adzunaJobs = adzunaResponse.data?.success ? (adzunaResponse.data.jobs || []) : [];
+      const jsearchJobs = jsearchResponse.data?.success ? (jsearchResponse.data.jobs || []) : [];
+      
+      // Merge and deduplicate jobs based on title and company
+      const allJobs = [...adzunaJobs, ...jsearchJobs];
+      const uniqueJobs = allJobs.reduce((acc: any[], job: any) => {
+        const isDuplicate = acc.some(j => 
+          j.title.toLowerCase() === job.title.toLowerCase() && 
+          j.company.toLowerCase() === job.company.toLowerCase()
+        );
+        if (!isDuplicate) acc.push(job);
+        return acc;
+      }, []);
+      
+      setExternalJobs(uniqueJobs);
+      toast.success(`Found ${uniqueJobs.length} jobs from multiple sources`);
     } catch (error) {
       console.error('Error fetching external jobs:', error);
       toast.error('Failed to load external job listings');
