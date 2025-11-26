@@ -1,5 +1,8 @@
 project_id = "anhglcjmbkqezqfyunby"
 
+[functions.fetch-adzuna-jobs]
+verify_jwt = true
+
 [functions.ai-chat]
 verify_jwt = true
 
