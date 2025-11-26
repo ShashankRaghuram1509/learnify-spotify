@@ -592,6 +592,45 @@ export type Database = {
           },
         ]
       }
+      external_job_interests: {
+        Row: {
+          company_name: string
+          created_at: string | null
+          external_job_id: string
+          id: string
+          interested_at: string
+          job_title: string
+          job_url: string | null
+          notes: string | null
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          company_name: string
+          created_at?: string | null
+          external_job_id: string
+          id?: string
+          interested_at?: string
+          job_title: string
+          job_url?: string | null
+          notes?: string | null
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string | null
+          external_job_id?: string
+          id?: string
+          interested_at?: string
+          job_title?: string
+          job_url?: string | null
+          notes?: string | null
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       job_roles: {
         Row: {
           company_id: string

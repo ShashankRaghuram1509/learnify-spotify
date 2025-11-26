@@ -5,18 +5,24 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Briefcase, Building2, DollarSign, Clock, Lock, Download, FileCheck } from "lucide-react";
+import { Briefcase, Building2, DollarSign, Clock, Lock, Download, FileCheck, ExternalLink, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function PlacementAssistance() {
   const { user, subscriptionTier, subscriptionExpiresAt } = useAuth();
   const [jobRoles, setJobRoles] = useState<any[]>([]);
+  const [externalJobs, setExternalJobs] = useState<any[]>([]);
+  const [jobInterests, setJobInterests] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [showApplyDialog, setShowApplyDialog] = useState(false);
+  const [searchKeywords, setSearchKeywords] = useState("");
+  const [isLoadingExternal, setIsLoadingExternal] = useState(false);
 
   const hasValidSubscription = (() => {
     if (!subscriptionTier) return false;
@@ -29,11 +35,13 @@ export default function PlacementAssistance() {
   useEffect(() => {
     if (user && hasValidSubscription) {
       fetchData();
+      fetchExternalJobs();
 
       const channel = supabase
         .channel('student-placement-changes')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'job_roles' }, fetchData)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'student_applications' }, fetchData)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'external_job_interests' }, fetchJobInterests)
         .subscribe();
 
       return () => {
@@ -56,6 +64,69 @@ export default function PlacementAssistance() {
 
     setJobRoles(jobs || []);
     setApplications(apps || []);
+    
+    await fetchJobInterests();
+  };
+
+  const fetchJobInterests = async () => {
+    const { data } = await supabase
+      .from('external_job_interests')
+      .select('*')
+      .eq('student_id', user?.id);
+    
+    setJobInterests(data || []);
+  };
+
+  const fetchExternalJobs = async (keywords?: string) => {
+    setIsLoadingExternal(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-adzuna-jobs', {
+        body: { 
+          keywords: keywords || searchKeywords || '',
+          location: 'India',
+          results_per_page: 20
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.success) {
+        setExternalJobs(data.jobs || []);
+        toast.success(`Found ${data.jobs?.length || 0} jobs from Adzuna`);
+      } else {
+        toast.error(data?.error || 'Failed to fetch external jobs');
+      }
+    } catch (error) {
+      console.error('Error fetching external jobs:', error);
+      toast.error('Failed to load external job listings');
+    } finally {
+      setIsLoadingExternal(false);
+    }
+  };
+
+  const handleTrackInterest = async (job: any) => {
+    const { error } = await supabase.from('external_job_interests').insert({
+      student_id: user?.id,
+      external_job_id: job.id.toString(),
+      job_title: job.title,
+      company_name: job.company,
+      job_url: job.redirect_url,
+    });
+
+    if (error) {
+      if (error.code === '23505') {
+        toast.info("You've already tracked interest in this job");
+      } else {
+        toast.error("Failed to track interest");
+      }
+    } else {
+      toast.success("Interest tracked! We'll notify you of updates.");
+      fetchJobInterests();
+    }
+  };
+
+  const hasTrackedInterest = (jobId: string) => {
+    return jobInterests.some(interest => interest.external_job_id === jobId.toString());
   };
 
   const handleApply = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -280,9 +351,193 @@ export default function PlacementAssistance() {
       </Card>
 
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Available Opportunities</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          {jobRoles.map((job) => (
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Available Opportunities</h2>
+          <div className="flex gap-2">
+            <Input 
+              placeholder="Search jobs (e.g., developer, designer)" 
+              value={searchKeywords}
+              onChange={(e) => setSearchKeywords(e.target.value)}
+              className="w-64"
+            />
+            <Button onClick={() => fetchExternalJobs(searchKeywords)} disabled={isLoadingExternal}>
+              {isLoadingExternal ? 'Searching...' : 'Search'}
+            </Button>
+          </div>
+        </div>
+
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList>
+            <TabsTrigger value="all">All Jobs ({jobRoles.length + externalJobs.length})</TabsTrigger>
+            <TabsTrigger value="internal">Our Partners ({jobRoles.length})</TabsTrigger>
+            <TabsTrigger value="external">External Jobs ({externalJobs.length})</TabsTrigger>
+            <TabsTrigger value="interested">Tracked ({jobInterests.length})</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              {jobRoles.map((job) => (
+                <Card key={`internal-${job.id}`} className="hover:shadow-lg transition-shadow border-l-4 border-l-primary">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-xl">{job.title}</CardTitle>
+                          <Badge variant="secondary">Partner</Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Building2 className="h-4 w-4" />
+                          {job.companies?.name}
+                        </div>
+                      </div>
+                      {hasApplied(job.id) && (
+                        <Badge variant={
+                          getApplicationStatus(job.id) === 'selected' ? 'default' :
+                          getApplicationStatus(job.id) === 'shortlisted' ? 'secondary' :
+                          getApplicationStatus(job.id) === 'rejected' ? 'destructive' : 'outline'
+                        }>
+                          {getApplicationStatus(job.id)}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {job.description}
+                    </p>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        <span className="capitalize">{job.experience_level} Level</span>
+                      </div>
+                      {job.salary_min && job.salary_max && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span>₹{job.salary_min.toLocaleString()} - ₹{job.salary_max.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>Posted {new Date(job.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+
+                    <Dialog open={showApplyDialog && selectedJob?.id === job.id} onOpenChange={(open) => {
+                      setShowApplyDialog(open);
+                      if (open) setSelectedJob(job);
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          className="w-full" 
+                          disabled={hasApplied(job.id)}
+                        >
+                          {hasApplied(job.id) ? 'Already Applied' : 'Apply Now'}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Apply for {job.title}</DialogTitle>
+                          <DialogDescription>{job.companies?.name}</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleApply} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="resume_url">Resume URL</Label>
+                            <input
+                              id="resume_url"
+                              name="resume_url"
+                              type="url"
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                              placeholder="https://..."
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="cover_letter">Cover Letter</Label>
+                            <Textarea
+                              id="cover_letter"
+                              name="cover_letter"
+                              placeholder="Tell us why you're a great fit..."
+                              rows={6}
+                              required
+                            />
+                          </div>
+                          <Button type="submit" className="w-full">Submit Application</Button>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </CardContent>
+                </Card>
+              ))}
+              
+              {externalJobs.map((job) => (
+                <Card key={`external-${job.id}`} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-xl">{job.title}</CardTitle>
+                          <Badge variant="outline">Adzuna</Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Building2 className="h-4 w-4" />
+                          {job.company}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{job.location}</div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {job.description?.replace(/<[^>]*>/g, '').substring(0, 200)}...
+                    </p>
+                    
+                    <div className="space-y-2">
+                      {job.category && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Briefcase className="h-4 w-4 text-muted-foreground" />
+                          <span>{job.category}</span>
+                        </div>
+                      )}
+                      {job.salary_min && job.salary_max && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span>₹{job.salary_min.toLocaleString()} - ₹{job.salary_max.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {job.created && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          <span>{new Date(job.created).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button 
+                        className="flex-1" 
+                        onClick={() => window.open(job.redirect_url, '_blank')}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Apply on Site
+                      </Button>
+                      <Button 
+                        variant={hasTrackedInterest(job.id) ? "secondary" : "outline"}
+                        onClick={() => handleTrackInterest(job)}
+                        disabled={hasTrackedInterest(job.id)}
+                      >
+                        <Heart className={`h-4 w-4 ${hasTrackedInterest(job.id) ? 'fill-current' : ''}`} />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="internal" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              {jobRoles.map((job) => (
             <Card key={job.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -370,9 +625,112 @@ export default function PlacementAssistance() {
                   </DialogContent>
                 </Dialog>
               </CardContent>
-            </Card>
-          ))}
-        </div>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="external" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              {externalJobs.length === 0 ? (
+                <div className="col-span-2 text-center py-8 text-muted-foreground">
+                  <p>Use the search above to find jobs from Adzuna</p>
+                </div>
+              ) : (
+                externalJobs.map((job) => (
+                  <Card key={job.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1 flex-1">
+                          <CardTitle className="text-xl">{job.title}</CardTitle>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Building2 className="h-4 w-4" />
+                            {job.company}
+                          </div>
+                          <div className="text-xs text-muted-foreground">{job.location}</div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {job.description?.replace(/<[^>]*>/g, '').substring(0, 200)}...
+                      </p>
+                      
+                      <div className="space-y-2">
+                        {job.category && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Briefcase className="h-4 w-4 text-muted-foreground" />
+                            <span>{job.category}</span>
+                          </div>
+                        )}
+                        {job.salary_min && job.salary_max && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                            <span>₹{job.salary_min.toLocaleString()} - ₹{job.salary_max.toLocaleString()}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button 
+                          className="flex-1" 
+                          onClick={() => window.open(job.redirect_url, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          Apply on Site
+                        </Button>
+                        <Button 
+                          variant={hasTrackedInterest(job.id) ? "secondary" : "outline"}
+                          onClick={() => handleTrackInterest(job)}
+                          disabled={hasTrackedInterest(job.id)}
+                        >
+                          <Heart className={`h-4 w-4 ${hasTrackedInterest(job.id) ? 'fill-current' : ''}`} />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="interested" className="mt-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              {jobInterests.length === 0 ? (
+                <div className="col-span-2 text-center py-8 text-muted-foreground">
+                  <p>You haven't tracked interest in any external jobs yet</p>
+                </div>
+              ) : (
+                jobInterests.map((interest) => (
+                  <Card key={interest.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="text-xl">{interest.job_title}</CardTitle>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Building2 className="h-4 w-4" />
+                        {interest.company_name}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Heart className="h-4 w-4 fill-current" />
+                        <span>Tracked on {new Date(interest.interested_at).toLocaleDateString()}</span>
+                      </div>
+                      {interest.job_url && (
+                        <Button 
+                          className="w-full" 
+                          onClick={() => window.open(interest.job_url, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View Job
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
