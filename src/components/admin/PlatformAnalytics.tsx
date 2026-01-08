@@ -33,6 +33,9 @@ export default function PlatformAnalytics() {
       .channel('analytics-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, fetchAnalytics)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollments' }, fetchAnalytics)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchAnalytics)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_roles' }, fetchAnalytics)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'courses' }, fetchAnalytics)
       .subscribe();
 
     return () => {
