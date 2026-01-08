@@ -12,6 +12,22 @@ export default function ActivityMetrics() {
 
   useEffect(() => {
     fetchActivityMetrics();
+
+    // Set up real-time subscriptions for activity metrics
+    const videoChannel = supabase
+      .channel('activity-video-tracking')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'video_watch_tracking' }, fetchActivityMetrics)
+      .subscribe();
+
+    const enrollmentsChannel = supabase
+      .channel('activity-enrollments')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollments' }, fetchActivityMetrics)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(videoChannel);
+      supabase.removeChannel(enrollmentsChannel);
+    };
   }, []);
 
   const fetchActivityMetrics = async () => {

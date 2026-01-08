@@ -15,6 +15,16 @@ export default function TopCoursesCard() {
 
   useEffect(() => {
     fetchTopCourses();
+
+    // Set up real-time subscription for enrollments
+    const enrollmentsChannel = supabase
+      .channel('top-courses-enrollments')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollments' }, fetchTopCourses)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(enrollmentsChannel);
+    };
   }, []);
 
   const fetchTopCourses = async () => {
