@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learnify — Learning Module &amp; AI Roadmap Chatbot Architecture</title>
+<style>
+  :root{
+    --green:#1DB954; --green-dk:#12833b; --green-tint:#eafaf0;
+    --ink:#0f172a; --slate:#334155; --muted:#64748b; --line:#e2e8f0;
+    --blue:#2563eb; --blue-tint:#eef4ff;
+    --amber:#b45309; --amber-tint:#fff7ec;
+    --violet:#7c3aed; --violet-tint:#f4efff;
+    --rose:#e11d48;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--slate); font-size:11.5px; line-height:1.5; background:#fff;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  h1,h2,h3,h4{ color:var(--ink); line-height:1.2; margin:0; }
+  p{ margin:0 0 8px; }
+  code{ font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:.92em;
+    background:#f1f5f9; padding:1px 5px; border-radius:4px; color:#0f172a; }
+  .mono{ font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; }
+  a{ color:var(--green-dk); text-decoration:none; }
+
+  /* ---------- page framing ---------- */
+  @page{ size:A4; margin:14mm 13mm 15mm; }
+  .page{ page-break-after:always; }
+  .page:last-child{ page-break-after:auto; }
+  section{ margin-bottom:16px; }
+  .avoid-break{ page-break-inside:avoid; }
+
+  /* ---------- cover ---------- */
+  .cover{
+    height:262mm; display:flex; flex-direction:column; justify-content:space-between;
+    background:linear-gradient(150deg,#0b3d1f 0%, #0f172a 55%, #05261a 100%);
+    color:#e9f5ee; padding:24mm 20mm; border-radius:4px;
+  }
+  .cover .brand{ display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.5px; font-size:22px;
+    background:linear-gradient(90deg,#1DB954,#7be3a0); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .cover .dot{ width:34px; height:34px; border-radius:9px; background:linear-gradient(135deg,#1DB954,#0e8a3c);
+    display:inline-block; }
+  .cover h1{ color:#fff; font-size:40px; line-height:1.08; margin:0 0 14px; letter-spacing:-.5px; }
+  .cover .sub{ font-size:15px; color:#a7d8bc; max-width:145mm; }
+  .cover .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:22px; }
+  .cover .chip{ font-size:11px; padding:5px 11px; border:1px solid rgba(255,255,255,.25);
+    border-radius:20px; color:#d6f0e0; background:rgba(255,255,255,.05); }
+  .cover .meta{ font-size:11.5px; color:#8fc3a5; border-top:1px solid rgba(255,255,255,.15); padding-top:14px; }
+  .cover .meta b{ color:#e9f5ee; font-weight:600; }
+
+  /* ---------- section headers ---------- */
+  .sec-h{ display:flex; align-items:baseline; gap:10px; border-bottom:2px solid var(--green);
+    padding-bottom:6px; margin-bottom:12px; }
+  .sec-n{ font-size:12px; font-weight:800; color:#fff; background:var(--green); border-radius:5px;
+    padding:2px 8px; letter-spacing:.4px; }
+  .sec-h h2{ font-size:18px; }
+  .lead{ color:var(--muted); font-size:12px; margin:-4px 0 12px; }
+
+  /* ---------- generic cards ---------- */
+  .card{ border:1px solid var(--line); border-radius:8px; padding:11px 13px; background:#fff; }
+  .grid{ display:grid; gap:10px; }
+  .g2{ grid-template-columns:1fr 1fr; }
+  .g3{ grid-template-columns:1fr 1fr 1fr; }
+  .card h4{ font-size:12.5px; margin-bottom:4px; }
+  .card .k{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:700; }
+  ul{ margin:4px 0 4px; padding-left:16px; }
+  li{ margin:2px 0; }
+  .tight li{ margin:1px 0; }
+
+  /* ---------- layered architecture diagram ---------- */
+  .layer{ border-radius:9px; padding:9px 11px 11px; margin-bottom:9px; border:1px solid; }
+  .layer .lh{ font-size:10.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; margin-bottom:8px;
+    display:flex; align-items:center; gap:8px; }
+  .layer .lh .tag{ font-size:9px; font-weight:700; padding:1px 7px; border-radius:20px; color:#fff; }
+  .row{ display:flex; flex-wrap:wrap; gap:7px; }
+  .node{ flex:1 1 0; min-width:98px; background:#fff; border:1px solid rgba(0,0,0,.1); border-radius:7px;
+    padding:7px 8px; font-size:10.3px; }
+  .node b{ display:block; color:var(--ink); font-size:10.6px; margin-bottom:1px; }
+  .node span{ color:var(--muted); font-size:9.6px; }
+  .node.hl{ border:1.5px solid var(--green); background:var(--green-tint); }
+
+  .L-client{ background:var(--blue-tint); border-color:#c7d9f8; } .L-client .lh{ color:#1d4ed8; } .L-client .tag{ background:var(--blue); }
+  .L-edge{ background:var(--green-tint); border-color:#bfe8cd; } .L-edge .lh{ color:var(--green-dk); } .L-edge .tag{ background:var(--green); }
+  .L-data{ background:var(--amber-tint); border-color:#f4d8b0; } .L-data .lh{ color:var(--amber); } .L-data .tag{ background:#d97706; }
+  .L-ext{ background:var(--violet-tint); border-color:#dcc9f8; } .L-ext .lh{ color:var(--violet); } .L-ext .tag{ background:var(--violet); }
+
+  .flowdown{ text-align:center; color:var(--muted); font-size:15px; line-height:.6; margin:1px 0 4px; }
+
+  /* ---------- sequence / step flow ---------- */
+  .steps{ counter-reset:step; }
+  .step{ display:flex; gap:10px; padding:8px 0; border-bottom:1px dashed var(--line); page-break-inside:avoid; }
+  .step:last-child{ border-bottom:0; }
+  .step .num{ counter-increment:step; flex:0 0 auto; width:22px; height:22px; border-radius:50%;
+    background:var(--green); color:#fff; font-weight:800; font-size:11px; display:flex; align-items:center; justify-content:center; }
+  .step .num::before{ content:counter(step); }
+  .step .body b{ color:var(--ink); }
+  .step .path{ color:var(--muted); }
+
+  /* ---------- pipeline ---------- */
+  .pipe{ display:flex; align-items:stretch; gap:0; flex-wrap:wrap; }
+  .pstage{ flex:1 1 0; min-width:82px; background:#fff; border:1px solid var(--line); border-top:3px solid var(--green);
+    border-radius:7px; padding:8px; text-align:center; }
+  .pstage b{ display:block; font-size:10.6px; color:var(--ink); }
+  .pstage span{ font-size:9.3px; color:var(--muted); }
+  .parrow{ display:flex; align-items:center; color:var(--green); font-weight:800; font-size:15px; padding:0 3px; }
+
+  /* ---------- ER map ---------- */
+  .er{ width:100%; }
+  .entity{ border:1px solid var(--line); border-radius:7px; overflow:hidden; background:#fff; }
+  .entity .et{ background:#0f172a; color:#fff; font-weight:700; font-size:11px; padding:4px 8px; letter-spacing:.2px; }
+  .entity.core .et{ background:var(--green-dk); }
+  .entity .ec{ padding:6px 8px; font-size:9.9px; color:var(--slate); }
+  .entity .ec .pk{ color:var(--amber); font-weight:700; }
+  .entity .ec .fk{ color:var(--blue); font-weight:700; }
+  .rel li{ font-size:10.5px; }
+
+  /* ---------- table ---------- */
+  table{ width:100%; border-collapse:collapse; font-size:10.4px; }
+  th,td{ text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ background:#f8fafc; color:var(--ink); font-size:10px; text-transform:uppercase; letter-spacing:.4px; }
+  tr{ page-break-inside:avoid; }
+  td .svc{ font-weight:700; color:var(--green-dk); }
+
+  .callout{ border-left:3px solid var(--green); background:var(--green-tint); border-radius:0 7px 7px 0;
+    padding:9px 12px; font-size:11px; }
+  .callout.warn{ border-left-color:var(--amber); background:var(--amber-tint); }
+  .callout b{ color:var(--ink); }
+
+  .pill{ display:inline-block; font-size:9.3px; font-weight:700; padding:1px 7px; border-radius:20px;
+    background:#f1f5f9; color:var(--slate); margin:1px 2px 1px 0; }
+  .pill.g{ background:var(--green-tint); color:var(--green-dk); }
+  .pill.b{ background:var(--blue-tint); color:#1d4ed8; }
+  .pill.v{ background:var(--violet-tint); color:var(--violet); }
+
+  .foot{ position:fixed; bottom:-11mm; left:0; right:0; font-size:8.5px; color:#94a3b8;
+    display:flex; justify-content:space-between; border-top:1px solid var(--line); padding-top:3px; }
+  .kvs{ font-size:10.4px; }
+  .kvs div{ display:flex; gap:6px; padding:2px 0; border-bottom:1px solid var(--line); }
+  .kvs div:last-child{ border-bottom:0; }
+  .kvs .kk{ flex:0 0 118px; color:var(--muted); font-weight:600; }
+</style>
+</head>
+<body>
+
+<div class="foot">
+  <span>Learnify — Learning Module &amp; AI Roadmap Chatbot · Architecture</span>
+  <span>Generated 2026-07-27 · from source at commit b68c27f</span>
+</div>
+
+<!-- ============================ COVER ============================ -->
+<div class="page">
+  <div class="cover">
+    <div>
+      <div class="brand"><span class="dot"></span> LEARNIFY</div>
+    </div>
+    <div>
+      <h1>Learning Module &amp;<br>AI Roadmap Chatbot</h1>
+      <div class="sub">Software architecture of the student learning experience — the conversational AI assistant that delivers customized study roadmaps, plus course delivery, assessments, proctoring, transcription and certification — extracted from the Learnify platform.</div>
+      <div class="chips">
+        <span class="chip">React 18 + TypeScript + Vite</span>
+        <span class="chip">Supabase (Postgres · Auth · Edge Functions)</span>
+        <span class="chip">Gemini 2.5 Flash via Lovable AI Gateway</span>
+        <span class="chip">Groq Whisper + Llama 3.3</span>
+      </div>
+    </div>
+    <div class="meta">
+      <b>Scope:</b> Learning module &amp; AI chatbot only &nbsp;·&nbsp; <b>Repository:</b> shashankraghuram1509/learnify-spotify &nbsp;·&nbsp; <b>Prepared for:</b> marketing@prachalas.com<br>
+      <b>Document type:</b> Technical architecture reference &nbsp;·&nbsp; <b>Date:</b> 27 July 2026
+    </div>
+  </div>
+</div>
+
+<!-- ============================ 1. OVERVIEW ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">01</span><h2>Overview &amp; Scope</h2></div>
+    <p>Learnify is a single-page web application (a Vite + React + TypeScript client) backed entirely by <b>Supabase</b> — PostgreSQL with Row-Level Security, JWT authentication, file storage, realtime subscriptions, and Deno-based Edge Functions. This document isolates and describes the <b>Learning Module</b>: everything a student touches while learning, and the <b>AI chatbot</b> that guides them with customized roadmaps and study help.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <div class="k">In scope — the learning module</div>
+        <ul class="tight">
+          <li><b>AI Roadmap Chatbot</b> — floating assistant giving personalized study roadmaps, course help &amp; academic guidance</li>
+          <li><b>Course delivery</b> — catalog, enrollment, video player, downloadable materials</li>
+          <li><b>Assessments</b> — assignments &amp; timed tests with browser-based proctoring</li>
+          <li><b>Progress &amp; certification</b> — progress tracking, completion, certificates</li>
+          <li><b>AI transcription</b> — speech-to-text + summary of session recordings</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="k">Out of scope (referenced only where it gates learning)</div>
+        <ul class="tight">
+          <li>Payments / Razorpay — appears only as the premium-enrollment gate</li>
+          <li>Placement &amp; jobs (Adzuna, JSearch)</li>
+          <li>User-to-user chat &amp; video-call scheduling</li>
+          <li>Admin platform analytics, MOU &amp; partner management</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="avoid-break">
+    <div class="sec-h"><span class="sec-n">02</span><h2>Technology Stack</h2></div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="k">Frontend (client SPA)</div>
+        <p style="margin:6px 0 2px">
+          <span class="pill b">React 18.3</span><span class="pill b">TypeScript</span><span class="pill b">Vite 5</span>
+          <span class="pill">React Router 6</span><span class="pill">TanStack Query 5</span>
+          <span class="pill">shadcn/ui · Radix</span><span class="pill">Tailwind CSS 3</span>
+          <span class="pill">Framer Motion</span><span class="pill">Zod</span><span class="pill">Sonner</span>
+          <span class="pill">jsPDF · html2canvas</span>
+        </p>
+      </div>
+      <div class="card">
+        <div class="k">Backend — Supabase</div>
+        <p style="margin:6px 0 2px">
+          <span class="pill g">PostgreSQL + RLS</span><span class="pill g">Supabase Auth (JWT)</span>
+          <span class="pill g">Storage</span><span class="pill g">Realtime</span>
+          <span class="pill g">Edge Functions (Deno)</span>
+        </p>
+      </div>
+      <div class="card">
+        <div class="k">AI / ML services</div>
+        <p style="margin:6px 0 2px">
+          <span class="pill v">Lovable AI Gateway</span><span class="pill v">google/gemini-2.5-flash</span>
+          <span class="pill v">Groq · whisper-large-v3-turbo</span><span class="pill v">Groq · llama-3.3-70b-versatile</span>
+        </p>
+      </div>
+      <div class="card">
+        <div class="k">Third-party integrations</div>
+        <p style="margin:6px 0 2px">
+          <span class="pill">YouTube embed</span><span class="pill">Google Drive / Calendar / Meet</span>
+          <span class="pill">Razorpay</span><span class="pill">Brevo email</span>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="avoid-break">
+    <div class="sec-h"><span class="sec-n">03</span><h2>High-Level System Architecture</h2></div>
+    <p class="lead">Four layers. The browser talks only to Supabase; every privileged action and every outbound AI/third-party call is brokered by an Edge Function that first verifies the caller's JWT.</p>
+
+    <div class="layer L-client">
+      <div class="lh"><span class="tag">CLIENT</span> React SPA &nbsp;·&nbsp; browser</div>
+      <div class="row">
+        <div class="node hl"><b>AIAssistant</b><span>floating roadmap chatbot (global)</span></div>
+        <div class="node"><b>Course catalog</b><span>Courses · CourseDetail</span></div>
+        <div class="node"><b>CourseViewer</b><span>video · materials · review</span></div>
+        <div class="node"><b>Assignments / TakeTest</b><span>+ useProctoring hook</span></div>
+        <div class="node"><b>Dashboard widgets</b><span>progress · certificates</span></div>
+      </div>
+      <div style="margin-top:6px;font-size:9.6px;color:#1d4ed8">Auth via <code>useAuth</code> context · data via <code>@supabase/supabase-js</code> (RLS-scoped) · Realtime channels</div>
+    </div>
+    <div class="flowdown">▼ &nbsp; HTTPS · JWT bearer token &nbsp; ▼</div>
+
+    <div class="layer L-edge">
+      <div class="lh"><span class="tag">EDGE</span> Supabase Edge Functions (Deno) — auth-gated brokers</div>
+      <div class="row">
+        <div class="node hl"><b>ai-chat</b><span>chatbot → LLM (SSE stream)</span></div>
+        <div class="node"><b>create-enrollment</b><span>subscription / payment gate</span></div>
+        <div class="node"><b>transcribe-video</b><span>Whisper + Llama → transcript</span></div>
+        <div class="node"><b>upload-to-drive</b><span>teacher material upload</span></div>
+        <div class="node"><b>create-meet-link</b><span>live session (Google Meet)</span></div>
+        <div class="node"><b>admin-create-instructor</b><span>role provisioning</span></div>
+      </div>
+    </div>
+    <div class="flowdown">▼ &nbsp; service-role &nbsp;/&nbsp; RLS &nbsp; ▼ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ▼ &nbsp; API keys &nbsp; ▼</div>
+
+    <div class="row" style="gap:9px">
+      <div class="layer L-data" style="flex:1 1 55%; margin:0">
+        <div class="lh"><span class="tag">DATA</span> Supabase Postgres + Storage</div>
+        <div class="row">
+          <div class="node"><b>Learning tables</b><span>courses · enrollments · assignments · certificates …</span></div>
+          <div class="node"><b>Identity</b><span>profiles · user_roles</span></div>
+          <div class="node"><b>Storage</b><span>materials · thumbnails</span></div>
+        </div>
+      </div>
+      <div class="layer L-ext" style="flex:1 1 42%; margin:0">
+        <div class="lh"><span class="tag">EXTERNAL</span> AI &amp; 3rd-party</div>
+        <div class="row">
+          <div class="node hl"><b>Lovable AI Gateway</b><span>Gemini 2.5 Flash</span></div>
+          <div class="node"><b>Groq</b><span>Whisper · Llama 3.3</span></div>
+          <div class="node"><b>Google · YouTube</b><span>Drive/Meet · video</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 4. CHATBOT ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">04</span><h2>AI Roadmap Chatbot — Deep Dive</h2></div>
+    <p class="lead">The headline feature: a conversational assistant that produces customized learning roadmaps, study plans and course help. It is a thin, secure client that streams tokens from a large language model through an auth-gated Edge Function.</p>
+
+    <div class="grid g2 avoid-break" style="margin-bottom:12px">
+      <div class="card">
+        <div class="k">Client — <span class="mono">AIAssistant.tsx</span></div>
+        <ul class="tight">
+          <li>Global floating widget (bottom-right), mounted once in <code>App.tsx</code> across all routes</li>
+          <li>Requires an authenticated Supabase session before sending</li>
+          <li><code>POST</code> to <code>${VITE_SUPABASE_URL}/functions/v1/ai-chat</code> with <code>Authorization: Bearer &lt;access_token&gt;</code></li>
+          <li>Reads a <b>Server-Sent Events</b> stream, parsing <code>choices[0].delta.content</code> and terminating on <code>[DONE]</code></li>
+          <li>Renders the reply <b>incrementally</b> (token-by-token); handles <code>429</code> rate-limit &amp; <code>402</code> usage-limit</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="k">Edge Function — <span class="mono">supabase/functions/ai-chat</span></div>
+        <ul class="tight">
+          <li>Decodes the JWT, extracts <code>sub</code> (user id); rejects unauthenticated calls with <code>401</code></li>
+          <li>Validates <code>messages[]</code>: 1–50 messages, each ≤ 4000 chars, role ∈ {user, assistant, system}</li>
+          <li>Prepends the educational <b>system prompt</b> (see below) that shapes the roadmap/guidance behaviour</li>
+          <li>Calls the LLM with <code>stream: true</code> and <b>proxies the SSE stream straight back</b> to the browser</li>
+          <li>Secret <code>LOVABLE_API_KEY</code> never leaves the server</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="font-size:13px;margin:6px 0 8px">Request &amp; streaming data flow</h3>
+    <div class="card steps avoid-break">
+      <div class="step"><div class="num"></div><div class="body"><b>User</b> opens the widget and sends a message. <span class="path">The client appends it to local <code>messages</code> state.</span></div></div>
+      <div class="step"><div class="num"></div><div class="body"><b>AIAssistant</b> retrieves the Supabase session and POSTs the full message history to the <code>ai-chat</code> function with the bearer token.</div></div>
+      <div class="step"><div class="num"></div><div class="body"><b>ai-chat</b> authenticates (JWT <code>sub</code>) and validates the payload shape and limits.</div></div>
+      <div class="step"><div class="num"></div><div class="body"><b>ai-chat</b> injects the system prompt and forwards <code>[system, ...messages]</code> to <b>Lovable AI Gateway</b> → <code>google/gemini-2.5-flash</code>, <code>stream:true</code>.</div></div>
+      <div class="step"><div class="num"></div><div class="body"><b>Gateway/model</b> streams completion chunks (SSE) back to the function, which returns them as <code>text/event-stream</code>.</div></div>
+      <div class="step"><div class="num"></div><div class="body"><b>AIAssistant</b> decodes each <code>data:</code> chunk and appends <code>delta.content</code> to the on-screen answer until <code>[DONE]</code>.</div></div>
+    </div>
+
+    <div class="callout avoid-break" style="margin-top:12px">
+      <b>System prompt (verbatim, in <span class="mono">ai-chat/index.ts</span>):</b><br>
+      <span style="color:var(--slate)">“You are a helpful educational AI assistant for a learning management system. You help students with their courses, answer questions about assignments, provide study tips, and assist with general academic guidance. Be encouraging, clear, and supportive.”</span>
+    </div>
+
+    <div class="callout warn avoid-break" style="margin-top:10px">
+      <b>Design note — where the “customized roadmap” comes from.</b> Roadmaps and study plans are produced <b>dynamically by the LLM</b> from the running conversation and the system prompt — they are generated per request and are <b>not persisted</b> to a dedicated roadmap table. The model receives the message history verbatim; there is currently no server-side injection of the student's enrolled-course or progress data into the prompt (a natural extension point — see §10).
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 5. LEARNING JOURNEY ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">05</span><h2>The Learning Journey</h2></div>
+    <p class="lead">End-to-end student path through the module. The AI chatbot overlays every step, always available for guidance.</p>
+
+    <div class="pipe avoid-break" style="margin-bottom:14px">
+      <div class="pstage"><b>Discover</b><span>Courses · search_courses()</span></div>
+      <div class="parrow">→</div>
+      <div class="pstage"><b>Enroll</b><span>create-enrollment (gated)</span></div>
+      <div class="parrow">→</div>
+      <div class="pstage"><b>Learn</b><span>CourseViewer · materials</span></div>
+      <div class="parrow">→</div>
+      <div class="pstage"><b>Assess</b><span>TakeTest · proctoring</span></div>
+      <div class="parrow">→</div>
+      <div class="pstage"><b>Certify</b><span>certificates</span></div>
+    </div>
+
+    <div class="grid g2">
+      <div class="card avoid-break">
+        <h4>Discover &amp; Enroll</h4>
+        <p style="margin:4px 0"><code>Courses</code> &amp; <code>CourseDetail</code> browse the <code>courses</code> table (with <code>modules</code>). Enrolling calls the <b>create-enrollment</b> Edge Function, which enforces access rules server-side:</p>
+        <ul class="tight">
+          <li><b>Free courses</b> → enroll immediately</li>
+          <li><b>Premium courses</b> → allowed if <code>profiles.subscription_tier</code> ∈ {Lite, Premium, Premium&nbsp;Pro} and unexpired, <b>or</b> a completed <code>payments</code> row exists for the course</li>
+          <li>Insert into <code>enrollments</code> is done with the <b>service role</b>, bypassing RLS after checks pass</li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <h4>Learn — <span class="mono">CourseViewer.tsx</span></h4>
+        <ul class="tight">
+          <li>Verifies enrollment &amp; (for premium) payment/subscription before revealing content</li>
+          <li>Embeds the lesson video via a normalized <b>YouTube</b> embed URL</li>
+          <li><b>MaterialsList</b> lists <code>course_resources</code> (pdf/video/link) ordered by <code>position</code></li>
+          <li>Shows enrollment <code>progress</code> and a <b>CourseReview</b></li>
+          <li>Optional <b>TranscriptViewer</b> renders AI transcript + summary from <code>transcripts</code></li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <h4>Assess — <span class="mono">AssignmentsList · TakeTest</span></h4>
+        <ul class="tight">
+          <li>Assignments &amp; “tests” share the <code>assignments</code> table (distinguished by <code>type</code>)</li>
+          <li>Starting a test inserts an <code>assignment_submissions</code> row (status <i>pending</i>) and starts a countdown from <code>duration_minutes</code></li>
+          <li>Supports free-text answers <b>or</b> an embedded <b>Google Form</b> (<code>attachment_url</code>)</li>
+          <li>Auto-submits at time-up; results tracked in <code>student_test_attempts</code></li>
+          <li>Progress can be boosted via <code>enrollments.test_progress_bonus</code></li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <h4>Track &amp; Certify</h4>
+        <ul class="tight">
+          <li><b>ProgressTracker</b> / <b>EnrolledCoursesList</b> compute % from <code>progress + test_progress_bonus</code> (capped 100)</li>
+          <li><code>video_watch_tracking</code> records minutes watched &amp; last position</li>
+          <li><b>CertificateManager</b> surfaces the student's <code>certificates</code> (joined to course titles)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="avoid-break">
+    <div class="sec-h"><span class="sec-n">06</span><h2>Assessment &amp; Proctoring Subsystem</h2></div>
+    <p class="lead">Timed tests are monitored client-side by the <span class="mono">useProctoring</span> hook, with every event persisted for teacher review.</p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="k">Monitored events → <span class="mono">proctoring_logs</span></div>
+        <p style="margin:6px 0 2px">
+          <span class="pill">tab switch (visibilitychange)</span><span class="pill">window blur</span>
+          <span class="pill">copy</span><span class="pill">paste</span>
+          <span class="pill">right-click (contextmenu)</span><span class="pill">fullscreen exit</span>
+        </p>
+        <p style="margin:6px 0 0">Fullscreen is requested on start; each violation increments a live counter shown to the student.</p>
+      </div>
+      <div class="card">
+        <div class="k">Enforcement → <span class="mono">proctoring_violations</span></div>
+        <ul class="tight">
+          <li>Aggregates <code>violation_count</code> and <code>failed_attempts</code> per (assignment, student)</li>
+          <li><code>blocked_until</code> can lock a student out after repeated violations</li>
+          <li>Enabled per-assignment via <code>assignments.proctoring_enabled</code></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 7. DATA MODEL ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">07</span><h2>Data Model</h2></div>
+    <p class="lead"><code>courses</code> is the hub of the learning schema. Roles live in a separate <code>user_roles</code> table (not on <code>profiles</code>); subscription state lives on <code>profiles</code>. Legend: <span class="pk" style="color:var(--amber);font-weight:700">PK</span> primary key · <span class="fk" style="color:var(--blue);font-weight:700">FK</span> foreign key.</p>
+
+    <div class="grid g3" style="margin-bottom:10px">
+      <div class="entity core">
+        <div class="et">courses <span style="font-weight:400;opacity:.7">· hub</span></div>
+        <div class="ec"><span class="pk">id</span> · title · description<br>teacher_id · thumbnail_url<br>video_url · price · is_premium</div>
+      </div>
+      <div class="entity core">
+        <div class="et">enrollments</div>
+        <div class="ec"><span class="pk">id</span> · student_id<br><span class="fk">course_id→courses</span><br>progress · test_progress_bonus<br>video_minutes_watched · completed_at</div>
+      </div>
+      <div class="entity">
+        <div class="et">profiles · subscription</div>
+        <div class="ec"><span class="pk">id</span> (= auth user)<br>full_name · email · college<br><b>subscription_tier</b><br><b>subscription_expires_at</b></div>
+      </div>
+
+      <div class="entity">
+        <div class="et">modules</div>
+        <div class="ec"><span class="pk">id</span> · <span class="fk">course_id→courses</span><br>title · position</div>
+      </div>
+      <div class="entity">
+        <div class="et">lessons</div>
+        <div class="ec"><span class="pk">id</span> · <span class="fk">module_id→modules</span><br>title · content_type/url/text<br>duration_minutes · position</div>
+      </div>
+      <div class="entity">
+        <div class="et">user_roles · RBAC</div>
+        <div class="ec"><span class="pk">id</span> · user_id<br>role <span class="mono">app_role</span><br>{student · teacher · admin}</div>
+      </div>
+
+      <div class="entity">
+        <div class="et">course_resources</div>
+        <div class="ec"><span class="pk">id</span> · <span class="fk">course_id→courses</span><br>title · resource_type · url<br>file_path · position</div>
+      </div>
+      <div class="entity">
+        <div class="et">course_materials · AI study</div>
+        <div class="ec"><span class="pk">id</span> · <span class="fk">course_id→courses</span><br>overview · key_points<br>code_examples · practice_exercises</div>
+      </div>
+      <div class="entity">
+        <div class="et">reviews</div>
+        <div class="ec"><span class="pk">id</span> · course_id · student_id<br>rating · comment</div>
+      </div>
+
+      <div class="entity">
+        <div class="et">assignments · tests</div>
+        <div class="ec"><span class="pk">id</span> · <span class="fk">course_id→courses</span><br>type · total_marks · due_date<br>duration_minutes · attachment_url<br>proctoring_enabled</div>
+      </div>
+      <div class="entity">
+        <div class="et">assignment_submissions</div>
+        <div class="ec"><span class="pk">id</span> · <span class="fk">assignment_id→assignments</span><br>student_id · submission_text/url<br>status · marks_obtained · feedback</div>
+      </div>
+      <div class="entity">
+        <div class="et">student_test_attempts</div>
+        <div class="ec"><span class="pk">id</span> · <span class="fk">assignment_id</span><br><span class="fk">submission_id→submissions</span><br>attempt_number · marks · passed</div>
+      </div>
+
+      <div class="entity">
+        <div class="et">proctoring_logs</div>
+        <div class="ec"><span class="pk">id</span> · <span class="fk">submission_id</span><br>student_id · event_type<br>event_data · timestamp</div>
+      </div>
+      <div class="entity">
+        <div class="et">proctoring_violations</div>
+        <div class="ec"><span class="pk">id</span> · <span class="fk">assignment_id</span><br>student_id · violation_count<br>failed_attempts · blocked_until</div>
+      </div>
+      <div class="entity">
+        <div class="et">certificates</div>
+        <div class="ec"><span class="pk">id</span> · student_id<br><span class="fk">course_id</span> · <span class="fk">enrollment_id</span><br>certificate_url · issued_at</div>
+      </div>
+
+      <div class="entity">
+        <div class="et">transcripts · AI</div>
+        <div class="ec"><span class="pk">id</span> · <span class="fk">enrollment_id</span><br>video_url · transcript<br>summary</div>
+      </div>
+      <div class="entity">
+        <div class="et">video_watch_tracking</div>
+        <div class="ec"><span class="pk">id</span> · student_id · <span class="fk">course_id</span><br><span class="fk">enrollment_id</span> · minutes_watched<br>last_position</div>
+      </div>
+      <div class="entity">
+        <div class="et">taxonomy</div>
+        <div class="ec">categories · course_categories<br>tags · course_tags<br><span style="color:var(--muted)">(many-to-many joins)</span></div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>Key relationships.</b> <code>courses</code> 1—∞ <code>enrollments</code>, <code>modules</code>, <code>course_resources</code>, <code>course_materials</code>, <code>assignments</code>, <code>certificates</code>. <code>modules</code> 1—∞ <code>lessons</code>. <code>assignments</code> 1—∞ <code>assignment_submissions</code> 1—∞ <code>student_test_attempts</code> / <code>proctoring_logs</code>. <code>enrollments</code> 1—∞ <code>transcripts</code> &amp; <code>video_watch_tracking</code>, 1—1 <code>certificates</code>. Identity: <code>profiles</code> holds subscription state; <code>user_roles</code> holds roles, resolved by the DB function <code>has_role(user, role)</code>.
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 8. EDGE FUNCTIONS + 9. AUTH ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">08</span><h2>Edge Functions (learning-relevant)</h2></div>
+    <p class="lead">Deno functions on Supabase. Each verifies the caller before touching data or calling an external API; secrets stay server-side.</p>
+    <table>
+      <thead><tr><th style="width:22%">Function</th><th style="width:40%">Responsibility</th><th>External call · model</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">ai-chat</td>
+          <td>Auth-gate + validate chat; stream LLM completion back to the widget as SSE.</td>
+          <td><span class="svc">Lovable AI Gateway</span><br><code>google/gemini-2.5-flash</code></td>
+        </tr>
+        <tr>
+          <td class="mono">transcribe-video</td>
+          <td>Fetch a recording → transcribe → summarize → insert into <code>transcripts</code> (service role).</td>
+          <td><span class="svc">Groq</span> <code>whisper-large-v3-turbo</code> +<br><code>llama-3.3-70b-versatile</code></td>
+        </tr>
+        <tr>
+          <td class="mono">create-enrollment</td>
+          <td>Enroll user after checking subscription tier/expiry or a completed payment; insert <code>enrollments</code>.</td>
+          <td>Supabase only (service role)</td>
+        </tr>
+        <tr>
+          <td class="mono">upload-to-drive</td>
+          <td>Teacher-only; upload a file, then record a <code>course_resources</code> row pointing at it.</td>
+          <td><span class="svc">Google Drive API</span> (OAuth)</td>
+        </tr>
+        <tr>
+          <td class="mono">create-meet-link</td>
+          <td>Create a Google Calendar event with a Meet link for a scheduled live session.</td>
+          <td><span class="svc">Google Calendar API</span> (OAuth)</td>
+        </tr>
+        <tr>
+          <td class="mono">admin-create-instructor</td>
+          <td>Admin-only; provision a teacher auth user, set <code>teacher</code> role, fill profile.</td>
+          <td>Supabase Admin API</td>
+        </tr>
+        <tr>
+          <td class="mono" style="color:var(--muted)">razorpay-* · fetch-*-jobs · send-email</td>
+          <td style="color:var(--muted)">Supporting (payments gate, placement, transactional email) — outside core learning scope.</td>
+          <td style="color:var(--muted)">Razorpay · Adzuna/JSearch · Brevo</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="avoid-break">
+    <div class="sec-h"><span class="sec-n">09</span><h2>Authentication &amp; Access Control</h2></div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="k">Auth — <span class="mono">useAuth.tsx</span></div>
+        <ul class="tight">
+          <li>React context wrapping Supabase Auth; subscribes to <code>onAuthStateChange</code> + <code>getSession()</code></li>
+          <li>Exposes <code>user, session, userRole, subscriptionTier, subscriptionExpiresAt</code> and <code>signIn/signUp/signOut</code></li>
+          <li>New users default to the <b>student</b> role via a DB <code>handle_new_user</code> trigger</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="k">Roles &amp; subscription</div>
+        <ul class="tight">
+          <li>Roles read from <code>user_roles</code>; effective role by priority <b>admin › teacher › student</b></li>
+          <li>Subscription tier/expiry read from <code>profiles</code>; premium checks enforced in Edge Functions, not just the client</li>
+          <li>Routes protected by <code>ProtectedRoute</code> (allowed-roles); data protected by Postgres <b>RLS</b> + <code>has_role()</code></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="avoid-break">
+    <div class="sec-h"><span class="sec-n">10</span><h2>Security Posture &amp; Extension Points</h2></div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="k">Strengths</div>
+        <ul class="tight">
+          <li>All AI / third-party secrets held server-side in Edge Functions; never shipped to the browser</li>
+          <li>Chatbot input validated (count, length, roles) before reaching the model</li>
+          <li>Premium access re-checked server-side; privileged writes use the service role only after authorization</li>
+          <li>Row-Level Security + <code>has_role()</code> as the data-access backbone</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="k">Opportunities (roadmap)</div>
+        <ul class="tight">
+          <li><b>Context-aware roadmaps</b> — inject the student's enrolled courses &amp; progress into the chatbot system prompt</li>
+          <li><b>Persist roadmaps</b> — store generated study plans (e.g. a <code>roadmaps</code> table) for resume/track</li>
+          <li>Rate-limit <code>ai-chat</code> per user; verify JWT signature (not just decode) at the edge</li>
+          <li>Wire chat replies to render markdown; add conversation history persistence</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 11. FILE INVENTORY ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">11</span><h2>Module File Inventory (the extracted learning module)</h2></div>
+    <p class="lead">The concrete source files that constitute the learning module &amp; chatbot, for lift-and-shift or focused review.</p>
+
+    <div class="grid g2">
+      <div class="card">
+        <div class="k">Chatbot</div>
+        <div class="kvs">
+          <div><span class="kk">Client</span><span class="mono">src/components/AIAssistant.tsx</span></div>
+          <div><span class="kk">Backend</span><span class="mono">supabase/functions/ai-chat/index.ts</span></div>
+          <div><span class="kk">Mounted in</span><span class="mono">src/App.tsx</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k">Course delivery</div>
+        <div class="kvs">
+          <div><span class="kk">Pages</span><span class="mono">pages/Courses.tsx · CourseDetail.tsx</span></div>
+          <div><span class="kk">Viewer</span><span class="mono">pages/dashboard/student/CourseViewer.tsx</span></div>
+          <div><span class="kk">My courses</span><span class="mono">pages/dashboard/student/MyCourses.tsx</span></div>
+          <div><span class="kk">Materials</span><span class="mono">components/dashboard/MaterialsList.tsx</span></div>
+          <div><span class="kk">Enroll fn</span><span class="mono">functions/create-enrollment</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k">Assessment &amp; proctoring</div>
+        <div class="kvs">
+          <div><span class="kk">List</span><span class="mono">components/.../student/AssignmentsList.tsx</span></div>
+          <div><span class="kk">Test</span><span class="mono">components/.../student/TakeTest.tsx</span></div>
+          <div><span class="kk">Submit</span><span class="mono">components/.../student/SubmitAssignment.tsx</span></div>
+          <div><span class="kk">Proctoring</span><span class="mono">src/hooks/useProctoring.ts</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k">Progress · certificates · transcripts</div>
+        <div class="kvs">
+          <div><span class="kk">Progress</span><span class="mono">components/dashboard/ProgressTracker.tsx</span></div>
+          <div><span class="kk">Enrolled</span><span class="mono">components/dashboard/EnrolledCoursesList.tsx</span></div>
+          <div><span class="kk">Certificates</span><span class="mono">components/dashboard/CertificateManager.tsx</span></div>
+          <div><span class="kk">Transcript UI</span><span class="mono">components/dashboard/TranscriptViewer.tsx</span></div>
+          <div><span class="kk">Transcribe fn</span><span class="mono">functions/transcribe-video</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k">Platform / cross-cutting</div>
+        <div class="kvs">
+          <div><span class="kk">Auth</span><span class="mono">src/hooks/useAuth.tsx</span></div>
+          <div><span class="kk">Guards</span><span class="mono">components/ProtectedRoute.tsx</span></div>
+          <div><span class="kk">Layout / nav</span><span class="mono">components/layout/DashboardLayout.tsx</span></div>
+          <div><span class="kk">Supabase client</span><span class="mono">src/integrations/supabase/client.ts</span></div>
+          <div><span class="kk">DB types</span><span class="mono">src/integrations/supabase/types.ts</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="k">Database</div>
+        <div class="kvs">
+          <div><span class="kk">Migrations</span><span class="mono">supabase/migrations/*.sql (36 files)</span></div>
+          <div><span class="kk">Core tables</span><span>courses, enrollments, modules, lessons, course_resources, assignments, assignment_submissions, certificates, transcripts, proctoring_*</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:14px">
+      <b>Summary.</b> The learning module is a cleanly layered slice: a React client for discovery, learning, assessment and certification; an always-on AI chatbot for customized roadmaps and guidance; and a Supabase backend where Edge Functions broker every privileged action and every AI call (Gemini 2.5 Flash for chat, Groq Whisper + Llama 3.3 for transcription), with Postgres RLS and role-based access as the security backbone.
+    </div>
+  </section>
+</div>
+
+</body>
+</html>
