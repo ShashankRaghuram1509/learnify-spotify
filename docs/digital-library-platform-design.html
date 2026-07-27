@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Digital Library &amp; Learning Platform — System &amp; Feature Design</title>
+<style>
+  :root{
+    --indigo:#4338ca; --indigo-dk:#312e81; --indigo-tint:#eef0fd;
+    --teal:#0d9488; --teal-dk:#0f766e; --teal-tint:#e6f6f4;
+    --amber:#b45309; --amber-tint:#fff7ec;
+    --violet:#7c3aed; --violet-tint:#f4efff;
+    --sky:#0369a1; --sky-tint:#e8f3fb;
+    --rose:#e11d48; --rose-tint:#ffeef2;
+    --ink:#0f172a; --slate:#334155; --muted:#64748b; --line:#e2e8f0;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--slate); font-size:11.5px; line-height:1.5; background:#fff;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  h1,h2,h3,h4{ color:var(--ink); line-height:1.2; margin:0; }
+  p{ margin:0 0 8px; }
+  .mono{ font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; }
+
+  @page{ size:A4; margin:14mm 13mm 15mm; }
+  .page{ page-break-after:always; }
+  .page:last-child{ page-break-after:auto; }
+  section{ margin-bottom:15px; }
+  .avoid-break{ page-break-inside:avoid; }
+
+  /* ---------- cover ---------- */
+  .cover{
+    height:262mm; display:flex; flex-direction:column; justify-content:space-between;
+    background:radial-gradient(circle at 82% 12%, #4f46e522, transparent 42%),
+               linear-gradient(155deg,#312e81 0%, #1e1b4b 52%, #0f172a 100%);
+    color:#e7e9fb; padding:24mm 20mm; border-radius:4px;
+  }
+  .cover .brand{ display:flex; align-items:center; gap:13px; font-weight:800; letter-spacing:.5px; font-size:21px; color:#fff; }
+  .cover .mark{ width:40px; height:40px; }
+  .cover h1{ color:#fff; font-size:39px; line-height:1.09; margin:0 0 14px; letter-spacing:-.6px; }
+  .cover .sub{ font-size:14.5px; color:#b9bdf0; max-width:150mm; }
+  .cover .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:22px; }
+  .cover .chip{ font-size:11px; padding:5px 11px; border:1px solid rgba(255,255,255,.22);
+    border-radius:20px; color:#cdd0f5; background:rgba(255,255,255,.05); }
+  .cover .meta{ font-size:11.5px; color:#9ea3e0; border-top:1px solid rgba(255,255,255,.15); padding-top:14px; }
+  .cover .meta b{ color:#e7e9fb; font-weight:600; }
+
+  /* ---------- section headers ---------- */
+  .sec-h{ display:flex; align-items:baseline; gap:10px; border-bottom:2px solid var(--indigo);
+    padding-bottom:6px; margin-bottom:12px; }
+  .sec-n{ font-size:12px; font-weight:800; color:#fff; background:var(--indigo); border-radius:5px;
+    padding:2px 8px; letter-spacing:.4px; }
+  .sec-h h2{ font-size:18px; }
+  .lead{ color:var(--muted); font-size:12px; margin:-4px 0 12px; }
+
+  .card{ border:1px solid var(--line); border-radius:8px; padding:11px 13px; background:#fff; }
+  .grid{ display:grid; gap:10px; }
+  .g2{ grid-template-columns:1fr 1fr; }
+  .g3{ grid-template-columns:1fr 1fr 1fr; }
+  .g4{ grid-template-columns:1fr 1fr 1fr 1fr; }
+  .card h4{ font-size:12.5px; margin-bottom:4px; }
+  .card .k{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:700; }
+  ul{ margin:4px 0; padding-left:16px; }
+  li{ margin:2px 0; }
+  .tight li{ margin:1px 0; }
+
+  /* module map layers */
+  .layer{ border-radius:9px; padding:9px 11px 11px; margin-bottom:9px; border:1px solid; }
+  .layer .lh{ font-size:10.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; margin-bottom:8px;
+    display:flex; align-items:center; gap:8px; }
+  .layer .lh .tag{ font-size:9px; font-weight:700; padding:1px 7px; border-radius:20px; color:#fff; }
+  .row{ display:flex; flex-wrap:wrap; gap:7px; }
+  .node{ flex:1 1 0; min-width:96px; background:#fff; border:1px solid rgba(0,0,0,.1); border-radius:7px;
+    padding:7px 8px; font-size:10.3px; }
+  .node b{ display:block; color:var(--ink); font-size:10.6px; margin-bottom:1px; }
+  .node span{ color:var(--muted); font-size:9.5px; }
+  .node.hl{ border:1.5px solid var(--indigo); background:var(--indigo-tint); }
+  .node.hlt{ border:1.5px solid var(--teal); background:var(--teal-tint); }
+
+  .L-exp{ background:var(--sky-tint); border-color:#c3e0f2; } .L-exp .lh{ color:var(--sky); } .L-exp .tag{ background:var(--sky); }
+  .L-core{ background:var(--indigo-tint); border-color:#cdd0f8; } .L-core .lh{ color:var(--indigo); } .L-core .tag{ background:var(--indigo); }
+  .L-found{ background:var(--teal-tint); border-color:#bfe7e1; } .L-found .lh{ color:var(--teal-dk); } .L-found .tag{ background:var(--teal); }
+  .flowdown{ text-align:center; color:var(--muted); font-size:14px; line-height:.7; margin:1px 0 4px; }
+
+  /* step flow */
+  .steps{ counter-reset:step; }
+  .step{ display:flex; gap:10px; padding:7px 0; border-bottom:1px dashed var(--line); page-break-inside:avoid; }
+  .step:last-child{ border-bottom:0; }
+  .step .num{ counter-increment:step; flex:0 0 auto; width:21px; height:21px; border-radius:50%;
+    background:var(--indigo); color:#fff; font-weight:800; font-size:10.5px; display:flex; align-items:center; justify-content:center; }
+  .step .num::before{ content:counter(step); }
+  .step.t .num{ background:var(--teal); }
+  .step .body b{ color:var(--ink); }
+  .step .path{ color:var(--muted); }
+
+  /* pipeline */
+  .pipe{ display:flex; align-items:stretch; flex-wrap:wrap; }
+  .pstage{ flex:1 1 0; min-width:80px; background:#fff; border:1px solid var(--line); border-top:3px solid var(--indigo);
+    border-radius:7px; padding:8px; text-align:center; }
+  .pstage b{ display:block; font-size:10.5px; color:var(--ink); }
+  .pstage span{ font-size:9.2px; color:var(--muted); }
+  .parrow{ display:flex; align-items:center; color:var(--indigo); font-weight:800; font-size:15px; padding:0 3px; }
+
+  /* entities */
+  .entity{ border:1px solid var(--line); border-radius:7px; overflow:hidden; background:#fff; }
+  .entity .et{ background:#1e1b4b; color:#fff; font-weight:700; font-size:11px; padding:4px 8px; }
+  .entity.core .et{ background:var(--indigo); }
+  .entity.ai .et{ background:var(--teal-dk); }
+  .entity .ec{ padding:6px 8px; font-size:9.8px; color:var(--slate); }
+  .entity .ec .rel{ color:var(--indigo); font-weight:700; }
+
+  table{ width:100%; border-collapse:collapse; font-size:10.3px; }
+  th,td{ text-align:left; padding:5px 7px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ background:#f6f7fe; color:var(--ink); font-size:9.6px; text-transform:uppercase; letter-spacing:.4px; }
+  tr{ page-break-inside:avoid; }
+  .yes{ color:var(--teal-dk); font-weight:800; }
+  .no{ color:#cbd5e1; font-weight:800; }
+  .part{ color:var(--amber); font-weight:800; font-size:9px; }
+  td.cap{ font-weight:600; color:var(--ink); }
+
+  .callout{ border-left:3px solid var(--indigo); background:var(--indigo-tint); border-radius:0 7px 7px 0;
+    padding:9px 12px; font-size:11px; }
+  .callout.teal{ border-left-color:var(--teal); background:var(--teal-tint); }
+  .callout.amber{ border-left-color:var(--amber); background:var(--amber-tint); }
+  .callout b{ color:var(--ink); }
+
+  .pill{ display:inline-block; font-size:9.2px; font-weight:700; padding:1px 7px; border-radius:20px;
+    background:#f1f5f9; color:var(--slate); margin:1px 2px 1px 0; }
+  .pill.i{ background:var(--indigo-tint); color:var(--indigo); }
+  .pill.t{ background:var(--teal-tint); color:var(--teal-dk); }
+  .pill.a{ background:var(--amber-tint); color:var(--amber); }
+
+  .foot{ position:fixed; bottom:-11mm; left:0; right:0; font-size:8.5px; color:#94a3b8;
+    display:flex; justify-content:space-between; border-top:1px solid var(--line); padding-top:3px; }
+
+  .rolecard{ border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .rolecard .rt{ display:flex; align-items:center; gap:8px; font-weight:800; color:var(--ink); font-size:12.5px; margin-bottom:5px; }
+  .rolecard .badge{ font-size:8.8px; font-weight:800; color:#fff; padding:2px 7px; border-radius:20px; }
+  .b-stu{ background:var(--indigo); } .b-ins{ background:var(--teal); } .b-adm{ background:var(--amber); } .b-par{ background:var(--sky); }
+</style>
+</head>
+<body>
+
+<div class="foot">
+  <span>Digital Library &amp; Learning Platform · System &amp; Feature Design</span>
+  <span>Technology-agnostic design · v1 · 2026-07-27</span>
+</div>
+
+<!-- ============================ COVER ============================ -->
+<div class="page">
+  <div class="cover">
+    <div>
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="8" width="42" height="32" rx="4" fill="#4f46e5"/>
+          <path d="M24 13c-4-2.4-8-2.4-11 0v20c3-2.4 7-2.4 11 0 4-2.4 8-2.4 11 0V13c-3-2.4-7-2.4-11 0Z" fill="#fff"/>
+          <path d="M24 13v20" stroke="#4f46e5" stroke-width="1.6"/>
+        </svg>
+        DIGITAL LIBRARY &amp; LEARNING PLATFORM
+      </div>
+    </div>
+    <div>
+      <h1>System &amp; Feature<br>Design</h1>
+      <div class="sub">A free, open-access digital library and learning platform for schools &amp; colleges — course enrollment, an e-resource catalog, assignments, proctored tests, one-on-one doubt-clearing over chat &amp; video, holistic student and course monitoring, and a course-grounded AI tutor that teaches from what each student is enrolled in.</div>
+      <div class="chips">
+        <span class="chip">100% free — no paid courses</span>
+        <span class="chip">Technology-agnostic design</span>
+        <span class="chip">Course-grounded AI tutor</span>
+        <span class="chip">Integrity-first assessments</span>
+      </div>
+    </div>
+    <div class="meta">
+      <b>Document:</b> System &amp; feature design (no technology stack) &nbsp;·&nbsp; <b>Audience:</b> Schools &amp; colleges &nbsp;·&nbsp; <b>Roles:</b> Student · Instructor/Faculty · Librarian-Admin · Parent (optional)<br>
+      <b>Prepared for:</b> marketing@prachalas.com &nbsp;·&nbsp; <b>Date:</b> 27 July 2026
+    </div>
+  </div>
+</div>
+
+<!-- ============================ 1. GOALS + 2. ROLES ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">01</span><h2>Design Goals &amp; Principles</h2></div>
+    <p>The platform is a <b>digital library</b> and <b>learning environment</b> in one: a place where students of a school or college browse and borrow reading material, enroll for free in structured courses, learn with an AI tutor grounded in their own coursework, prove their learning through assignments and proctored tests, and get one-on-one help from instructors — while instructors, administrators and (optionally) parents keep a clear, ethical view of progress.</p>
+    <div class="grid g3">
+      <div class="card"><div class="k">Open by default</div><p style="margin:5px 0 0">Every course and library resource is <b>free</b>. There are no prices, tiers, or subscriptions anywhere — access is governed by role and enrollment, never by payment.</p></div>
+      <div class="card"><div class="k">Grounded &amp; trustworthy AI</div><p style="margin:5px 0 0">The AI tutor teaches strictly from the enrolled course's material and <b>cites its sources</b>, so guidance is accurate and verifiable rather than open-ended.</p></div>
+      <div class="card"><div class="k">Integrity first</div><p style="margin:5px 0 0">Assessments are designed around fairness: proctoring, clear rules, and transparent violation handling protect the value of every result.</p></div>
+      <div class="card"><div class="k">Whole-learner visibility</div><p style="margin:5px 0 0">Monitoring blends engagement, progress, assessment and help-seeking into a humane picture that highlights <b>who needs support</b>, not just scores.</p></div>
+      <div class="card"><div class="k">Human help, one tap away</div><p style="margin:5px 0 0">The AI tutor handles routine questions; unresolved doubts escalate smoothly to a real instructor over chat or video.</p></div>
+      <div class="card"><div class="k">Safe for minors</div><p style="margin:5px 0 0">Privacy, consent and an optional parent/guardian view are first-class design concerns for school-age users.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="sec-n">02</span><h2>Actors &amp; Roles</h2></div>
+    <p class="lead">Four roles. The Parent/Guardian role is optional and intended for school deployments; colleges can disable it.</p>
+    <div class="grid g2">
+      <div class="rolecard">
+        <div class="rt"><span class="badge b-stu">STUDENT</span> The learner</div>
+        <ul class="tight">
+          <li>Browses the library, borrows e-resources, enrolls in courses (free)</li>
+          <li>Learns via lessons, materials, and the course-grounded AI tutor</li>
+          <li>Submits assignments; takes proctored tests</li>
+          <li>Raises doubts and joins 1:1 chat/video sessions</li>
+          <li>Tracks own progress, roadmaps, and certificates</li>
+        </ul>
+      </div>
+      <div class="rolecard">
+        <div class="rt"><span class="badge b-ins">INSTRUCTOR</span> Faculty / teacher</div>
+        <ul class="tight">
+          <li>Authors courses, lessons, materials, assignments and tests</li>
+          <li>Grades submissions; reviews proctoring flags</li>
+          <li>Runs doubt-clearing sessions (chat &amp; video)</li>
+          <li>Monitors their courses and enrolled students</li>
+          <li>Answers questions the AI tutor escalates</li>
+        </ul>
+      </div>
+      <div class="rolecard">
+        <div class="rt"><span class="badge b-adm">LIBRARIAN-ADMIN</span> Administration</div>
+        <ul class="tight">
+          <li>Curates the e-resource catalog; manages borrowing rules</li>
+          <li>Manages users, roles, classes/cohorts and enrollment policy</li>
+          <li>Oversees institution-wide monitoring &amp; integrity dashboards</li>
+          <li>Configures the platform, notifications and academic calendar</li>
+        </ul>
+      </div>
+      <div class="rolecard">
+        <div class="rt"><span class="badge b-par">PARENT</span> Guardian (optional)</div>
+        <ul class="tight">
+          <li>Linked to one or more students (school deployments)</li>
+          <li>Read-only view of progress, attendance &amp; assessment summaries</li>
+          <li>Receives notifications on milestones and at-risk alerts</li>
+          <li>No access to raw content authoring or grading</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 3. MODULE MAP ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">03</span><h2>System Building Blocks (module map)</h2></div>
+    <p class="lead">A conceptual map of the platform — described by capability, not technology. Experiences at the top consume core modules; every core module rests on a shared foundation.</p>
+
+    <div class="layer L-exp">
+      <div class="lh"><span class="tag">EXPERIENCES</span> Role-specific interfaces</div>
+      <div class="row">
+        <div class="node"><b>Student Portal</b><span>learn · borrow · assess · ask</span></div>
+        <div class="node"><b>Instructor Console</b><span>author · grade · mentor · monitor</span></div>
+        <div class="node"><b>Librarian-Admin Console</b><span>curate · manage · oversee</span></div>
+        <div class="node"><b>Parent Portal</b><span>read-only oversight (optional)</span></div>
+      </div>
+    </div>
+    <div class="flowdown">▼</div>
+
+    <div class="layer L-core">
+      <div class="lh"><span class="tag">CORE MODULES</span> What the platform does</div>
+      <div class="row" style="margin-bottom:7px">
+        <div class="node"><b>Digital Library &amp; Catalog</b><span>courses + e-book / journal catalog, borrowing</span></div>
+        <div class="node"><b>Course Enrollment</b><span>open, free enrollment · classes/cohorts</span></div>
+        <div class="node"><b>Learning &amp; Content Delivery</b><span>modules · lessons · media · progress</span></div>
+        <div class="node"><b>Assessment &amp; Proctoring</b><span>assignments · proctored tests · integrity</span></div>
+      </div>
+      <div class="row">
+        <div class="node"><b>Doubt-Clearing Sessions</b><span>1:1 chat + video · scheduling · records</span></div>
+        <div class="node hlt"><b>AI Course Tutor</b><span>course-grounded teaching · roadmaps · quizzes</span></div>
+        <div class="node"><b>Monitoring &amp; Analytics</b><span>student &amp; course dashboards · at-risk</span></div>
+        <div class="node"><b>Certification</b><span>completion &amp; achievement records</span></div>
+      </div>
+    </div>
+    <div class="flowdown">▼</div>
+
+    <div class="layer L-found">
+      <div class="lh"><span class="tag">FOUNDATION</span> Shared services every module relies on</div>
+      <div class="row">
+        <div class="node"><b>Identity, Roles &amp; Access</b><span>who you are · what you may do</span></div>
+        <div class="node"><b>Search &amp; Discovery</b><span>find courses &amp; resources</span></div>
+        <div class="node"><b>Content &amp; Resource Store</b><span>media, documents, e-resources</span></div>
+        <div class="node"><b>Notifications &amp; Reminders</b><span>deadlines · sessions · alerts</span></div>
+        <div class="node"><b>Records &amp; Audit Log</b><span>traceable, privacy-aware history</span></div>
+      </div>
+    </div>
+
+    <div class="callout teal" style="margin-top:12px">
+      <b>Reading the map.</b> Nothing in the experiences layer talks to the foundation directly — requests always flow through a core module that enforces the rules of that capability (e.g. only enrolled students reach a course's tutor; only an assignment's instructor sees its proctoring flags). This keeps <b>policy in one place per capability</b> and makes each module independently understandable.
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 4. MODULE DESIGNS ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">04</span><h2>Core Module Designs</h2></div>
+    <p class="lead">Each module's purpose, key concepts, and the behaviour that defines it.</p>
+
+    <div class="grid g2">
+      <div class="card avoid-break">
+        <h4>① Digital Library &amp; Catalog</h4>
+        <p style="margin:3px 0 4px;color:var(--muted);font-size:10.5px">The "library" itself: two shelves under one roof.</p>
+        <ul class="tight">
+          <li><b>Courses</b> — free, structured learning bundles (video, notes, downloadable materials)</li>
+          <li><b>E-resources</b> — a browsable catalog of e-books, journals &amp; reference material</li>
+          <li><b>Borrow / read</b> — students open resources online or check them out for a set loan period; availability &amp; returns are tracked</li>
+          <li>Organised by <b>categories, subjects &amp; tags</b>; full-text and metadata <b>search</b></li>
+          <li>Recommendations tie resources to the courses a student is enrolled in</li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <h4>② Course Enrollment</h4>
+        <p style="margin:3px 0 4px;color:var(--muted);font-size:10.5px">Open access — governed by role, never payment.</p>
+        <ul class="tight">
+          <li><b>Self-enroll</b> in any open course; or be added to a <b>class/cohort</b> by an admin</li>
+          <li>Optional <b>prerequisites</b> and <b>instructor approval</b> for restricted courses</li>
+          <li>Enrollment unlocks course content, the AI tutor, and assessments</li>
+          <li>Un-enroll / re-enroll supported; history retained for records</li>
+          <li>No prices, carts, or subscriptions exist in the model</li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <h4>③ Learning &amp; Content Delivery</h4>
+        <p style="margin:3px 0 4px;color:var(--muted);font-size:10.5px">How a course is structured and consumed.</p>
+        <ul class="tight">
+          <li>Course → <b>modules</b> → <b>lessons</b>; lessons carry video, text, and attached materials</li>
+          <li><b>Progress</b> is tracked per lesson and rolled up to a course percentage</li>
+          <li>Resume-where-you-left-off; completion states drive certification</li>
+          <li>Session recordings can be <b>transcribed &amp; summarised</b> for review and accessibility</li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <h4>④ Assessment &amp; Proctoring</h4>
+        <p style="margin:3px 0 4px;color:var(--muted);font-size:10.5px">Assignments and proctored tests — see §6 for the flow.</p>
+        <ul class="tight">
+          <li><b>Assignments</b>: instructions, attachments, deadlines, late-policy, submission &amp; grading with feedback</li>
+          <li><b>Proctored tests</b>: timed, with integrity monitoring and violation handling</li>
+          <li>Attempts, marks and pass/fail are recorded and feed monitoring</li>
+          <li>Results and feedback are returned to the student and (optionally) the parent</li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <h4>⑤ Doubt-Clearing Sessions</h4>
+        <p style="margin:3px 0 4px;color:var(--muted);font-size:10.5px">One-on-one human help — see §8 for the flow.</p>
+        <ul class="tight">
+          <li>Student <b>raises a doubt</b> (tied to a course/lesson) and picks <b>chat</b> or <b>video</b></li>
+          <li>Instant chat, or a <b>scheduled</b> video call with reminders</li>
+          <li>Session transcript / notes are saved to the student's record</li>
+          <li>Can be initiated directly, or as an <b>escalation from the AI tutor</b></li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <h4>⑥ Certification</h4>
+        <p style="margin:3px 0 4px;color:var(--muted);font-size:10.5px">Recognising completion.</p>
+        <ul class="tight">
+          <li>Issued automatically when a course's completion &amp; assessment criteria are met</li>
+          <li>Verifiable achievement record tied to the student and course</li>
+          <li>Visible to the student, instructor, admin and (optionally) parent</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 5. AI TUTOR ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">05</span><h2>AI Course Tutor — the "internal Claude"</h2></div>
+    <p class="lead">An assistant that behaves like a knowledgeable teacher for the specific courses a student is enrolled in — grounded in the real course material, not a generic chatbot.</p>
+
+    <div class="grid g2" style="margin-bottom:12px">
+      <div class="card avoid-break">
+        <div class="k">What it does</div>
+        <ul class="tight">
+          <li><b>Teaches from the course</b> — explains concepts using the enrolled course's lessons, notes &amp; resources</li>
+          <li><b>Cites its sources</b> — every explanation points back to the lesson/resource it drew from, so students can verify and go deeper</li>
+          <li><b>Personal study roadmap</b> — generates and adapts an ordered path through the course based on the student's progress and gaps</li>
+          <li><b>Self-check quizzes</b> — creates short practice questions from the material and gives feedback on answers</li>
+          <li><b>Socratic help</b> — offers hints before answers to encourage genuine understanding</li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <div class="k">Guardrails &amp; boundaries</div>
+        <ul class="tight">
+          <li><b>Stays in scope</b> — answers are bounded to courses the student is actually enrolled in</li>
+          <li><b>Knows its limits</b> — when material doesn't cover a question, it says so and can draw on general knowledge only if clearly flagged as beyond the course</li>
+          <li><b>Escalates to a human</b> — hands off to a doubt-clearing session with the instructor when a student is stuck or asks for it</li>
+          <li><b>No exam help during tests</b> — the tutor is unavailable inside a live proctored assessment</li>
+          <li><b>Age-appropriate &amp; safe</b> — tone and content suited to the institution's learners</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="font-size:13px;margin:6px 0 8px">How a tutored answer is formed</h3>
+    <div class="card steps avoid-break">
+      <div class="step t"><div class="num"></div><div class="body"><b>Student asks</b> a question from within a course they're enrolled in. <span class="path">The tutor knows which course, module and lesson they're on.</span></div></div>
+      <div class="step t"><div class="num"></div><div class="body"><b>Retrieve course context</b> — the tutor gathers the most relevant lessons, notes and resources <i>from that course</i>.</div></div>
+      <div class="step t"><div class="num"></div><div class="body"><b>Teach, grounded</b> — it composes an explanation from that material, adapted to the student's current progress, and <b>cites the source lessons</b>.</div></div>
+      <div class="step t"><div class="num"></div><div class="body"><b>Reinforce</b> — offers a next step on the personalized <b>roadmap</b> and, on request, a short <b>self-check quiz</b>.</div></div>
+      <div class="step t"><div class="num"></div><div class="body"><b>Escalate if needed</b> — if the question is out of scope or the student stays stuck, it offers to <b>book a doubt-clearing session</b> with the instructor.</div></div>
+    </div>
+
+    <div class="callout teal avoid-break" style="margin-top:12px">
+      <b>Why "grounded" matters.</b> Because the tutor teaches from the same material the student is graded on — and shows its citations — its guidance is consistent with the course, easy to trust, and safe to lean on. It also produces a valuable by-product for instructors: the questions students ask most reveal exactly where the course material is unclear (fed into Course Monitoring, §9).
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 6. FLOWS: LEARNING + TEST ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">06</span><h2>Key Journey — Learn, Assess, Certify</h2></div>
+    <p class="lead">The student's end-to-end path. Monitoring (§9) observes every stage; the AI tutor (§5) is available throughout except inside a live test.</p>
+    <div class="pipe avoid-break" style="margin-bottom:14px">
+      <div class="pstage"><b>Discover</b><span>library &amp; catalog</span></div>
+      <div class="parrow">→</div>
+      <div class="pstage"><b>Enroll</b><span>free · open</span></div>
+      <div class="parrow">→</div>
+      <div class="pstage"><b>Learn</b><span>lessons + AI tutor</span></div>
+      <div class="parrow">→</div>
+      <div class="pstage"><b>Practice</b><span>assignments</span></div>
+      <div class="parrow">→</div>
+      <div class="pstage"><b>Prove</b><span>proctored test</span></div>
+      <div class="parrow">→</div>
+      <div class="pstage"><b>Certify</b><span>achievement</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="sec-n">07</span><h2>Proctored Test — integrity flow</h2></div>
+    <p class="lead">Timed assessment with monitoring and a fair, transparent response to suspected violations.</p>
+    <div class="card steps avoid-break">
+      <div class="step"><div class="num"></div><div class="body"><b>Pre-flight</b> — the student sees the rules, duration and what will be monitored, and gives informed consent to start.</div></div>
+      <div class="step"><div class="num"></div><div class="body"><b>Locked session begins</b> — a timed attempt opens; the AI tutor and other aids are disabled for the duration.</div></div>
+      <div class="step"><div class="num"></div><div class="body"><b>Integrity signals</b> — the session watches for defined events (e.g. leaving the test, switching context, copy/paste attempts) and records each with a timestamp.</div></div>
+      <div class="step"><div class="num"></div><div class="body"><b>Graduated response</b> — minor events raise a visible warning to the student; repeated or serious events increment a violation count and can pause or end the attempt per policy.</div></div>
+      <div class="step"><div class="num"></div><div class="body"><b>Auto-submit</b> — on time-out or completion the attempt is submitted with its answers and full integrity log.</div></div>
+      <div class="step"><div class="num"></div><div class="body"><b>Human review</b> — the instructor sees the score alongside the flags and makes the final, accountable decision; the student is told the outcome and basis.</div></div>
+    </div>
+    <div class="callout amber avoid-break" style="margin-top:12px">
+      <b>Fairness by design.</b> Monitoring <i>informs</i> a human decision — it never silently fails a student. Rules are shown up front, flags are visible, and every consequential judgement is made by the instructor with the evidence in view. Repeat-offense limits and cool-down/lockout windows are configurable per assessment.
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 8. DOUBT SESSIONS ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">08</span><h2>One-on-One Doubt-Clearing — flow</h2></div>
+    <p class="lead">Human help over chat or video, reachable directly or as an escalation from the AI tutor.</p>
+    <div class="grid g2" style="margin-bottom:12px">
+      <div class="card avoid-break">
+        <div class="k">Chat session (instant)</div>
+        <ul class="tight">
+          <li>Student raises a doubt tied to a course/lesson</li>
+          <li>Routed to an available instructor for that course; joins a queue if busy</li>
+          <li>Real-time 1:1 messaging; can share snippets &amp; resources</li>
+          <li>Transcript saved to the student's record and course thread</li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <div class="k">Video session (scheduled)</div>
+        <ul class="tight">
+          <li>Student requests a slot; instructor confirms a time</li>
+          <li>Reminders sent to both; a private meeting link is generated</li>
+          <li>1:1 video call for deeper, face-to-face explanation</li>
+          <li>Notes / recording &amp; outcome logged after the call</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card steps avoid-break">
+      <div class="step t"><div class="num"></div><div class="body"><b>Raise</b> — student describes the doubt (auto-linked to the current course &amp; lesson) and picks chat or video.</div></div>
+      <div class="step t"><div class="num"></div><div class="body"><b>Match &amp; schedule</b> — routed to a course instructor; chat starts immediately, or a video slot is confirmed with reminders.</div></div>
+      <div class="step t"><div class="num"></div><div class="body"><b>Resolve</b> — the session happens 1:1; shared context and resources keep it focused.</div></div>
+      <div class="step t"><div class="num"></div><div class="body"><b>Record &amp; close</b> — transcript/notes and a resolution status are saved; the doubt feeds monitoring (topics, response time, resolution rate).</div></div>
+    </div>
+    <div class="callout teal avoid-break" style="margin-top:12px">
+      <b>Escalation path.</b> When the AI tutor can't fully help, it offers a one-tap handoff that pre-fills the doubt with the conversation context — so the student never re-explains, and the instructor arrives already informed.
+    </div>
+  </section>
+
+  <section class="avoid-break">
+    <div class="sec-h"><span class="sec-n">09</span><h2>Monitoring &amp; Analytics</h2></div>
+    <p class="lead">Two lenses on the same activity: how each <b>student</b> is doing, and how each <b>course</b> is performing.</p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="k">Student monitoring</div>
+        <ul class="tight">
+          <li><b>Engagement</b> — logins, active time, lessons opened, resources read/borrowed</li>
+          <li><b>Progress</b> — lesson &amp; course completion, roadmap position</li>
+          <li><b>Assessment</b> — assignment &amp; test scores, attempts, integrity flags</li>
+          <li><b>Help-seeking</b> — doubts raised, sessions attended, tutor usage</li>
+          <li><b>At-risk signal</b> — a blended indicator flags students who need support early</li>
+          <li>Parent-visible summary (optional): progress, attendance, milestones, alerts</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="k">Course monitoring</div>
+        <ul class="tight">
+          <li><b>Reach</b> — enrollments, active learners, completion rate</li>
+          <li><b>Outcomes</b> — score distributions, pass rates, assignment turnaround</li>
+          <li><b>Content usage</b> — most/least viewed lessons; drop-off points</li>
+          <li><b>Support load</b> — doubt-session volume &amp; topics per course</li>
+          <li><b>Clarity gaps</b> — most-asked AI-tutor questions surface confusing material</li>
+          <li><b>Integrity</b> — proctoring-flag rates by assessment</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 10. DATA MODEL ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">10</span><h2>Conceptual Data Model</h2></div>
+    <p class="lead">The entities the design revolves around and how they relate — expressed as concepts, independent of any storage technology.</p>
+
+    <div class="grid g4" style="margin-bottom:10px">
+      <div class="entity core"><div class="et">Person</div><div class="ec">name · contact<br><span class="rel">has</span> Role(s)<br>{student·instructor·<br>librarian-admin·parent}</div></div>
+      <div class="entity"><div class="et">Guardian Link</div><div class="ec"><span class="rel">Parent → Student</span><br>oversight scope<br>(school option)</div></div>
+      <div class="entity core"><div class="et">Course</div><div class="ec">title · subject<br>free · open/restricted<br><span class="rel">has</span> Modules</div></div>
+      <div class="entity"><div class="et">Class / Cohort</div><div class="ec">group of students<br><span class="rel">grouped into</span> Course<br>(admin-managed)</div></div>
+
+      <div class="entity"><div class="et">Module</div><div class="ec"><span class="rel">in</span> Course<br>ordered<br><span class="rel">has</span> Lessons</div></div>
+      <div class="entity"><div class="et">Lesson</div><div class="ec"><span class="rel">in</span> Module<br>video · notes · media<br>duration · order</div></div>
+      <div class="entity"><div class="et">Resource</div><div class="ec">e-book · journal · ref<br>catalog metadata<br><span class="rel">borrowable</span></div></div>
+      <div class="entity"><div class="et">Loan / Read</div><div class="ec"><span class="rel">Student ↔ Resource</span><br>borrowed · due · returned</div></div>
+
+      <div class="entity core"><div class="et">Enrollment</div><div class="ec"><span class="rel">Student ↔ Course</span><br>status · progress<br>enrolled/completed</div></div>
+      <div class="entity"><div class="et">Progress Record</div><div class="ec"><span class="rel">per</span> Enrollment/Lesson<br>completion · last position<br>time spent</div></div>
+      <div class="entity"><div class="et">Assignment</div><div class="ec"><span class="rel">in</span> Course<br>instructions · deadline<br>marks · late-policy</div></div>
+      <div class="entity"><div class="et">Submission</div><div class="ec"><span class="rel">Student ↔ Assignment</span><br>content · status<br>marks · feedback</div></div>
+
+      <div class="entity"><div class="et">Test</div><div class="ec"><span class="rel">in</span> Course<br>timed · proctored<br>rules · total marks</div></div>
+      <div class="entity"><div class="et">Test Attempt</div><div class="ec"><span class="rel">Student ↔ Test</span><br>answers · score · passed<br>attempt no.</div></div>
+      <div class="entity"><div class="et">Integrity Event</div><div class="ec"><span class="rel">per</span> Test Attempt<br>type · timestamp<br>violation count</div></div>
+      <div class="entity"><div class="et">Certificate</div><div class="ec"><span class="rel">Student ↔ Course</span><br>issued-on<br>achievement record</div></div>
+
+      <div class="entity"><div class="et">Doubt Session</div><div class="ec"><span class="rel">Student ↔ Instructor</span><br>mode: chat/video<br>course/lesson · status</div></div>
+      <div class="entity"><div class="et">Session Message / Note</div><div class="ec"><span class="rel">in</span> Doubt Session<br>transcript · resolution</div></div>
+      <div class="entity ai"><div class="et">Tutor Conversation</div><div class="ec"><span class="rel">Student ↔ Course</span><br>grounded messages<br>cited sources</div></div>
+      <div class="entity ai"><div class="et">Roadmap / Quiz</div><div class="ec"><span class="rel">generated per</span><br>Enrollment<br>steps · questions</div></div>
+    </div>
+
+    <div class="callout">
+      <b>Relationships at a glance.</b> A <b>Person</b> holds one or more <b>Roles</b>; a Parent links to Students via a <b>Guardian Link</b>. A <b>Course</b> contains <b>Modules → Lessons</b> and offers <b>Assignments</b> &amp; <b>Tests</b>. A student's <b>Enrollment</b> is the spine that gathers their <b>Progress</b>, <b>Submissions</b>, <b>Test Attempts</b> (with <b>Integrity Events</b>), <b>Tutor Conversations</b>, generated <b>Roadmaps/Quizzes</b>, and any <b>Certificate</b>. <b>Resources</b> live in the catalog and are checked out via <b>Loan/Read</b> records. <b>Doubt Sessions</b> connect a student to an instructor around a specific course or lesson. Monitoring (§9) is a <i>view</i> computed over these entities — not a store of its own.
+    </div>
+  </section>
+</div>
+
+<!-- ============================ 11. ACCESS MATRIX + NFR ============================ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">11</span><h2>Access Control Matrix</h2></div>
+    <p class="lead">What each role may do. <span class="yes">●</span> full · <span class="part">▲ own/limited</span> · <span class="no">●</span> none. "Own" means restricted to the user's own courses, students, or children.</p>
+    <table>
+      <thead><tr><th style="width:34%">Capability</th><th>Student</th><th>Instructor</th><th>Librarian-Admin</th><th>Parent</th></tr></thead>
+      <tbody>
+        <tr><td class="cap">Browse library &amp; borrow resources</td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="part">▲ view</span></td></tr>
+        <tr><td class="cap">Enroll in courses</td><td><span class="yes">●</span></td><td><span class="no">●</span></td><td><span class="part">▲ manage</span></td><td><span class="no">●</span></td></tr>
+        <tr><td class="cap">Author courses / lessons / materials</td><td><span class="no">●</span></td><td><span class="yes">●</span></td><td><span class="part">▲ oversee</span></td><td><span class="no">●</span></td></tr>
+        <tr><td class="cap">Use AI course tutor</td><td><span class="yes">●</span></td><td><span class="part">▲ preview</span></td><td><span class="no">●</span></td><td><span class="no">●</span></td></tr>
+        <tr><td class="cap">Submit assignments / take tests</td><td><span class="yes">●</span></td><td><span class="no">●</span></td><td><span class="no">●</span></td><td><span class="no">●</span></td></tr>
+        <tr><td class="cap">Grade &amp; review proctoring flags</td><td><span class="no">●</span></td><td><span class="part">▲ own</span></td><td><span class="yes">●</span></td><td><span class="no">●</span></td></tr>
+        <tr><td class="cap">Run doubt-clearing sessions</td><td><span class="part">▲ request</span></td><td><span class="yes">●</span></td><td><span class="no">●</span></td><td><span class="no">●</span></td></tr>
+        <tr><td class="cap">View student monitoring</td><td><span class="part">▲ self</span></td><td><span class="part">▲ own</span></td><td><span class="yes">●</span></td><td><span class="part">▲ child</span></td></tr>
+        <tr><td class="cap">View course monitoring</td><td><span class="no">●</span></td><td><span class="part">▲ own</span></td><td><span class="yes">●</span></td><td><span class="no">●</span></td></tr>
+        <tr><td class="cap">Manage users, roles &amp; catalog</td><td><span class="no">●</span></td><td><span class="no">●</span></td><td><span class="yes">●</span></td><td><span class="no">●</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="avoid-break">
+    <div class="sec-h"><span class="sec-n">12</span><h2>Cross-Cutting Design Concerns</h2></div>
+    <div class="grid g3">
+      <div class="card"><div class="k">Privacy &amp; minors</div><p style="margin:5px 0 0">Data minimisation, clear consent, and parental oversight for school-age users. Monitoring is transparent to the student and framed for support, not surveillance.</p></div>
+      <div class="card"><div class="k">Accessibility</div><p style="margin:5px 0 0">Captions &amp; transcripts for video, readable typography, keyboard-friendly navigation, and low-bandwidth / offline reading for library resources.</p></div>
+      <div class="card"><div class="k">Academic integrity</div><p style="margin:5px 0 0">Rules shown up front, human-in-the-loop judgement, tutor disabled during tests, and full audit trails on every consequential action.</p></div>
+      <div class="card"><div class="k">Notifications</div><p style="margin:5px 0 0">Deadlines, session reminders, grade releases, and at-risk alerts — delivered per role with sensible defaults and opt-outs.</p></div>
+      <div class="card"><div class="k">Reliability of learning</div><p style="margin:5px 0 0">Progress and submissions are never silently lost; auto-save and resume protect long lessons and timed attempts.</p></div>
+      <div class="card"><div class="k">Extensibility</div><p style="margin:5px 0 0">Group study rooms, peer discussion, gamified streaks, multi-language tutoring, and institution-wide reporting are natural next steps.</p></div>
+    </div>
+    <div class="callout teal" style="margin-top:12px">
+      <b>In one line.</b> A free, open digital library where students learn with a course-grounded AI tutor, prove their learning through fair proctored assessments, get one-on-one human help when they need it, and are supported early through humane monitoring — with instructors, admins and parents each given exactly the view their role calls for.
+    </div>
+  </section>
+</div>
+
+</body>
+</html>
