@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learnify — Library Content &amp; Course-Authoring Permissions</title>
+<style>
+  :root{
+    --green:#1DB954; --green-dk:#12833b; --green-tint:#eafaf0;
+    --ink:#0f172a; --slate:#334155; --muted:#64748b; --line:#e2e8f0;
+    --blue:#2563eb; --blue-tint:#eef4ff;
+    --amber:#b45309; --amber-tint:#fff7ec;
+    --violet:#7c3aed; --violet-tint:#f4efff;
+    --rose:#e11d48; --rose-tint:#ffeef2;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--slate); font-size:11.4px; line-height:1.5; background:#fff;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  h1,h2,h3,h4{ color:var(--ink); line-height:1.2; margin:0; }
+  p{ margin:0 0 8px; }
+  code{ font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:.9em;
+    background:#f1f5f9; padding:1px 5px; border-radius:4px; color:#0f172a; }
+  .mono{ font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; }
+
+  @page{ size:A4; margin:14mm 13mm 15mm; }
+  .page{ page-break-after:always; }
+  .page:last-child{ page-break-after:auto; }
+  section{ margin-bottom:15px; }
+  .avoid-break{ page-break-inside:avoid; }
+
+  /* cover */
+  .cover{ height:262mm; display:flex; flex-direction:column; justify-content:space-between;
+    background:linear-gradient(150deg,#0b3d1f 0%, #0f172a 55%, #05261a 100%);
+    color:#e9f5ee; padding:24mm 20mm; border-radius:4px; }
+  .cover .brand{ display:flex; align-items:center; gap:12px; font-weight:800; letter-spacing:.5px; font-size:20px;
+    background:linear-gradient(90deg,#1DB954,#7be3a0); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .cover .dot{ width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,#1DB954,#0e8a3c); display:inline-block; }
+  .cover h1{ color:#fff; font-size:37px; line-height:1.1; margin:0 0 14px; letter-spacing:-.5px; }
+  .cover .sub{ font-size:14px; color:#a7d8bc; max-width:150mm; }
+  .cover .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:22px; }
+  .cover .chip{ font-size:10.5px; padding:5px 11px; border:1px solid rgba(255,255,255,.24); border-radius:20px; color:#d6f0e0; background:rgba(255,255,255,.05); }
+  .cover .meta{ font-size:11px; color:#8fc3a5; border-top:1px solid rgba(255,255,255,.15); padding-top:14px; }
+  .cover .meta b{ color:#e9f5ee; font-weight:600; }
+
+  .sec-h{ display:flex; align-items:baseline; gap:10px; border-bottom:2px solid var(--green); padding-bottom:6px; margin-bottom:12px; }
+  .sec-n{ font-size:12px; font-weight:800; color:#fff; background:var(--green); border-radius:5px; padding:2px 8px; letter-spacing:.4px; }
+  .sec-h h2{ font-size:17.5px; }
+  .lead{ color:var(--muted); font-size:12px; margin:-4px 0 12px; }
+
+  .card{ border:1px solid var(--line); border-radius:8px; padding:11px 13px; background:#fff; }
+  .grid{ display:grid; gap:10px; }
+  .g2{ grid-template-columns:1fr 1fr; }
+  .g3{ grid-template-columns:1fr 1fr 1fr; }
+  .card h4{ font-size:12.5px; margin-bottom:4px; }
+  .card .k{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:700; }
+  ul{ margin:4px 0; padding-left:16px; }
+  li{ margin:2px 0; }
+  .tight li{ margin:1px 0; }
+
+  /* content hierarchy tree */
+  .tree{ border:1px solid var(--line); border-radius:9px; padding:12px; background:#fbfdfc; }
+  .tnode{ background:#fff; border:1px solid var(--line); border-radius:7px; padding:6px 9px; }
+  .tnode .tt{ font-weight:800; color:var(--ink); font-size:11.5px; }
+  .tnode .tm{ font-size:9.4px; color:var(--muted); }
+  .tnode.hub{ border:1.5px solid var(--green); background:var(--green-tint); }
+  .vis{ font-size:8.6px; font-weight:800; padding:1px 6px; border-radius:20px; margin-left:5px; }
+  .vis.pub{ background:var(--blue-tint); color:#1d4ed8; } .vis.gate{ background:var(--amber-tint); color:var(--amber); } .vis.priv{ background:var(--rose-tint); color:var(--rose); }
+  .branch{ display:flex; gap:8px; margin-top:8px; }
+  .rail{ flex:0 0 16px; text-align:center; color:var(--green); font-weight:800; }
+  .kids{ flex:1; display:flex; flex-direction:column; gap:7px; }
+
+  /* enforcement flow */
+  .flow{ display:flex; align-items:stretch; flex-wrap:wrap; gap:0; }
+  .fbox{ flex:1 1 0; min-width:96px; border:1px solid var(--line); border-top:3px solid var(--green); border-radius:7px; padding:8px; text-align:center; background:#fff; }
+  .fbox b{ display:block; font-size:10.6px; color:var(--ink); } .fbox span{ font-size:9.2px; color:var(--muted); }
+  .farrow{ display:flex; align-items:center; color:var(--green); font-weight:800; font-size:15px; padding:0 3px; }
+
+  table{ width:100%; border-collapse:collapse; font-size:10.1px; }
+  th,td{ text-align:left; padding:5px 7px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ background:#f6fbf7; color:var(--ink); font-size:9.4px; text-transform:uppercase; letter-spacing:.3px; }
+  tr{ page-break-inside:avoid; }
+  td.cap{ font-weight:600; color:var(--ink); }
+  .yes{ color:var(--green-dk); font-weight:800; } .no{ color:#cbd5e1; font-weight:800; } .cond{ color:var(--amber); font-weight:800; font-size:9px; }
+  .cmd{ font-weight:800; font-size:8.8px; padding:1px 5px; border-radius:4px; }
+  .c-sel{ background:var(--blue-tint); color:#1d4ed8; } .c-ins{ background:var(--green-tint); color:var(--green-dk); }
+  .c-upd{ background:var(--amber-tint); color:var(--amber); } .c-del{ background:var(--rose-tint); color:var(--rose); } .c-all{ background:var(--violet-tint); color:var(--violet); }
+
+  .callout{ border-left:3px solid var(--green); background:var(--green-tint); border-radius:0 7px 7px 0; padding:9px 12px; font-size:10.8px; }
+  .callout.warn{ border-left-color:var(--amber); background:var(--amber-tint); }
+  .callout.risk{ border-left-color:var(--rose); background:var(--rose-tint); }
+  .callout b{ color:var(--ink); }
+
+  .pill{ display:inline-block; font-size:9px; font-weight:700; padding:1px 7px; border-radius:20px; background:#f1f5f9; color:var(--slate); margin:1px 2px 1px 0; }
+  .pill.g{ background:var(--green-tint); color:var(--green-dk); } .pill.a{ background:var(--amber-tint); color:var(--amber); } .pill.b{ background:var(--blue-tint); color:#1d4ed8; } .pill.r{ background:var(--rose-tint); color:var(--rose); }
+
+  .foot{ position:fixed; bottom:-11mm; left:0; right:0; font-size:8.5px; color:#94a3b8; display:flex; justify-content:space-between; border-top:1px solid var(--line); padding-top:3px; }
+  .predicate{ font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace; font-size:9px; color:var(--slate); background:#f8fafc; border:1px solid var(--line); border-radius:4px; padding:1px 4px; display:inline-block; }
+</style>
+</head>
+<body>
+
+<div class="foot">
+  <span>Learnify — Library Content &amp; Course-Authoring Permissions · Architecture</span>
+  <span>From source at commit 72b453b · 2026-07-28</span>
+</div>
+
+<!-- ============ COVER ============ -->
+<div class="page">
+  <div class="cover">
+    <div><div class="brand"><span class="dot"></span> LEARNIFY</div></div>
+    <div>
+      <h1>Library Content &amp;<br>Course-Authoring<br>Permissions</h1>
+      <div class="sub">How the course library is laid out — courses, modules, lessons, materials and taxonomy — and exactly who is allowed to create, upload and edit each part. Extracted from the codebase: application-layer checks and PostgreSQL Row-Level Security.</div>
+      <div class="chips">
+        <span class="chip">Content hierarchy &amp; visibility</span>
+        <span class="chip">Role &amp; ownership model</span>
+        <span class="chip">Storage buckets &amp; upload paths</span>
+        <span class="chip">RLS policy catalog</span>
+      </div>
+    </div>
+    <div class="meta">
+      <b>Scope:</b> Course/library content structure &amp; write-access model &nbsp;·&nbsp; <b>Repository:</b> shashankraghuram1509/learnify-spotify<br>
+      <b>Sources:</b> 36 SQL migrations · Storage policies · authoring components · <span class="mono">upload-to-drive</span> function &nbsp;·&nbsp; <b>Date:</b> 28 July 2026
+    </div>
+  </div>
+</div>
+
+<!-- ============ 1. OVERVIEW ============ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">01</span><h2>Overview — a two-layer permission model</h2></div>
+    <p>The library's content is <b>public to read</b> but tightly governed to write. Every write is checked in up to two places: an <b>application layer</b> (UI gating and, for the Drive path, explicit role + ownership checks inside an Edge Function) and the <b>database layer</b> — PostgreSQL <b>Row-Level Security (RLS)</b> policies on the content tables plus policies on the Storage buckets. RLS is the real backstop: even if the UI is bypassed, the database rejects an unauthorized write.</p>
+
+    <div class="flow avoid-break" style="margin:10px 0 6px">
+      <div class="fbox"><b>Client action</b><span>create course · upload material</span></div>
+      <div class="farrow">→</div>
+      <div class="fbox"><b>App-layer checks</b><span>UI role gating · Edge-Function role &amp; ownership</span></div>
+      <div class="farrow">→</div>
+      <div class="fbox"><b>Database RLS</b><span>table policies via <span class="mono">has_role()</span> + <span class="mono">teacher_id</span></span></div>
+      <div class="farrow">→</div>
+      <div class="fbox"><b>Storage policies</b><span>bucket-scoped <span class="mono">storage.objects</span> rules</span></div>
+      <div class="farrow">→</div>
+      <div class="fbox"><b>Write committed</b><span>or rejected</span></div>
+    </div>
+
+    <div class="grid g3" style="margin-top:6px">
+      <div class="card"><div class="k">Read model</div><p style="margin:5px 0 0">The whole catalog — courses, modules, taxonomy, reviews — is world-readable (<span class="predicate">USING (true)</span>). Only <b>premium lesson bodies</b> and private files (certificates) are gated.</p></div>
+      <div class="card"><div class="k">Write model</div><p style="margin:5px 0 0">Anchored on two facts: the caller's <b>role</b> (<span class="mono">student/teacher/admin</span>) and <b>ownership</b> (<span class="mono">courses.teacher_id = auth.uid()</span>). Teachers own their courses; admins override.</p></div>
+      <div class="card"><div class="k">Source-of-truth caveat</div><p style="margin:5px 0 0">A few live objects — the <code>course_resources</code> &amp; <code>course_materials</code> tables and the <code>course-materials</code> bucket — exist in the running DB but <b>not in the migrations</b>, so part of the model lives outside version control (see §8).</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="sec-n">02</span><h2>How the library is laid out</h2></div>
+    <p class="lead">The content hierarchy that makes up a course, with each level's read-visibility. <span class="vis pub">PUBLIC</span> world-readable · <span class="vis gate">GATED</span> conditional · <span class="vis priv">PRIVATE</span> owner-only.</p>
+
+    <div class="tree avoid-break">
+      <div class="tnode hub"><span class="tt">courses</span> <span class="vis pub">PUBLIC READ</span><div class="tm">the hub · title, description, thumbnail_url, video_url, teacher_id, is_premium · one row per course</div></div>
+      <div class="branch">
+        <div class="rail">└─</div>
+        <div class="kids">
+          <div class="tnode"><span class="tt">modules</span> <span class="vis pub">PUBLIC</span><div class="tm">ordered sections within a course (<span class="mono">course_id</span>, title, position)</div></div>
+          <div class="branch">
+            <div class="rail">└─</div>
+            <div class="kids">
+              <div class="tnode"><span class="tt">lessons</span> <span class="vis gate">GATED</span><div class="tm">the teachable units (video/text). <b>Free-course lessons are public; premium-course lessons require enrollment.</b></div></div>
+            </div>
+          </div>
+          <div class="tnode"><span class="tt">course_resources</span> <span class="vis pub">PUBLIC</span><div class="tm">downloadable materials &amp; links (pdf / video / link / document) shown by <span class="mono">MaterialsList</span> · ordered by <span class="mono">position</span> · <i>defined outside migrations</i></div></div>
+          <div class="tnode"><span class="tt">course_materials</span> <span class="vis pub">PUBLIC</span><div class="tm">structured AI study content — overview, key_points, code_examples, practice_exercises (JSON) · <i>defined outside migrations</i></div></div>
+          <div class="tnode"><span class="tt">reviews</span> <span class="vis pub">PUBLIC</span><div class="tm">student ratings &amp; comments (write-gated to enrolled students)</div></div>
+          <div class="tnode"><span class="tt">categories · tags</span> <span class="vis pub">PUBLIC</span><div class="tm">taxonomy via join tables <span class="mono">course_categories</span> / <span class="mono">course_tags</span> · <b>read-only to all clients</b> (no write policy)</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:10px">
+      <b>The catalog is the library.</b> Because <code>courses</code>, <code>modules</code>, taxonomy and resources are all world-readable, browsing/search works for anyone. The single access boundary inside a course is the <b>premium-lesson gate</b>: a premium course's lesson bodies are visible only to enrolled students, enforced directly in the <code>lessons</code> RLS policy — not just hidden in the UI.
+    </div>
+  </section>
+</div>
+
+<!-- ============ 3. ROLES ============ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">03</span><h2>Roles &amp; how they are granted</h2></div>
+    <p class="lead">Authoring rights flow entirely from a user's role. Roles live in their own table and are deliberately hard to self-assign.</p>
+    <div class="grid g2">
+      <div class="card avoid-break">
+        <div class="k">The role model</div>
+        <ul class="tight">
+          <li>Roles are <span class="mono">app_role</span> ∈ {<b>student, teacher, admin</b>}, stored in a dedicated <code>user_roles</code> table — <b>separated from <code>profiles</code> for security</b></li>
+          <li>Checked via <code>has_role(user, role)</code> — a <b>SECURITY DEFINER</b> SQL function that reads <code>user_roles</code>, so RLS policies can call it without recursion</li>
+          <li>A user may hold multiple role rows (<span class="mono">UNIQUE(user_id, role)</span>)</li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <div class="k">How you get a role</div>
+        <ul class="tight">
+          <li><b>Signup → always <span class="mono">student</span>.</b> The <code>handle_new_user</code> trigger forces the student role and <b>ignores any client-supplied role</b> in metadata (locked down after earlier versions trusted it)</li>
+          <li><b>Teacher / admin are provisioned by an admin</b> — an RLS policy lets admins insert <span class="mono">teacher</span> role rows; the <code>admin-create-instructor</code> function does this server-side</li>
+          <li>Net effect: elevated authoring rights can't be self-granted</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout warn" style="margin-top:10px">
+      <b>Design intent, verbatim from the migration:</b> <i>“Always assign 'student' role by default, ignoring any client input. Teachers and admins must be created through secure admin interface.”</i> This is the linchpin of the authoring model — content-write power is bootstrapped only by an existing admin.
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="sec-n">04</span><h2>Who can author what</h2></div>
+    <p class="lead">Effective write permissions across the library. <span class="yes">●</span> allowed · <span class="cond">▲ conditional</span> · <span class="no">●</span> denied. "Owner" = the course's <code>teacher_id</code>.</p>
+    <table>
+      <thead><tr><th style="width:31%">Action</th><th>Student</th><th>Teacher · owner</th><th>Teacher · other</th><th>Admin</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td class="cap">View catalog &amp; content</td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td>premium lesson bodies need enrollment</td></tr>
+        <tr><td class="cap">Create a course</td><td><span class="no">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td><span class="yes">●</span></td><td>teacher role only — <b>not bound to own id</b> (§8)</td></tr>
+        <tr><td class="cap">Edit / delete <i>own</i> course</td><td><span class="no">●</span></td><td><span class="yes">●</span></td><td><span class="no">●</span></td><td><span class="yes">●</span></td><td>owner + teacher role; admin = any</td></tr>
+        <tr><td class="cap">Edit / delete <i>any</i> course</td><td><span class="no">●</span></td><td><span class="no">●</span></td><td><span class="no">●</span></td><td><span class="yes">●</span></td><td>“Admins can manage all courses”</td></tr>
+        <tr><td class="cap">Manage modules &amp; lessons</td><td><span class="no">●</span></td><td><span class="yes">●</span></td><td><span class="no">●</span></td><td><span class="cond">▲ no policy</span></td><td>owner-only; <b>no admin RLS policy exists</b> (§8)</td></tr>
+        <tr><td class="cap">Upload file → <span class="mono">course-materials</span></td><td><span class="no">●</span></td><td><span class="cond">▲ own path</span></td><td><span class="no">●</span></td><td><span class="no">●</span></td><td>path must start with owned course id</td></tr>
+        <tr><td class="cap">Add <span class="mono">course_resources</span> row</td><td><span class="no">●</span></td><td><span class="yes">●</span></td><td><span class="no">●</span></td><td><span class="cond">▲</span></td><td>Drive fn: teacher role + ownership</td></tr>
+        <tr><td class="cap">Upload thumbnail / video</td><td><span class="no">●</span></td><td><span class="no">●</span></td><td><span class="no">●</span></td><td><span class="yes">●</span></td><td><b>admin-only</b> buckets</td></tr>
+        <tr><td class="cap">Manage categories / tags</td><td><span class="no">●</span></td><td><span class="no">●</span></td><td><span class="no">●</span></td><td><span class="no">●</span></td><td>no write policy → service-role only</td></tr>
+        <tr><td class="cap">Grant teacher / admin role</td><td><span class="no">●</span></td><td><span class="no">●</span></td><td><span class="no">●</span></td><td><span class="yes">●</span></td><td>admins insert teacher rows</td></tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<!-- ============ 5. CREATION FLOWS ============ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">05</span><h2>Course creation &amp; editing flows</h2></div>
+    <p class="lead">Two authoring surfaces write to the same <code>courses</code> table — one for teachers (self-service) and one for admins (full control).</p>
+    <div class="grid g2">
+      <div class="card avoid-break">
+        <h4>Teacher — self-service</h4>
+        <p style="margin:2px 0 5px;color:var(--muted);font-size:10.3px"><span class="mono">teacher/MyCourses.tsx</span></p>
+        <ul class="tight">
+          <li>“Create Course” dialog → direct client <code>insert</code> into <code>courses</code> with <b><code>teacher_id = self</code></b></li>
+          <li>Manages materials inline per course (upload + list)</li>
+          <li>Delete via client <code>delete</code>; edit button present but not yet wired</li>
+          <li>Governed by RLS: <span class="predicate">INSERT: has_role(uid,'teacher')</span> and <span class="predicate">UPDATE/DELETE: uid = teacher_id AND has_role(uid,'teacher')</span></li>
+        </ul>
+      </div>
+      <div class="card avoid-break">
+        <h4>Admin — full management</h4>
+        <p style="margin:2px 0 5px;color:var(--muted);font-size:10.3px"><span class="mono">admin/CourseManagement.tsx</span></p>
+        <ul class="tight">
+          <li>Sees <b>every</b> course; can create, edit &amp; delete any of them</li>
+          <li><b>Assigns a course to any teacher</b> (sets <code>teacher_id</code> from a picker)</li>
+          <li>Uploads cover &amp; video files to Storage (<code>course-thumbnails</code>, <code>course-videos</code>)</li>
+          <li>Governed by RLS: <span class="predicate">ALL: EXISTS(user_roles WHERE uid AND role='admin')</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:10px">
+      <b>Modules &amp; lessons</b> are written only through the owning teacher's context — the RLS policy is <span class="predicate">ALL USING EXISTS(courses WHERE id = *.course_id AND teacher_id = auth.uid())</span>. There is <b>no admin policy on modules or lessons</b>, so an admin editing another teacher's course cannot alter its module/lesson structure through the normal client (only <code>courses</code>-level fields).
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-h"><span class="sec-n">06</span><h2>Material &amp; file upload architecture</h2></div>
+    <p class="lead">Four buckets, and two distinct code paths for adding course materials — enforcing permission in different places.</p>
+
+    <div class="grid g2" style="margin-bottom:10px">
+      <div class="card avoid-break">
+        <div class="k">Path A — Supabase Storage (in use)</div>
+        <p style="margin:5px 0 0"><span class="mono">MaterialsUpload.tsx</span> uploads the file to bucket <code>course-materials</code> at path <span class="mono">{courseId}/{timestamp}.{ext}</span>, gets a public URL, then client-<code>insert</code>s a <code>course_resources</code> row. <b>Permission rests on the Storage policy</b> — the path's first segment must be a course the caller owns.</p>
+      </div>
+      <div class="card avoid-break">
+        <div class="k">Path B — Google Drive (hardened)</div>
+        <p style="margin:5px 0 0"><span class="mono">upload-to-drive</span> Edge Function does <b>explicit checks in code</b> — caller's <code>user_roles.role === 'teacher'</code> <b>and</b> <code>courses.teacher_id === caller</code> — then uploads to Google Drive and inserts the <code>course_resources</code> row pointing at the Drive link.</p>
+      </div>
+    </div>
+
+    <table class="avoid-break">
+      <thead><tr><th>Bucket</th><th>Visibility</th><th>Limits</th><th>Who can write</th><th>Path rule</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">course-materials</td><td><span class="pill b">referenced</span></td><td>none in migrations</td><td><b>Owning teacher</b> (INSERT only)</td><td>1st segment = owned course id</td></tr>
+        <tr><td class="mono">course-thumbnails</td><td><span class="pill g">public</span></td><td>5 MB · images</td><td><b>Admins</b> (ins/upd/del)</td><td>none</td></tr>
+        <tr><td class="mono">course-videos</td><td><span class="pill g">public</span></td><td>500 MB · video</td><td><b>Admins</b> (ins/upd/del)</td><td>none</td></tr>
+        <tr><td class="mono">certificates</td><td><span class="pill r">private</span></td><td>—</td><td>Owner (per-user folder)</td><td>1st segment = own user id</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn" style="margin-top:10px">
+      <b>Enforcement lives in different places.</b> Materials (teacher) are guarded by a <b>path-scoped Storage policy</b>; thumbnails/videos (admin) by <b>role-only Storage policies with no path restriction</b>; the Drive path by <b>explicit code checks</b>. The <code>course-materials</code> bucket and the <code>course_resources</code> table are not created by any migration, so their full rule-set lives in the running database rather than version control.
+    </div>
+  </section>
+</div>
+
+<!-- ============ 7. RLS CATALOG ============ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">07</span><h2>RLS policy catalog</h2></div>
+    <p class="lead">The exact policies governing content, as found in the migrations. <span class="cmd c-sel">SELECT</span> <span class="cmd c-ins">INSERT</span> <span class="cmd c-upd">UPDATE</span> <span class="cmd c-del">DELETE</span> <span class="cmd c-all">ALL</span></p>
+
+    <div class="k" style="margin:2px 0 5px">Content tables</div>
+    <table class="avoid-break">
+      <thead><tr><th style="width:15%">Table</th><th style="width:11%">Cmd</th><th>Predicate (USING / WITH CHECK)</th></tr></thead>
+      <tbody>
+        <tr><td class="mono" rowspan="4">courses</td><td><span class="cmd c-sel">SELECT</span></td><td class="mono">true — anyone can view</td></tr>
+        <tr><td><span class="cmd c-ins">INSERT</span></td><td class="mono">has_role(auth.uid(), 'teacher')</td></tr>
+        <tr><td><span class="cmd c-upd">UPD</span> <span class="cmd c-del">DEL</span></td><td class="mono">auth.uid() = teacher_id AND has_role(auth.uid(), 'teacher')</td></tr>
+        <tr><td><span class="cmd c-all">ALL</span></td><td class="mono">EXISTS(user_roles WHERE user_id = auth.uid() AND role = 'admin')  — admin override</td></tr>
+
+        <tr><td class="mono" rowspan="2">modules</td><td><span class="cmd c-sel">SELECT</span></td><td class="mono">true</td></tr>
+        <tr><td><span class="cmd c-all">ALL</span></td><td class="mono">EXISTS(courses WHERE id = modules.course_id AND teacher_id = auth.uid())</td></tr>
+
+        <tr><td class="mono" rowspan="3">lessons</td><td><span class="cmd c-sel">SELECT</span></td><td class="mono">free course (c.is_premium = false OR NULL) — anyone</td></tr>
+        <tr><td><span class="cmd c-sel">SELECT</span></td><td class="mono">premium course AND enrolled (enrollments.student_id = auth.uid())</td></tr>
+        <tr><td><span class="cmd c-all">ALL</span></td><td class="mono">EXISTS(modules→courses WHERE c.teacher_id = auth.uid())</td></tr>
+
+        <tr><td class="mono" rowspan="3">reviews</td><td><span class="cmd c-sel">SELECT</span></td><td class="mono">true</td></tr>
+        <tr><td><span class="cmd c-ins">INSERT</span></td><td class="mono">auth.uid() = user_id AND EXISTS(enrollments for this course &amp; student)</td></tr>
+        <tr><td><span class="cmd c-upd">UPD</span></td><td class="mono">auth.uid() = user_id</td></tr>
+
+        <tr><td class="mono">categories, tags,<br>course_categories,<br>course_tags</td><td><span class="cmd c-sel">SELECT</span></td><td class="mono">true — <b>no INSERT/UPDATE/DELETE policy → client writes denied</b> (service-role only)</td></tr>
+
+        <tr><td class="mono">course_resources<br>course_materials</td><td>—</td><td class="mono"><b>Not in migrations</b> — no CREATE TABLE / RLS in version control; governed by live-DB RLS + the Drive function's checks</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <div class="k" style="margin:2px 0 5px">Storage · <span class="mono">storage.objects</span> policies</div>
+    <table class="avoid-break">
+      <thead><tr><th style="width:19%">Bucket</th><th style="width:13%">Cmd</th><th>Predicate</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">course-materials</td><td><span class="cmd c-ins">INSERT</span></td><td class="mono">bucket_id='course-materials' AND EXISTS(courses WHERE id::text = foldername[1] AND teacher_id = auth.uid())</td></tr>
+        <tr><td class="mono" rowspan="2">course-thumbnails</td><td><span class="cmd c-sel">SELECT</span></td><td class="mono">bucket_id='course-thumbnails' — public</td></tr>
+        <tr><td><span class="cmd c-ins">INS</span> <span class="cmd c-upd">UPD</span> <span class="cmd c-del">DEL</span></td><td class="mono">EXISTS(user_roles WHERE user_id = auth.uid() AND role = 'admin')</td></tr>
+        <tr><td class="mono" rowspan="2">course-videos</td><td><span class="cmd c-sel">SELECT</span></td><td class="mono">bucket_id='course-videos' — public</td></tr>
+        <tr><td><span class="cmd c-ins">INS</span> <span class="cmd c-upd">UPD</span> <span class="cmd c-del">DEL</span></td><td class="mono">EXISTS(user_roles WHERE user_id = auth.uid() AND role = 'admin')</td></tr>
+        <tr><td class="mono" rowspan="2">certificates</td><td><span class="cmd c-sel">SELECT</span></td><td class="mono">bucket_id='certificates' AND auth.uid()::text = foldername[1]</td></tr>
+        <tr><td><span class="cmd c-ins">INSERT</span></td><td class="mono">bucket_id='certificates' AND auth.uid()::text = foldername[1]</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" style="margin-top:9px">
+      <b>Enrollment &amp; certificates, for context.</b> Direct client writes are <b>blocked</b> on both: enrollments insert only via <code>service_role</code> (the <code>create-enrollment</code> function), and certificates insert only via a <code>SECURITY DEFINER</code> completion trigger — so authoring privileges never leak into records that must be system-generated.
+    </div>
+  </section>
+</div>
+
+<!-- ============ 8. FINDINGS ============ -->
+<div class="page">
+  <section>
+    <div class="sec-h"><span class="sec-n">08</span><h2>Findings, gaps &amp; recommendations</h2></div>
+    <p class="lead">Observations that matter for correctness and security of the authoring model, most notable first.</p>
+
+    <div class="callout risk avoid-break">
+      <b>1 · Course creation isn't bound to the creator.</b> The <code>courses</code> INSERT policy checks only <span class="predicate">has_role(auth.uid(),'teacher')</span> — it never requires <span class="mono">teacher_id = auth.uid()</span>. Any teacher can create a course attributed to <i>another</i> teacher's id (and would then be unable to edit it, since UPDATE/DELETE require ownership). <b>Fix:</b> add <span class="predicate">WITH CHECK (teacher_id = auth.uid())</span> to the INSERT policy.
+    </div>
+
+    <div class="callout warn avoid-break" style="margin-top:9px">
+      <b>2 · Part of the model lives outside migrations.</b> <code>course_resources</code>, <code>course_materials</code> and the <code>course-materials</code> bucket exist in the running database but have <b>no CREATE/RLS statements in any migration</b>. Their access rules can't be reviewed, diffed, or reproduced from source. <b>Fix:</b> capture them as migrations so the whole permission surface is in version control.
+    </div>
+
+    <div class="grid g2" style="margin-top:9px">
+      <div class="card avoid-break">
+        <div class="k">3 · Admins can't edit modules/lessons</div>
+        <p style="margin:5px 0 0">“Admins can manage all courses” covers only the <code>courses</code> table. <code>modules</code> and <code>lessons</code> have <b>owner-teacher-only</b> policies and no admin clause, so an admin cannot restructure another teacher's curriculum via the client. Add admin clauses if that's intended.</p>
+      </div>
+      <div class="card avoid-break">
+        <div class="k">4 · Two upload paths, uneven guarantees</div>
+        <p style="margin:5px 0 0">The Storage path (<span class="mono">MaterialsUpload</span>) has no in-code ownership check and leans entirely on the bucket policy; the Drive path checks explicitly. Keeping both means two rule-sets to maintain. Consider standardising on one.</p>
+      </div>
+      <div class="card avoid-break">
+        <div class="k">5 · Admin buckets have no path scoping</div>
+        <p style="margin:5px 0 0">Thumbnail/video policies are role-only — any admin may write anywhere in those buckets. Low risk (trusted role), but a per-course path convention would tighten it.</p>
+      </div>
+      <div class="card avoid-break">
+        <div class="k">6 · Role lookup uses <span class="mono">.single()</span></div>
+        <p style="margin:5px 0 0">Because <code>user_roles</code> allows multiple rows per user, the Drive function's <span class="mono">.select('role')…​.single()</span> would error for a user holding more than one role. Prefer <span class="mono">has_role()</span> or a <span class="mono">.in()</span> check.</p>
+      </div>
+    </div>
+
+    <div class="callout avoid-break" style="margin-top:10px">
+      <b>Bottom line.</b> The library is a <b>public catalog with a single premium-lesson gate</b>, and authoring is a clean <b>role + ownership</b> model: students can't write, teachers own their courses and materials, admins override at the course level, and system-only records (enrollments, certificates) are sealed off from direct writes. The main hardening opportunities are binding course creation to its owner, and bringing the out-of-migration objects back under version control.
+    </div>
+  </section>
+</div>
+
+</body>
+</html>
